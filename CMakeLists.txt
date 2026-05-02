@@ -8,6 +8,7 @@ find_package(EnTT CONFIG REQUIRED)
 
 add_executable(roguelike
     src/core/Game.cpp
+    src/core/GameLog.cpp
     src/core/Rng.cpp
     src/fov/ShadowcastingFov.cpp
     src/main.cpp
