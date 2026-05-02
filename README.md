@@ -1,4 +1,4 @@
-# Roguelike
+﻿# Roguelike
 
 A C++20 roguelike project built in small, playable slices.
 
@@ -17,8 +17,10 @@ Project bootstrap. The current executable is a minimal smoke target that proves 
 
 ## Build
 
+Install dependencies with vcpkg manifest mode, then configure with the vcpkg toolchain file:
+
 ```bash
-cmake -S . -B build
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 cmake --build build
-ctest --test-dir build
+ctest --test-dir build -C Debug
 ```
