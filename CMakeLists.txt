@@ -7,11 +7,16 @@ find_package(SDL2_ttf CONFIG REQUIRED)
 
 add_executable(roguelike
     src/main.cpp
+    src/render/ConsoleBuffer.cpp
 )
 
 target_compile_features(roguelike PRIVATE cxx_std_20)
 set_target_properties(roguelike PROPERTIES
     CXX_EXTENSIONS OFF
+)
+
+target_include_directories(roguelike PRIVATE
+    src
 )
 
 target_link_libraries(roguelike PRIVATE
@@ -26,4 +31,4 @@ else()
 endif()
 
 enable_testing()
-add_test(NAME roguelike_smoke COMMAND roguelike)
+add_test(NAME roguelike_smoke COMMAND roguelike --smoke)
