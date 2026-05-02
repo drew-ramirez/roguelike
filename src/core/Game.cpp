@@ -7,6 +7,7 @@
 
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "render/SdlRenderer.hpp"
+#include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/InputSystem.hpp"
 #include "systems/MapRenderSystem.hpp"
@@ -24,6 +25,11 @@ Game::Game(std::optional<Rng::Seed> seed)
     auto build = SimpleMapBuilder::build(map_.width(), map_.height(), resources_.rng);
     map_ = std::move(build.map);
     resources_.player = spawnPlayer(registry_, build.playerStart);
+    resources_.log.add("Entered the dungeon.");
+    const auto spawned = spawnMonsters(registry_, build.rooms, resources_.rng, build.playerStart);
+    if (spawned > 0) {
+        resources_.log.add("You hear movement in the dark.");
+    }
     updateVisibility(registry_, map_, resources_.player, fovProvider_);
 }
 

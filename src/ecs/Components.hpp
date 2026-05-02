@@ -27,6 +27,9 @@ struct Name {
 struct Player {
 };
 
+struct Monster {
+};
+
 struct BlocksTile {
 };
 

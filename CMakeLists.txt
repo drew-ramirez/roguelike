@@ -16,6 +16,7 @@ add_executable(roguelike
     src/map/generators/SimpleMapBuilder.cpp
     src/render/ConsoleBuffer.cpp
     src/render/SdlRenderer.cpp
+    src/spawn/MonsterSpawner.cpp
     src/spawn/Spawner.cpp
     src/systems/InputSystem.cpp
     src/systems/MapRenderSystem.cpp

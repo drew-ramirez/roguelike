@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <charconv>
 #include <cstdint>
@@ -18,6 +19,7 @@
 #include "map/Rect.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "render/ConsoleBuffer.hpp"
+#include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/InputSystem.hpp"
 #include "systems/RenderSystem.hpp"
@@ -304,6 +306,35 @@ bool smokeMapAndMovement()
     return blocked.x == 2 && blocked.y == 1;
 }
 
+bool smokeMonsterSpawning()
+{
+    rl::Rng rng{12345U};
+    auto build = rl::SimpleMapBuilder::build(40, 25, rng);
+
+    entt::registry registry;
+    [[maybe_unused]] const auto player = rl::spawnPlayer(registry, build.playerStart);
+    const auto spawned = rl::spawnMonsters(registry, build.rooms, rng, build.playerStart);
+    if (spawned < 2) {
+        return false;
+    }
+
+    std::vector<rl::Point> occupied;
+    const auto view = registry.view<const rl::Monster, const rl::Position>();
+    for (const auto entity : view) {
+        const auto& position = view.get<const rl::Position>(entity);
+        const rl::Point point{position.x, position.y};
+        if (point == build.playerStart || !build.map.isWalkable(point.x, point.y)) {
+            return false;
+        }
+        if (std::find(occupied.begin(), occupied.end(), point) != occupied.end()) {
+            return false;
+        }
+        occupied.push_back(point);
+    }
+
+    return occupied.size() == spawned;
+}
+
 int runSmoke()
 {
     if (!smokeConsoleBuffer()) {
@@ -328,6 +359,9 @@ int runSmoke()
         return 1;
     }
     if (!smokeMapAndMovement()) {
+        return 1;
+    }
+    if (!smokeMonsterSpawning()) {
         return 1;
     }
     return 0;
