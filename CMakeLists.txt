@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.21)
 
 project(roguelike VERSION 0.1.0 LANGUAGES CXX)
 
@@ -6,8 +6,10 @@ find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_ttf CONFIG REQUIRED)
 
 add_executable(roguelike
+    src/core/Game.cpp
     src/main.cpp
     src/render/ConsoleBuffer.cpp
+    src/render/SdlRenderer.cpp
 )
 
 target_compile_features(roguelike PRIVATE cxx_std_20)

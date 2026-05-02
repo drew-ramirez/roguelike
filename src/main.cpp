@@ -1,7 +1,8 @@
-﻿#include <exception>
+#include <exception>
 #include <iostream>
 #include <string_view>
 
+#include "core/Game.hpp"
 #include "render/ConsoleBuffer.hpp"
 
 namespace {
@@ -41,7 +42,8 @@ int main(int argc, char* argv[])
             return runSmoke();
         }
 
-        std::cout << "Roguelike bootstrap\n";
+        rl::Game game;
+        game.run();
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "Fatal error: " << error.what() << '\n';
