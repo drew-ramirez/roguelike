@@ -1,11 +1,11 @@
-﻿#include "core/Game.hpp"
+#include "core/Game.hpp"
 
 #include <chrono>
 #include <thread>
 
-#include "core/Point.hpp"
 #include "render/SdlRenderer.hpp"
 #include "spawn/Spawner.hpp"
+#include "systems/InputSystem.hpp"
 #include "systems/MapRenderSystem.hpp"
 #include "systems/RenderSystem.hpp"
 
@@ -20,15 +20,23 @@ Game::Game()
 void Game::run()
 {
     while (running_ && !renderer_->shouldQuit()) {
-        renderer_->pollEvents();
-        tick();
+        const auto events = renderer_->pollEvents();
+        tick(events);
         renderer_->present(console_);
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
 }
 
-void Game::tick()
+void Game::tick(const std::vector<InputEvent>& events)
 {
+    for (const auto& event : events) {
+        if (event.type == InputEventType::Quit) {
+            running_ = false;
+        }
+    }
+
+    handlePlayerInput(registry_, resources_, map_, events);
+
     console_.clear();
     renderMap(map_, console_);
     renderEntities(registry_, console_);

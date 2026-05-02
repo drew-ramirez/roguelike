@@ -50,6 +50,30 @@ std::optional<std::string> environmentVariable(const char* name)
 #endif
 }
 
+rl::Key mapSdlKey(SDL_Keycode key)
+{
+    switch (key) {
+    case SDLK_UP:
+        return rl::Key::Up;
+    case SDLK_DOWN:
+        return rl::Key::Down;
+    case SDLK_LEFT:
+        return rl::Key::Left;
+    case SDLK_RIGHT:
+        return rl::Key::Right;
+    case SDLK_w:
+        return rl::Key::W;
+    case SDLK_a:
+        return rl::Key::A;
+    case SDLK_s:
+        return rl::Key::S;
+    case SDLK_d:
+        return rl::Key::D;
+    default:
+        return rl::Key::Unknown;
+    }
+}
+
 } // namespace
 
 namespace rl {
@@ -141,14 +165,19 @@ SdlRenderer::SdlRenderer(int consoleWidth, int consoleHeight)
 
 SdlRenderer::~SdlRenderer() = default;
 
-void SdlRenderer::pollEvents()
+std::vector<InputEvent> SdlRenderer::pollEvents()
 {
+    std::vector<InputEvent> events;
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
         if (event.type == SDL_QUIT) {
             shouldQuit_ = true;
+            events.push_back(InputEvent{InputEventType::Quit});
+        } else if (event.type == SDL_KEYDOWN) {
+            events.push_back(InputEvent{InputEventType::KeyDown, mapSdlKey(event.key.keysym.sym)});
         }
     }
+    return events;
 }
 
 void SdlRenderer::present(const ConsoleBuffer& console)

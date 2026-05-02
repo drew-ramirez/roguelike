@@ -1,14 +1,14 @@
-﻿#include <exception>
+#include <exception>
 #include <iostream>
 #include <string_view>
 
-#include <entt/entt.hpp>
-
 #include "core/Game.hpp"
+#include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "spawn/Spawner.hpp"
+#include "systems/InputSystem.hpp"
 #include "systems/RenderSystem.hpp"
 
 namespace {
@@ -61,10 +61,32 @@ bool smokeEntityRendering()
     return console.cellAt(3, 2).glyph == U' ';
 }
 
-bool smokeMap()
+bool smokeMapAndMovement()
 {
     rl::Map map = rl::Map::createStarter(8, 6);
-    return map.blocksMovement(0, 0) && map.blocksMovement(7, 5) && map.isWalkable(1, 1);
+    if (!map.blocksMovement(0, 0) || !map.blocksMovement(7, 5) || !map.isWalkable(1, 1)) {
+        return false;
+    }
+
+    entt::registry registry;
+    rl::GameResources resources;
+    resources.player = rl::spawnPlayer(registry, rl::Point{1, 1});
+
+    if (!rl::tryMoveEntity(registry, resources.player, map, rl::Point{1, 0})) {
+        return false;
+    }
+
+    const auto& moved = registry.get<rl::Position>(resources.player);
+    if (moved.x != 2 || moved.y != 1) {
+        return false;
+    }
+
+    if (rl::tryMoveEntity(registry, resources.player, map, rl::Point{0, -1})) {
+        return false;
+    }
+
+    const auto& blocked = registry.get<rl::Position>(resources.player);
+    return blocked.x == 2 && blocked.y == 1;
 }
 
 int runSmoke()
@@ -75,7 +97,7 @@ int runSmoke()
     if (!smokeEntityRendering()) {
         return 1;
     }
-    if (!smokeMap()) {
+    if (!smokeMapAndMovement()) {
         return 1;
     }
     return 0;

@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.21)
 
 project(roguelike VERSION 0.1.0 LANGUAGES CXX)
 
@@ -13,6 +13,7 @@ add_executable(roguelike
     src/render/ConsoleBuffer.cpp
     src/render/SdlRenderer.cpp
     src/spawn/Spawner.cpp
+    src/systems/InputSystem.cpp
     src/systems/MapRenderSystem.cpp
     src/systems/RenderSystem.cpp
 )

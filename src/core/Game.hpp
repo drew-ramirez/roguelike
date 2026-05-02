@@ -1,11 +1,13 @@
-﻿#pragma once
+#pragma once
 
 #include <memory>
+#include <vector>
 
 #include <entt/entt.hpp>
 
 #include "core/GameResources.hpp"
 #include "core/RunState.hpp"
+#include "input/InputEvent.hpp"
 #include "map/Map.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "render/IRenderer.hpp"
@@ -19,7 +21,7 @@ public:
     void run();
 
 private:
-    void tick();
+    void tick(const std::vector<InputEvent>& events);
 
     RunState state_ = RunState::AwaitingInput;
     ConsoleBuffer console_{80, 50};
