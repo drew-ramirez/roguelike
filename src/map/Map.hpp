@@ -8,7 +8,7 @@ namespace rl {
 
 class Map {
 public:
-    Map(int width, int height);
+    Map(int width, int height, TileType fill = TileType::Floor);
 
     [[nodiscard]] static Map createStarter(int width = 80, int height = 45);
 
