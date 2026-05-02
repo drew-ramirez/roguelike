@@ -213,6 +213,30 @@ bool smokeVisibility()
     return map.isRevealed(1, 1) && !map.isVisible(1, 1);
 }
 
+bool smokeVisibleEntityRendering()
+{
+    rl::Map map{8, 6};
+    map.setVisible(1, 1);
+
+    entt::registry registry;
+    const auto player = rl::spawnPlayer(registry, rl::Point{1, 1});
+    const auto hidden = registry.create();
+    registry.emplace<rl::Position>(hidden, rl::Position{2, 1});
+    registry.emplace<rl::Renderable>(hidden, rl::Renderable{U'm', rl::Color::white(), rl::Color::black(), 5});
+
+    rl::ConsoleBuffer console{8, 6};
+    console.clear();
+    rl::renderEntities(registry, map, console);
+    if (console.cellAt(1, 1).glyph != U'@' || console.cellAt(2, 1).glyph != U' ') {
+        return false;
+    }
+
+    map.setVisible(2, 1);
+    console.clear();
+    rl::renderEntities(registry, map, console);
+    return registry.valid(player) && console.cellAt(2, 1).glyph == U'm';
+}
+
 bool smokeSeedParsing()
 {
     char executable[] = "roguelike";
@@ -292,6 +316,9 @@ int runSmoke()
         return 1;
     }
     if (!smokeVisibility()) {
+        return 1;
+    }
+    if (!smokeVisibleEntityRendering()) {
         return 1;
     }
     if (!smokeSeedParsing()) {

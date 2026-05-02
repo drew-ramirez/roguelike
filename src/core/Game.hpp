@@ -9,6 +9,7 @@
 #include "core/GameResources.hpp"
 #include "core/Rng.hpp"
 #include "core/RunState.hpp"
+#include "fov/ShadowcastingFov.hpp"
 #include "input/InputEvent.hpp"
 #include "map/Map.hpp"
 #include "render/ConsoleBuffer.hpp"
@@ -24,12 +25,14 @@ public:
 
 private:
     void tick(const std::vector<InputEvent>& events);
+    void render();
 
     RunState state_ = RunState::AwaitingInput;
     ConsoleBuffer console_{80, 50};
     Map map_{80, 45, TileType::Wall};
     entt::registry registry_;
     GameResources resources_;
+    ShadowcastingFov fovProvider_;
     std::unique_ptr<IRenderer> renderer_;
     bool running_ = true;
 };

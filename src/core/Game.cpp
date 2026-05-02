@@ -11,6 +11,7 @@
 #include "systems/InputSystem.hpp"
 #include "systems/MapRenderSystem.hpp"
 #include "systems/RenderSystem.hpp"
+#include "systems/VisibilitySystem.hpp"
 
 namespace rl {
 
@@ -23,6 +24,7 @@ Game::Game(std::optional<Rng::Seed> seed)
     auto build = SimpleMapBuilder::build(map_.width(), map_.height(), resources_.rng);
     map_ = std::move(build.map);
     resources_.player = spawnPlayer(registry_, build.playerStart);
+    updateVisibility(registry_, map_, resources_.player, fovProvider_);
 }
 
 void Game::run()
@@ -44,14 +46,20 @@ void Game::tick(const std::vector<InputEvent>& events)
     }
 
     handlePlayerInput(registry_, resources_, map_, events);
+    updateVisibility(registry_, map_, resources_.player, fovProvider_);
 
-    console_.clear();
-    renderMap(map_, console_);
-    renderEntities(registry_, console_);
+    render();
 
     if (state_ == RunState::GameOver) {
         running_ = false;
     }
+}
+
+void Game::render()
+{
+    console_.clear();
+    renderMap(map_, console_);
+    renderEntities(registry_, map_, console_);
 }
 
 } // namespace rl
