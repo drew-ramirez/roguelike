@@ -4,12 +4,20 @@ project(roguelike VERSION 0.1.0 LANGUAGES CXX)
 
 find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_ttf CONFIG REQUIRED)
+find_package(EnTT CONFIG REQUIRED)
 
 add_executable(roguelike
     src/core/Game.cpp
+    src/core/Rng.cpp
     src/main.cpp
+    src/map/Map.cpp
+    src/map/generators/SimpleMapBuilder.cpp
     src/render/ConsoleBuffer.cpp
     src/render/SdlRenderer.cpp
+    src/spawn/Spawner.cpp
+    src/systems/InputSystem.cpp
+    src/systems/MapRenderSystem.cpp
+    src/systems/RenderSystem.cpp
 )
 
 target_compile_features(roguelike PRIVATE cxx_std_20)
@@ -22,6 +30,7 @@ target_include_directories(roguelike PRIVATE
 )
 
 target_link_libraries(roguelike PRIVATE
+    EnTT::EnTT
     $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
     $<IF:$<TARGET_EXISTS:SDL2_ttf::SDL2_ttf>,SDL2_ttf::SDL2_ttf,SDL2_ttf::SDL2_ttf-static>
 )

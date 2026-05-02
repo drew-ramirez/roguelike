@@ -4,7 +4,7 @@ A C++20 roguelike project built in small, playable slices.
 
 ## Status
 
-Chapter 1 renderer bootstrap. The app opens an SDL2 window, draws a terminal-style console buffer, and exits cleanly when the window closes.
+Chapters 2-4 ECS/map/movement/mapgen bootstrap. The app opens an SDL2 window, draws a seeded rooms-and-corridors dungeon, renders the player through EnTT, and supports blocked tile movement.
 
 ## Planned Stack
 
@@ -31,4 +31,15 @@ Run the game executable without arguments to open the window. The smoke test use
 ./build/Debug/roguelike --smoke
 ```
 
+Use a reproducible map seed with:
+
+```bash
+./build/Debug/roguelike --seed 12345
+```
+
 The SDL_ttf renderer looks for a local monospace font. Set `ROGUELIKE_FONT_PATH` to a `.ttf` or `.ttc` file if automatic font discovery fails.
+
+## Controls
+
+- Arrow keys or WASD: move one tile.
+- Window close button: quit.

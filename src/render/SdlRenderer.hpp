@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "render/IRenderer.hpp"
 
@@ -24,7 +25,7 @@ public:
     SdlRenderer(SdlRenderer&&) = delete;
     SdlRenderer& operator=(SdlRenderer&&) = delete;
 
-    void pollEvents() override;
+    [[nodiscard]] std::vector<InputEvent> pollEvents() override;
     void present(const ConsoleBuffer& console) override;
     [[nodiscard]] bool shouldQuit() const noexcept override;
 
