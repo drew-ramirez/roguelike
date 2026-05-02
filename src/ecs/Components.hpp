@@ -1,7 +1,9 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
+#include "core/Point.hpp"
 #include "render/Color.hpp"
 
 namespace rl {
@@ -26,6 +28,12 @@ struct Player {
 };
 
 struct BlocksTile {
+};
+
+struct Viewshed {
+    std::vector<Point> visible;
+    int range = 8;
+    bool dirty = true;
 };
 
 } // namespace rl

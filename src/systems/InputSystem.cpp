@@ -42,6 +42,11 @@ bool tryMoveEntity(entt::registry& registry, entt::entity entity, const Map& map
 
     position.x = target.x;
     position.y = target.y;
+    if (registry.all_of<Viewshed>(entity)) {
+        registry.patch<Viewshed>(entity, [](Viewshed& viewshed) {
+            viewshed.dirty = true;
+        });
+    }
     return true;
 }
 

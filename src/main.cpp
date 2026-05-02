@@ -13,6 +13,7 @@
 #include "core/GameResources.hpp"
 #include "core/Rng.hpp"
 #include "ecs/Components.hpp"
+#include "fov/ShadowcastingFov.hpp"
 #include "map/Map.hpp"
 #include "map/Rect.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
@@ -20,6 +21,7 @@
 #include "spawn/Spawner.hpp"
 #include "systems/InputSystem.hpp"
 #include "systems/RenderSystem.hpp"
+#include "systems/VisibilitySystem.hpp"
 
 namespace {
 
@@ -190,6 +192,27 @@ bool smokeGeneratedMap()
     return allWalkableTilesReachable(first.map, first.playerStart);
 }
 
+bool smokeVisibility()
+{
+    rl::Map map{12, 8};
+    map.setTile(3, 1, rl::TileType::Wall);
+
+    entt::registry registry;
+    const auto player = rl::spawnPlayer(registry, rl::Point{1, 1});
+    rl::ShadowcastingFov fov;
+    rl::updateVisibility(registry, map, player, fov);
+
+    if (!map.isVisible(1, 1) || !map.isVisible(3, 1) || map.isVisible(4, 1)) {
+        return false;
+    }
+    if (!map.isRevealed(1, 1)) {
+        return false;
+    }
+
+    map.clearVisible();
+    return map.isRevealed(1, 1) && !map.isVisible(1, 1);
+}
+
 bool smokeSeedParsing()
 {
     char executable[] = "roguelike";
@@ -266,6 +289,9 @@ int runSmoke()
         return 1;
     }
     if (!smokeGeneratedMap()) {
+        return 1;
+    }
+    if (!smokeVisibility()) {
         return 1;
     }
     if (!smokeSeedParsing()) {

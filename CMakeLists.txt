@@ -9,6 +9,7 @@ find_package(EnTT CONFIG REQUIRED)
 add_executable(roguelike
     src/core/Game.cpp
     src/core/Rng.cpp
+    src/fov/ShadowcastingFov.cpp
     src/main.cpp
     src/map/Map.cpp
     src/map/generators/SimpleMapBuilder.cpp
@@ -18,6 +19,7 @@ add_executable(roguelike
     src/systems/InputSystem.cpp
     src/systems/MapRenderSystem.cpp
     src/systems/RenderSystem.cpp
+    src/systems/VisibilitySystem.cpp
 )
 
 target_compile_features(roguelike PRIVATE cxx_std_20)
