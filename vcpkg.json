@@ -1,7 +1,8 @@
-{
+﻿{
   "name": "roguelike",
   "version-string": "0.1.0",
   "dependencies": [
+    "entt",
     "sdl2",
     "sdl2-ttf"
   ]
