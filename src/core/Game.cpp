@@ -1,8 +1,11 @@
 #include "core/Game.hpp"
 
 #include <chrono>
+#include <iostream>
 #include <thread>
+#include <utility>
 
+#include "map/generators/SimpleMapBuilder.hpp"
 #include "render/SdlRenderer.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/InputSystem.hpp"
@@ -11,10 +14,15 @@
 
 namespace rl {
 
-Game::Game()
+Game::Game(std::optional<Rng::Seed> seed)
     : renderer_(std::make_unique<SdlRenderer>(console_.width(), console_.height()))
 {
-    resources_.player = spawnPlayer(registry_, Point{40, 22});
+    resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
+    std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
+
+    auto build = SimpleMapBuilder::build(map_.width(), map_.height(), resources_.rng);
+    map_ = std::move(build.map);
+    resources_.player = spawnPlayer(registry_, build.playerStart);
 }
 
 void Game::run()

@@ -1,6 +1,11 @@
 #include <array>
+#include <charconv>
+#include <cstdint>
 #include <exception>
 #include <iostream>
+#include <limits>
+#include <optional>
+#include <stdexcept>
 #include <string_view>
 #include <vector>
 
@@ -26,6 +31,45 @@ bool hasArgument(int argc, char* argv[], std::string_view expected)
         }
     }
     return false;
+}
+
+rl::Rng::Seed parseSeedValue(std::string_view value)
+{
+    if (value.empty()) {
+        throw std::invalid_argument("Seed value cannot be empty");
+    }
+
+    std::uint64_t parsed = 0;
+    const auto* const begin = value.data();
+    const auto* const end = value.data() + value.size();
+    const auto [next, error] = std::from_chars(begin, end, parsed);
+    if (error != std::errc{} || next != end) {
+        throw std::invalid_argument("Seed must be an unsigned integer");
+    }
+    if (parsed > std::numeric_limits<rl::Rng::Seed>::max()) {
+        throw std::out_of_range("Seed is larger than the supported range");
+    }
+
+    return static_cast<rl::Rng::Seed>(parsed);
+}
+
+std::optional<rl::Rng::Seed> parseSeedArgument(int argc, char* argv[])
+{
+    constexpr std::string_view prefix = "--seed=";
+    for (int i = 1; i < argc; ++i) {
+        const std::string_view argument{argv[i]};
+        if (argument == "--seed") {
+            if (i + 1 >= argc) {
+                throw std::invalid_argument("Missing value for --seed");
+            }
+            return parseSeedValue(argv[i + 1]);
+        }
+        if (argument.starts_with(prefix)) {
+            return parseSeedValue(argument.substr(prefix.size()));
+        }
+    }
+
+    return std::nullopt;
 }
 
 bool sameMapTiles(const rl::Map& left, const rl::Map& right)
@@ -146,6 +190,23 @@ bool smokeGeneratedMap()
     return allWalkableTilesReachable(first.map, first.playerStart);
 }
 
+bool smokeSeedParsing()
+{
+    char executable[] = "roguelike";
+    char seedFlag[] = "--seed";
+    char seedValue[] = "12345";
+    char seedEquals[] = "--seed=67890";
+    char* splitSeedArgs[] = {executable, seedFlag, seedValue};
+    char* equalsSeedArgs[] = {executable, seedEquals};
+    char* noSeedArgs[] = {executable};
+
+    const auto splitSeed = parseSeedArgument(3, splitSeedArgs);
+    const auto equalsSeed = parseSeedArgument(2, equalsSeedArgs);
+    const auto noSeed = parseSeedArgument(1, noSeedArgs);
+
+    return splitSeed == 12345U && equalsSeed == 67890U && !noSeed.has_value();
+}
+
 bool smokeEntityRendering()
 {
     entt::registry registry;
@@ -207,6 +268,9 @@ int runSmoke()
     if (!smokeGeneratedMap()) {
         return 1;
     }
+    if (!smokeSeedParsing()) {
+        return 1;
+    }
     if (!smokeEntityRendering()) {
         return 1;
     }
@@ -225,7 +289,7 @@ int main(int argc, char* argv[])
             return runSmoke();
         }
 
-        rl::Game game;
+        rl::Game game{parseSeedArgument(argc, argv)};
         game.run();
         return 0;
     } catch (const std::exception& error) {

@@ -1,11 +1,13 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include <entt/entt.hpp>
 
 #include "core/GameResources.hpp"
+#include "core/Rng.hpp"
 #include "core/RunState.hpp"
 #include "input/InputEvent.hpp"
 #include "map/Map.hpp"
@@ -16,7 +18,7 @@ namespace rl {
 
 class Game {
 public:
-    Game();
+    explicit Game(std::optional<Rng::Seed> seed = std::nullopt);
 
     void run();
 
@@ -25,7 +27,7 @@ private:
 
     RunState state_ = RunState::AwaitingInput;
     ConsoleBuffer console_{80, 50};
-    Map map_{Map::createStarter(80, 45)};
+    Map map_{80, 45, TileType::Wall};
     entt::registry registry_;
     GameResources resources_;
     std::unique_ptr<IRenderer> renderer_;
