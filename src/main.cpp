@@ -6,6 +6,7 @@
 
 #include "core/Game.hpp"
 #include "ecs/Components.hpp"
+#include "map/Map.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/RenderSystem.hpp"
@@ -60,12 +61,21 @@ bool smokeEntityRendering()
     return console.cellAt(3, 2).glyph == U' ';
 }
 
+bool smokeMap()
+{
+    rl::Map map = rl::Map::createStarter(8, 6);
+    return map.blocksMovement(0, 0) && map.blocksMovement(7, 5) && map.isWalkable(1, 1);
+}
+
 int runSmoke()
 {
     if (!smokeConsoleBuffer()) {
         return 1;
     }
     if (!smokeEntityRendering()) {
+        return 1;
+    }
+    if (!smokeMap()) {
         return 1;
     }
     return 0;

@@ -6,6 +6,7 @@
 
 #include "core/GameResources.hpp"
 #include "core/RunState.hpp"
+#include "map/Map.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "render/IRenderer.hpp"
 
@@ -22,6 +23,7 @@ private:
 
     RunState state_ = RunState::AwaitingInput;
     ConsoleBuffer console_{80, 50};
+    Map map_{Map::createStarter(80, 45)};
     entt::registry registry_;
     GameResources resources_;
     std::unique_ptr<IRenderer> renderer_;

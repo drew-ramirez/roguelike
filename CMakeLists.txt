@@ -9,9 +9,11 @@ find_package(EnTT CONFIG REQUIRED)
 add_executable(roguelike
     src/core/Game.cpp
     src/main.cpp
+    src/map/Map.cpp
     src/render/ConsoleBuffer.cpp
     src/render/SdlRenderer.cpp
     src/spawn/Spawner.cpp
+    src/systems/MapRenderSystem.cpp
     src/systems/RenderSystem.cpp
 )
 

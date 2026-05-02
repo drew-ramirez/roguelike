@@ -6,6 +6,7 @@
 #include "core/Point.hpp"
 #include "render/SdlRenderer.hpp"
 #include "spawn/Spawner.hpp"
+#include "systems/MapRenderSystem.hpp"
 #include "systems/RenderSystem.hpp"
 
 namespace rl {
@@ -29,6 +30,7 @@ void Game::run()
 void Game::tick()
 {
     console_.clear();
+    renderMap(map_, console_);
     renderEntities(registry_, console_);
 
     if (state_ == RunState::GameOver) {
