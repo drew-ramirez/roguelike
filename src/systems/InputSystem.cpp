@@ -3,6 +3,7 @@
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
+#include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
 
@@ -36,7 +37,7 @@ bool tryMoveEntity(entt::registry& registry, entt::entity entity, const Map& map
 
     auto& position = registry.get<Position>(entity);
     const Point target{position.x + delta.x, position.y + delta.y};
-    if (map.blocksMovement(target.x, target.y)) {
+    if (isBlocked(map, registry, target, entity)) {
         return false;
     }
 

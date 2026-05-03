@@ -23,6 +23,7 @@
 #include "spawn/Spawner.hpp"
 #include "systems/InputSystem.hpp"
 #include "systems/RenderSystem.hpp"
+#include "systems/SpatialIndexSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
 
 namespace {
@@ -335,6 +336,24 @@ bool smokeMonsterSpawning()
     return occupied.size() == spawned;
 }
 
+bool smokeEntityBlocking()
+{
+    rl::Map map = rl::Map::createStarter(8, 6);
+    entt::registry registry;
+    const auto player = rl::spawnPlayer(registry, rl::Point{1, 1});
+    [[maybe_unused]] const auto goblin = rl::spawnGoblin(registry, rl::Point{2, 1});
+
+    if (!rl::blockingEntityAt(registry, rl::Point{2, 1}).has_value()) {
+        return false;
+    }
+    if (rl::tryMoveEntity(registry, player, map, rl::Point{1, 0})) {
+        return false;
+    }
+
+    const auto& position = registry.get<rl::Position>(player);
+    return position.x == 1 && position.y == 1;
+}
+
 int runSmoke()
 {
     if (!smokeConsoleBuffer()) {
@@ -362,6 +381,9 @@ int runSmoke()
         return 1;
     }
     if (!smokeMonsterSpawning()) {
+        return 1;
+    }
+    if (!smokeEntityBlocking()) {
         return 1;
     }
     return 0;

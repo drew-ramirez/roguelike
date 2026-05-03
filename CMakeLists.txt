@@ -21,6 +21,7 @@ add_executable(roguelike
     src/systems/InputSystem.cpp
     src/systems/MapRenderSystem.cpp
     src/systems/RenderSystem.cpp
+    src/systems/SpatialIndexSystem.cpp
     src/systems/VisibilitySystem.cpp
 )
 

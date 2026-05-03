@@ -1,6 +1,7 @@
 #include "spawn/MonsterSpawner.hpp"
 
 #include "ecs/Components.hpp"
+#include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
 namespace {
@@ -16,25 +17,12 @@ Point randomPointInRoom(const Rect& room, Rng& rng)
     };
 }
 
-bool hasBlockingEntityAt(const entt::registry& registry, Point position)
-{
-    const auto view = registry.view<const Position, const BlocksTile>();
-    for (const auto entity : view) {
-        const auto& blockerPosition = view.get<const Position>(entity);
-        if (blockerPosition.x == position.x && blockerPosition.y == position.y) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 bool trySpawnMonsterInRoom(entt::registry& registry, const Rect& room, Rng& rng, Point playerStart)
 {
     constexpr int maxAttempts = 20;
     for (int attempt = 0; attempt < maxAttempts; ++attempt) {
         const Point position = randomPointInRoom(room, rng);
-        if (position == playerStart || hasBlockingEntityAt(registry, position)) {
+        if (position == playerStart || blockingEntityAt(registry, position).has_value()) {
             continue;
         }
 
