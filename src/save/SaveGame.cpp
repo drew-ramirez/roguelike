@@ -32,6 +32,8 @@ using EntityId = std::uint32_t;
         return "wall";
     case TileType::Floor:
         return "floor";
+    case TileType::DownStairs:
+        return "down_stairs";
     }
     return "wall";
 }
@@ -40,6 +42,9 @@ using EntityId = std::uint32_t;
 {
     if (value == "floor") {
         return TileType::Floor;
+    }
+    if (value == "down_stairs") {
+        return TileType::DownStairs;
     }
     return TileType::Wall;
 }

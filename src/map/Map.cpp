@@ -55,6 +55,11 @@ int Map::height() const noexcept
     return height_;
 }
 
+int Map::tileCount() const noexcept
+{
+    return static_cast<int>(tiles_.size());
+}
+
 bool Map::inBounds(int x, int y) const noexcept
 {
     return x >= 0 && y >= 0 && x < width_ && y < height_;

@@ -28,6 +28,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/systems/InputSystem.cpp
     src/systems/ItemSystem.cpp
     src/systems/MapRenderSystem.cpp
+    src/systems/MapTransitionSystem.cpp
     src/systems/MeleeCombatSystem.cpp
     src/systems/MonsterAI.cpp
     src/systems/RenderSystem.cpp
@@ -74,6 +75,7 @@ set(ROGUELIKE_HEADERS
     src/systems/InputSystem.hpp
     src/systems/ItemSystem.hpp
     src/systems/MapRenderSystem.hpp
+    src/systems/MapTransitionSystem.hpp
     src/systems/MeleeCombatSystem.hpp
     src/systems/MonsterAI.hpp
     src/systems/RenderSystem.hpp

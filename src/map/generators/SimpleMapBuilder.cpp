@@ -208,7 +208,11 @@ MapBuildResult SimpleMapBuilder::build(int width, int height, Rng& rng)
 
     const Point playerStart = rooms.empty() ? Point{} : rooms.front().center();
     validateGeneratedMap(map, playerStart, rooms);
-    return MapBuildResult{std::move(map), playerStart, std::move(rooms)};
+    const Point stairsPosition =
+        rooms.empty() ? Point{} : rooms.back().center();
+    map.setTile(stairsPosition.x, stairsPosition.y, TileType::DownStairs);
+    return MapBuildResult{
+        std::move(map), playerStart, stairsPosition, std::move(rooms)};
 }
 
 } // namespace rl

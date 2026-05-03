@@ -21,6 +21,7 @@ class Map {
 
     [[nodiscard]] int width() const noexcept;
     [[nodiscard]] int height() const noexcept;
+    [[nodiscard]] int tileCount() const noexcept;
     [[nodiscard]] bool inBounds(int x, int y) const noexcept;
     [[nodiscard]] int xyIdx(int x, int y) const;
     [[nodiscard]] TileType tileAt(int x, int y) const;
