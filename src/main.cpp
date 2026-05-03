@@ -24,6 +24,7 @@
 #include "systems/DamageSystem.hpp"
 #include "systems/InputSystem.hpp"
 #include "systems/MeleeCombatSystem.hpp"
+#include "systems/MonsterAI.hpp"
 #include "systems/RenderSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
@@ -388,9 +389,19 @@ bool smokeCombatAndDeath()
         return false;
     }
 
-    registry.emplace_or_replace<rl::SufferDamage>(resources.player, rl::SufferDamage{100});
-    rl::applyDamageAndCleanup(registry, resources, state);
-    return state == rl::RunState::GameOver;
+    entt::registry monsterRegistry;
+    rl::GameResources monsterResources;
+    monsterResources.player = rl::spawnPlayer(monsterRegistry, rl::Point{1, 1});
+    [[maybe_unused]] const auto attackingGoblin = rl::spawnGoblin(monsterRegistry, rl::Point{2, 1});
+    auto& playerStats = monsterRegistry.get<rl::CombatStats>(monsterResources.player);
+    playerStats.hp = 1;
+    playerStats.defense = 0;
+
+    rl::RunState monsterState = rl::RunState::MonsterTurn;
+    rl::runMonsterAi(monsterRegistry, monsterResources, map);
+    rl::processMeleeCombat(monsterRegistry, monsterResources.log);
+    rl::applyDamageAndCleanup(monsterRegistry, monsterResources, monsterState);
+    return monsterState == rl::RunState::GameOver;
 }
 
 int runSmoke()

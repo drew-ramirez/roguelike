@@ -13,6 +13,7 @@
 #include "systems/InputSystem.hpp"
 #include "systems/MapRenderSystem.hpp"
 #include "systems/MeleeCombatSystem.hpp"
+#include "systems/MonsterAI.hpp"
 #include "systems/RenderSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
 
@@ -60,6 +61,13 @@ void Game::tick(const std::vector<InputEvent>& events)
             processMeleeCombat(registry_, resources_.log);
             applyDamageAndCleanup(registry_, resources_, state_);
             updateVisibility(registry_, map_, resources_.player, fovProvider_);
+
+            if (state_ != RunState::GameOver) {
+                state_ = RunState::MonsterTurn;
+                runMonsterAi(registry_, resources_, map_);
+                processMeleeCombat(registry_, resources_.log);
+                applyDamageAndCleanup(registry_, resources_, state_);
+            }
 
             if (state_ != RunState::GameOver) {
                 state_ = RunState::AwaitingInput;
