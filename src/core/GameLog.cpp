@@ -32,6 +32,16 @@ std::vector<std::string_view> GameLog::recent(std::size_t count) const
     return result;
 }
 
+std::vector<std::string_view> GameLog::messages() const
+{
+    std::vector<std::string_view> result;
+    result.reserve(messages_.size());
+    for (const auto& message : messages_) {
+        result.push_back(message);
+    }
+    return result;
+}
+
 std::size_t GameLog::size() const noexcept
 {
     return messages_.size();

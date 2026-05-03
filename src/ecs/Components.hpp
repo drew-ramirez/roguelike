@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
@@ -54,6 +55,10 @@ struct WantsToMelee {
 
 struct SufferDamage {
     int amount = 0;
+};
+
+struct SaveEntityId {
+    std::uint32_t value = 0;
 };
 
 struct Consumable {};

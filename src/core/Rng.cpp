@@ -8,6 +8,7 @@
 #include "core/Rng.hpp"
 
 #include <random>
+#include <sstream>
 #include <stdexcept>
 
 namespace rl {
@@ -25,6 +26,13 @@ Rng::Seed Rng::makeSeed()
 Rng::Seed Rng::seed() const noexcept
 {
     return seed_;
+}
+
+std::string Rng::engineState() const
+{
+    std::ostringstream output;
+    output << engine_;
+    return output.str();
 }
 
 int Rng::rangeInclusive(int min, int max)
@@ -46,6 +54,17 @@ void Rng::reseed(Seed seed)
 {
     seed_ = seed;
     engine_.seed(seed_);
+}
+
+void Rng::restoreEngineState(const std::string& state)
+{
+    std::istringstream input{state};
+    std::mt19937 restored;
+    input >> restored;
+    if (!input) {
+        throw std::invalid_argument("Invalid RNG engine state");
+    }
+    engine_ = restored;
 }
 
 } // namespace rl

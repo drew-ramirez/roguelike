@@ -10,6 +10,7 @@ option(ROGUELIKE_ENABLE_CLANG_TIDY
 find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_ttf CONFIG REQUIRED)
 find_package(EnTT CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 set(ROGUELIKE_CORE_SOURCES
     src/core/GameLog.cpp
@@ -18,6 +19,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/Map.cpp
     src/map/generators/SimpleMapBuilder.cpp
     src/render/ConsoleBuffer.cpp
+    src/save/SaveGame.cpp
     src/spawn/ItemSpawner.cpp
     src/spawn/MonsterSpawner.cpp
     src/spawn/Spawner.cpp
@@ -63,6 +65,7 @@ set(ROGUELIKE_HEADERS
     src/render/ConsoleBuffer.hpp
     src/render/IRenderer.hpp
     src/render/SdlRenderer.hpp
+    src/save/SaveGame.hpp
     src/spawn/ItemSpawner.hpp
     src/spawn/MonsterSpawner.hpp
     src/spawn/Spawner.hpp
@@ -101,6 +104,7 @@ target_include_directories(roguelike_core PUBLIC src)
 
 target_link_libraries(roguelike_core PUBLIC
     EnTT::EnTT
+    nlohmann_json::nlohmann_json
 )
 
 add_executable(roguelike ${ROGUELIKE_APP_SOURCES})
