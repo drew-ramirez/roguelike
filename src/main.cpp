@@ -28,6 +28,7 @@
 #include "systems/RenderSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
+#include "ui/Hud.hpp"
 
 namespace {
 
@@ -404,6 +405,30 @@ bool smokeCombatAndDeath()
     return monsterState == rl::RunState::GameOver;
 }
 
+bool smokeHudAndLog()
+{
+    rl::ConsoleBuffer console{80, 50};
+    entt::registry registry;
+    rl::GameResources resources;
+    resources.player = rl::spawnPlayer(registry, rl::Point{1, 1});
+
+    resources.log.add("one");
+    resources.log.add("two");
+    resources.log.add("three");
+    resources.log.add("four");
+    resources.log.add("five");
+    resources.log.add("six");
+
+    const auto recent = resources.log.recent(5);
+    if (recent.size() != 5 || recent.front() != "two" || recent.back() != "six") {
+        return false;
+    }
+
+    console.clear();
+    rl::drawHud(console, resources, registry, rl::RunState::AwaitingInput);
+    return console.cellAt(1, 44).glyph == U'H' && console.cellAt(1, 45).glyph == U't';
+}
+
 int runSmoke()
 {
     if (!smokeConsoleBuffer()) {
@@ -437,6 +462,9 @@ int runSmoke()
         return 1;
     }
     if (!smokeCombatAndDeath()) {
+        return 1;
+    }
+    if (!smokeHudAndLog()) {
         return 1;
     }
     return 0;

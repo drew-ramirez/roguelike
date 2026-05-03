@@ -16,6 +16,7 @@
 #include "systems/MonsterAI.hpp"
 #include "systems/RenderSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
+#include "ui/Hud.hpp"
 
 namespace rl {
 
@@ -83,6 +84,7 @@ void Game::render()
     console_.clear();
     renderMap(map_, console_);
     renderEntities(registry_, map_, console_);
+    drawHud(console_, resources_, registry_, state_);
 }
 
 } // namespace rl

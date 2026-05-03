@@ -26,6 +26,8 @@ add_executable(roguelike
     src/systems/RenderSystem.cpp
     src/systems/SpatialIndexSystem.cpp
     src/systems/VisibilitySystem.cpp
+    src/ui/Hud.cpp
+    src/ui/Widgets.cpp
 )
 
 target_compile_features(roguelike PRIVATE cxx_std_20)

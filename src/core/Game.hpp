@@ -29,7 +29,7 @@ private:
 
     RunState state_ = RunState::AwaitingInput;
     ConsoleBuffer console_{80, 50};
-    Map map_{80, 45, TileType::Wall};
+    Map map_{80, 43, TileType::Wall};
     entt::registry registry_;
     GameResources resources_;
     ShadowcastingFov fovProvider_;
