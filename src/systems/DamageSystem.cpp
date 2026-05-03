@@ -27,6 +27,22 @@ std::string entityName(const entt::registry& registry, entt::entity entity)
 
 } // namespace
 
+void queueDamage(entt::registry& registry, entt::entity target, int amount)
+{
+    if (amount <= 0 || target == entt::null || !registry.valid(target)) {
+        return;
+    }
+
+    if (registry.all_of<SufferDamage>(target)) {
+        registry.patch<SufferDamage>(target, [amount](SufferDamage& damage) {
+            damage.amount += amount;
+        });
+        return;
+    }
+
+    registry.emplace<SufferDamage>(target, SufferDamage{amount});
+}
+
 void applyDamageAndCleanup(entt::registry& registry,
                            GameResources& resources,
                            RunState& state)

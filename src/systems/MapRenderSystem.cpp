@@ -22,11 +22,19 @@ void renderMap(const Map& map, ConsoleBuffer& console)
             }
 
             const bool visible = map.isVisible(x, y);
-            if (map.tileAt(x, y) == TileType::Wall) {
+            const auto tile = map.tileAt(x, y);
+            if (tile == TileType::Wall) {
                 console.set(x,
                             y,
                             U'#',
                             visible ? Color::white() : Color{80, 80, 80, 255},
+                            Color::black());
+            } else if (tile == TileType::DownStairs) {
+                console.set(x,
+                            y,
+                            U'>',
+                            visible ? Color{220, 220, 120, 255}
+                                    : Color{90, 90, 50, 255},
                             Color::black());
             } else {
                 console.set(x,

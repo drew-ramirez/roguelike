@@ -75,14 +75,84 @@ rl::Key mapSdlKey(SDL_Keycode key)
         return rl::Key::Left;
     case SDLK_RIGHT:
         return rl::Key::Right;
-    case SDLK_w:
-        return rl::Key::W;
+    case SDLK_KP_1:
+        return rl::Key::Numpad1;
+    case SDLK_KP_2:
+        return rl::Key::Numpad2;
+    case SDLK_KP_3:
+        return rl::Key::Numpad3;
+    case SDLK_KP_4:
+        return rl::Key::Numpad4;
+    case SDLK_KP_6:
+        return rl::Key::Numpad6;
+    case SDLK_KP_7:
+        return rl::Key::Numpad7;
+    case SDLK_KP_8:
+        return rl::Key::Numpad8;
+    case SDLK_KP_9:
+        return rl::Key::Numpad9;
     case SDLK_a:
         return rl::Key::A;
-    case SDLK_s:
-        return rl::Key::S;
+    case SDLK_b:
+        return rl::Key::B;
+    case SDLK_c:
+        return rl::Key::C;
     case SDLK_d:
         return rl::Key::D;
+    case SDLK_e:
+        return rl::Key::E;
+    case SDLK_f:
+        return rl::Key::F;
+    case SDLK_g:
+        return rl::Key::G;
+    case SDLK_h:
+        return rl::Key::H;
+    case SDLK_i:
+        return rl::Key::I;
+    case SDLK_j:
+        return rl::Key::J;
+    case SDLK_k:
+        return rl::Key::K;
+    case SDLK_l:
+        return rl::Key::L;
+    case SDLK_m:
+        return rl::Key::M;
+    case SDLK_n:
+        return rl::Key::N;
+    case SDLK_o:
+        return rl::Key::O;
+    case SDLK_p:
+        return rl::Key::P;
+    case SDLK_q:
+        return rl::Key::Q;
+    case SDLK_r:
+        return rl::Key::R;
+    case SDLK_s:
+        return rl::Key::S;
+    case SDLK_t:
+        return rl::Key::T;
+    case SDLK_u:
+        return rl::Key::U;
+    case SDLK_v:
+        return rl::Key::V;
+    case SDLK_w:
+        return rl::Key::W;
+    case SDLK_x:
+        return rl::Key::X;
+    case SDLK_y:
+        return rl::Key::Y;
+    case SDLK_z:
+        return rl::Key::Z;
+    case SDLK_ESCAPE:
+        return rl::Key::Escape;
+    case SDLK_RETURN:
+    case SDLK_KP_ENTER:
+        return rl::Key::Enter;
+    case SDLK_F5:
+        return rl::Key::F5;
+    case SDLK_PERIOD:
+    case SDLK_GREATER:
+        return rl::Key::Descend;
     default:
         return rl::Key::Unknown;
     }

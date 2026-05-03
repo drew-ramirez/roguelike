@@ -11,6 +11,7 @@ namespace rl {
 struct MapBuildResult {
     Map map;
     Point playerStart;
+    Point stairsPosition;
     std::vector<Rect> rooms;
 };
 

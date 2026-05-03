@@ -15,6 +15,7 @@ class GameLog {
     void add(std::string message);
 
     [[nodiscard]] std::vector<std::string_view> recent(std::size_t count) const;
+    [[nodiscard]] std::vector<std::string_view> messages() const;
     [[nodiscard]] std::size_t size() const noexcept;
 
   private:

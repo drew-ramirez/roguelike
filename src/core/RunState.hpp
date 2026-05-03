@@ -8,6 +8,7 @@ enum class RunState {
     PlayerTurn,
     MonsterTurn,
     ShowInventory,
+    ShowDropItem,
     ShowTargeting,
     GameOver
 };

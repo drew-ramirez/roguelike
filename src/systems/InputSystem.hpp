@@ -20,6 +20,8 @@ namespace rl {
 struct GameResources;
 class Map;
 
+enum class PlayerInputResult { None, TookTurn, OpenInventory, Descend, Save };
+
 /**
  * Converts supported movement keys into tile deltas
  *
@@ -36,6 +38,15 @@ class Map;
                                  entt::entity entity,
                                  const Map& map,
                                  Point delta);
+
+/**
+ * Applies map-context player input without letting menus consume movement
+ */
+[[nodiscard]] PlayerInputResult
+handleMapInput(entt::registry& registry,
+               GameResources& resources,
+               const Map& map,
+               const std::vector<InputEvent>& events);
 
 /**
  * Applies one player key event as movement or bump combat

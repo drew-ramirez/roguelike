@@ -26,12 +26,15 @@ namespace rl {
 
 class Game {
   public:
-    explicit Game(std::optional<Rng::Seed> seed = std::nullopt);
+    explicit Game(std::optional<Rng::Seed> seed = std::nullopt,
+                  bool loadExisting = false);
 
     void run();
 
   private:
+    void startNewGame(std::optional<Rng::Seed> seed);
     void tick(const std::vector<InputEvent>& events);
+    void resolvePlayerTurn(bool runMonsters = true);
     void render();
 
     RunState state_ = RunState::AwaitingInput;

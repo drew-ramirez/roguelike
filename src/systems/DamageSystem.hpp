@@ -15,6 +15,8 @@ namespace rl {
 
 struct GameResources;
 
+void queueDamage(entt::registry& registry, entt::entity target, int amount);
+
 void applyDamageAndCleanup(entt::registry& registry,
                            GameResources& resources,
                            RunState& state);

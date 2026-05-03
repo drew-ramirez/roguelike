@@ -3,12 +3,12 @@
 #include <algorithm>
 
 #include "ecs/Components.hpp"
+#include "spawn/SpawnTable.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
 namespace {
 
-constexpr int maxMonsters = 8;
 constexpr int forcedEarlyMonsters = 2;
 
 Point randomPointInRoom(const Rect& room, Rng& rng)
@@ -22,7 +22,8 @@ Point randomPointInRoom(const Rect& room, Rng& rng)
 bool trySpawnMonsterInRoom(entt::registry& registry,
                            const Rect& room,
                            Rng& rng,
-                           Point playerStart)
+                           Point playerStart,
+                           int depth)
 {
     constexpr int maxAttempts = 20;
     for (int attempt = 0; attempt < maxAttempts; ++attempt) {
@@ -32,11 +33,15 @@ bool trySpawnMonsterInRoom(entt::registry& registry,
             continue;
         }
 
-        if (rng.coinFlip()) {
+        const auto id = rollSpawn(monsterSpawnTable(), depth, rng);
+        if (id == "orc") {
+            [[maybe_unused]] const auto monster = spawnOrc(registry, position);
+        } else if (id == "troll") {
+            [[maybe_unused]] const auto monster =
+                spawnTroll(registry, position);
+        } else {
             [[maybe_unused]] const auto monster =
                 spawnGoblin(registry, position);
-        } else {
-            [[maybe_unused]] const auto monster = spawnOrc(registry, position);
         }
         return true;
     }
@@ -72,10 +77,24 @@ entt::entity spawnOrc(entt::registry& registry, Point position)
     return entity;
 }
 
+entt::entity spawnTroll(entt::registry& registry, Point position)
+{
+    const auto entity = registry.create();
+    registry.emplace<Position>(entity, Position{position.x, position.y});
+    registry.emplace<Renderable>(
+        entity, Renderable{U'T', Color{90, 160, 90, 255}, Color::black(), 5});
+    registry.emplace<Name>(entity, Name{"Troll"});
+    registry.emplace<Monster>(entity);
+    registry.emplace<BlocksTile>(entity);
+    registry.emplace<CombatStats>(entity, CombatStats{20, 20, 2, 6});
+    return entity;
+}
+
 std::size_t spawnMonsters(entt::registry& registry,
                           const std::vector<Rect>& rooms,
                           Rng& rng,
-                          Point playerStart)
+                          Point playerStart,
+                          int depth)
 {
     if (rooms.size() <= 1) {
         return 0;
@@ -83,7 +102,8 @@ std::size_t spawnMonsters(entt::registry& registry,
 
     std::size_t spawned = 0;
     for (std::size_t roomIndex = 1;
-         roomIndex < rooms.size() && spawned < maxMonsters;
+         roomIndex < rooms.size() &&
+         spawned < static_cast<std::size_t>(maxMonstersForDepth(depth));
          ++roomIndex) {
         const bool forceSpawn = spawned < forcedEarlyMonsters;
         if (!forceSpawn && rng.rangeInclusive(0, 2) == 0) {
@@ -91,7 +111,7 @@ std::size_t spawnMonsters(entt::registry& registry,
         }
 
         if (trySpawnMonsterInRoom(
-                registry, rooms[roomIndex], rng, playerStart)) {
+                registry, rooms[roomIndex], rng, playerStart, depth)) {
             ++spawned;
         }
     }

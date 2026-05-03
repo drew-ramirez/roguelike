@@ -43,12 +43,14 @@ void drawHud(ConsoleBuffer& console,
                       Color::white());
     }
 
-    console.print(40, uiTop + 1, "Depth 1", Color{180, 180, 180, 255});
+    console.print(40,
+                  uiTop + 1,
+                  "Depth " + std::to_string(resources.depth),
+                  Color{180, 180, 180, 255});
     if (state == RunState::GameOver) {
         console.print(58, uiTop + 1, "GAME OVER", Color{255, 80, 80, 255});
     } else {
-        console.print(
-            58, uiTop + 1, "Move: WASD/Arrows", Color{130, 130, 130, 255});
+        console.print(58, uiTop + 1, "g/i/>/F5", Color{130, 130, 130, 255});
     }
 
     const auto messages = resources.log.recent(visibleMessages);
