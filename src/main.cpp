@@ -482,7 +482,8 @@ int main(int argc, char* argv[])
             return runSmoke();
         }
 
-        rl::Game game{parseSeedArgument(argc, argv)};
+        rl::Game game{parseSeedArgument(argc, argv),
+                      hasArgument(argc, argv, "--load")};
         game.run();
         return 0;
     } catch (const std::exception& error) {
