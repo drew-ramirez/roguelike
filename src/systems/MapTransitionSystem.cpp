@@ -10,6 +10,7 @@
 #include "map/Map.hpp"
 #include "map/TileType.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
+#include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "systems/VisibilitySystem.hpp"
 
@@ -90,8 +91,16 @@ bool tryDescendToNextLevel(entt::registry& registry,
         });
     }
 
-    [[maybe_unused]] const auto monsters =
-        spawnMonsters(registry, build.rooms, resources.rng, build.playerStart);
+    [[maybe_unused]] const auto monsters = spawnMonsters(registry,
+                                                         build.rooms,
+                                                         resources.rng,
+                                                         build.playerStart,
+                                                         resources.depth);
+    [[maybe_unused]] const auto items = spawnItems(registry,
+                                                   build.rooms,
+                                                   resources.rng,
+                                                   build.playerStart,
+                                                   resources.depth);
     resources.log.add("You descend to depth " +
                       std::to_string(resources.depth) + ".");
     updateVisibility(registry, map, resources.player, fovProvider);
