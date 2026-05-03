@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     Game.hpp
+ * @brief    Declares the main game loop owner and engine service wiring
+ * **************************************************************************
+ */
+
 #pragma once
 
 #include <memory>

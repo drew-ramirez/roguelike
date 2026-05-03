@@ -30,5 +30,6 @@ BinPackParameters: false
 BreakStringLiterals: true
 Cpp11BracedListStyle: true
 NamespaceIndentation: None
+ReflowComments: false
 SpaceBeforeParens: ControlStatements
 ...

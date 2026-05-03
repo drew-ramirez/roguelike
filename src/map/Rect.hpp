@@ -4,7 +4,7 @@
 
 namespace rl {
 
-// x1/y1 are inclusive; x2/y2 are exclusive.
+// x1/y1 are inclusive; x2/y2 are exclusive
 struct Rect {
     int x1 = 0;
     int y1 = 0;

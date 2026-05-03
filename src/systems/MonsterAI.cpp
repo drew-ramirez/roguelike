@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     MonsterAI.cpp
+ * @brief    Moves visible monsters and queues adjacent melee attacks
+ * **************************************************************************
+ */
+
 #include "systems/MonsterAI.hpp"
 
 #include <algorithm>
@@ -37,6 +44,7 @@ Point chooseMonsterStep(Point monsterPosition,
     const Point secondary =
         primary.x != 0 ? Point{0, sign(deltaY)} : Point{sign(deltaX), 0};
 
+    // Try the longer axis first, then slide along the other axis if blocked
     const Point primaryTarget = monsterPosition + primary;
     if ((primary.x != 0 || primary.y != 0) &&
         !isBlocked(map, registry, primaryTarget, monster)) {
@@ -76,6 +84,7 @@ void runMonsterAi(entt::registry& registry,
         const int distance = std::abs(playerPosition.x - monsterPosition.x) +
                              std::abs(playerPosition.y - monsterPosition.y);
 
+        // Adjacent monsters attack, visible ones chase with a greedy step
         if (distance == 1) {
             registry.emplace_or_replace<WantsToMelee>(
                 monster, WantsToMelee{resources.player});

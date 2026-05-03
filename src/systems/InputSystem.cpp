@@ -48,6 +48,7 @@ bool tryMoveEntity(entt::registry& registry,
     position.x = target.x;
     position.y = target.y;
     if (registry.all_of<Viewshed>(entity)) {
+        // Moving changes what the entity can see, so queue a refresh
         registry.patch<Viewshed>(
             entity, [](Viewshed& viewshed) { viewshed.dirty = true; });
     }
@@ -74,6 +75,7 @@ bool handlePlayerInput(entt::registry& registry,
 
             const auto& position = registry.get<Position>(resources.player);
             const Point target{position.x + delta->x, position.y + delta->y};
+            // Walking into a blocker becomes bump combat instead of movement
             if (const auto blocker =
                     blockingEntityAt(registry, target, resources.player);
                 blocker.has_value()) {

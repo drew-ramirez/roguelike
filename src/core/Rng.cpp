@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     Rng.cpp
+ * @brief    Owns seed creation and bounded random rolls
+ * **************************************************************************
+ */
+
 #include "core/Rng.hpp"
 
 #include <random>

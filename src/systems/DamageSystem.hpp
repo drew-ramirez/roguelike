@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     DamageSystem.hpp
+ * @brief    Declares queued damage cleanup and death handling
+ * **************************************************************************
+ */
+
 #pragma once
 
 #include <entt/entt.hpp>

@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     Map.hpp
+ * @brief    Declares the tile map, blocking rules, and map memory state
+ * **************************************************************************
+ */
+
 #pragma once
 
 #include <vector>

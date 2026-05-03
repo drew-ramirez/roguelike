@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     VisibilitySystem.hpp
+ * @brief    Declares viewshed refresh and map-memory updates
+ * **************************************************************************
+ */
+
 #pragma once
 
 #include <entt/entt.hpp>

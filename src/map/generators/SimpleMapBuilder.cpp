@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     SimpleMapBuilder.cpp
+ * @brief    Builds deterministic rooms-and-corridors dungeon maps
+ * **************************************************************************
+ */
+
 #include "map/generators/SimpleMapBuilder.hpp"
 
 #include <algorithm>
@@ -19,6 +26,12 @@ constexpr int minRoomSize = 6;
 constexpr int maxRoomSize = 10;
 constexpr int minAcceptedRooms = 2;
 constexpr int minFloorTiles = 20;
+
+/**
+ * **************************************************************************
+ * MAP CARVING
+ * **************************************************************************
+ */
 
 void carveRoom(Map& map, const Rect& room)
 {
@@ -44,6 +57,12 @@ void carveVerticalTunnel(Map& map, int y1, int y2, int x)
         map.setTile(x, y, TileType::Floor);
     }
 }
+
+/**
+ * **************************************************************************
+ * REACHABILITY CHECKS
+ * **************************************************************************
+ */
 
 int countWalkableTiles(const Map& map)
 {
@@ -101,8 +120,15 @@ bool allWalkableTilesReachable(const Map& map, Point start)
     return reached == totalWalkable;
 }
 
+/**
+ * **************************************************************************
+ * ROOM LINKING
+ * **************************************************************************
+ */
+
 void connectRooms(Map& map, Point previous, Point next, Rng& rng)
 {
+    // Connect rooms in placement order so accepted rooms form one chain
     if (rng.coinFlip()) {
         carveHorizontalTunnel(map, previous.x, next.x, previous.y);
         carveVerticalTunnel(map, previous.y, next.y, next.x);
@@ -125,6 +151,7 @@ void validateGeneratedMap(const Map& map,
                           Point playerStart,
                           const std::vector<Rect>& rooms)
 {
+    // Fail early when generation breaks the playable-map assumptions
     if (static_cast<int>(rooms.size()) < minAcceptedRooms) {
         throw std::runtime_error("Map generation failed to place enough rooms");
     }
@@ -143,6 +170,12 @@ void validateGeneratedMap(const Map& map,
 }
 
 } // namespace
+
+/**
+ * **************************************************************************
+ * BUILD ENTRYPOINT
+ * **************************************************************************
+ */
 
 MapBuildResult SimpleMapBuilder::build(int width, int height, Rng& rng)
 {

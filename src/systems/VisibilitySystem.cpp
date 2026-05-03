@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     VisibilitySystem.cpp
+ * @brief    Refreshes visible tiles and revealed map memory
+ * **************************************************************************
+ */
+
 #include "systems/VisibilitySystem.hpp"
 
 #include "ecs/Components.hpp"
@@ -17,6 +24,7 @@ void updateVisibility(entt::registry& registry,
     }
 
     auto& viewshed = registry.get<Viewshed>(viewer);
+    // Viewsheds refresh only after another system marks them dirty
     if (!viewshed.dirty) {
         return;
     }
@@ -26,6 +34,7 @@ void updateVisibility(entt::registry& registry,
         fovProvider.compute(map, Point{position.x, position.y}, viewshed.range);
     viewshed.dirty = false;
 
+    // Visible resets each update, while revealed stays as map memory
     map.clearVisible();
     for (const Point point : viewshed.visible) {
         map.setVisible(point.x, point.y);

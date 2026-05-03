@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     ConsoleBuffer.hpp
+ * @brief    Declares the logical console buffer used before presentation
+ * **************************************************************************
+ */
+
 #pragma once
 
 #include <cstdint>

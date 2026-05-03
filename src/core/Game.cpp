@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     Game.cpp
+ * @brief    Wires startup, turns, rendering, and the playable loop
+ * **************************************************************************
+ */
+
 #include "core/Game.hpp"
 
 #include <chrono>

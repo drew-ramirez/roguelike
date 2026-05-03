@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     MeleeCombatSystem.cpp
+ * @brief    Converts melee intents into damage and log messages
+ * **************************************************************************
+ */
+
 #include "systems/MeleeCombatSystem.hpp"
 
 #include <algorithm>

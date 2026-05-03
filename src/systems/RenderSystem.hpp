@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     RenderSystem.hpp
+ * @brief    Declares ECS renderable drawing into the console buffer
+ * **************************************************************************
+ */
+
 #pragma once
 
 #include <entt/entt.hpp>

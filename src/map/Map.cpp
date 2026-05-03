@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     Map.cpp
+ * @brief    Stores tiles, visibility, and revealed map memory
+ * **************************************************************************
+ */
+
 #include "map/Map.hpp"
 
 #include <algorithm>
@@ -127,6 +134,7 @@ void Map::setVisible(int x, int y, bool visible)
     const auto index = static_cast<std::size_t>(xyIdx(x, y));
     visibleTiles_[index] = visible;
     if (visible) {
+        // Seeing a tile also records it as explored map memory
         revealedTiles_[index] = true;
     }
 }

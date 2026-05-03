@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     SdlRenderer.hpp
+ * @brief    Declares the SDL2 renderer behind the console renderer API
+ * **************************************************************************
+ */
+
 #pragma once
 
 #include <filesystem>
@@ -17,6 +24,12 @@ struct Cell;
 
 class SdlRenderer final : public IRenderer {
   public:
+    /**
+     * Creates a console-sized SDL window using the project font lookup rules
+     *
+     * @param consoleWidth Width of the logical console in cells
+     * @param consoleHeight Height of the logical console in cells
+     */
     SdlRenderer(int consoleWidth, int consoleHeight);
     ~SdlRenderer() override;
 

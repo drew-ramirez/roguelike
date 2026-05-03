@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     Rng.hpp
+ * @brief    Declares the central deterministic RNG wrapper
+ * **************************************************************************
+ */
+
 #pragma once
 
 #include <cstdint>

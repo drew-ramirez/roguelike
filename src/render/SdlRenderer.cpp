@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     SdlRenderer.cpp
+ * @brief    Owns the SDL2/SDL_ttf renderer behind the IRenderer boundary
+ * **************************************************************************
+ */
+
 #define SDL_MAIN_HANDLED
 
 #include "render/SdlRenderer.hpp"
@@ -14,6 +21,12 @@
 #include "render/ConsoleBuffer.hpp"
 
 namespace {
+
+/**
+ * **************************************************************************
+ * LOCAL SDL HELPERS
+ * **************************************************************************
+ */
 
 SDL_Color toSdlColor(rl::Color color)
 {
@@ -40,6 +53,7 @@ std::optional<std::string> environmentVariable(const char* name)
     }
 
     std::string result{value};
+    // _dupenv_s hands ownership to us, so free it the CRT way
     std::free(value);
     return result;
 #else
@@ -77,6 +91,12 @@ rl::Key mapSdlKey(SDL_Keycode key)
 } // namespace
 
 namespace rl {
+
+/**
+ * **************************************************************************
+ * SDL RESOURCE LIFETIME
+ * **************************************************************************
+ */
 
 SdlRenderer::SdlContext::SdlContext()
 {
@@ -125,6 +145,12 @@ void SdlRenderer::RendererDeleter::operator()(
     }
 }
 
+/**
+ * **************************************************************************
+ * RENDERER SETUP
+ * **************************************************************************
+ */
+
 SdlRenderer::SdlRenderer(int consoleWidth, int consoleHeight)
 {
     if (consoleWidth <= 0 || consoleHeight <= 0) {
@@ -172,6 +198,12 @@ SdlRenderer::SdlRenderer(int consoleWidth, int consoleHeight)
 
 SdlRenderer::~SdlRenderer() = default;
 
+/**
+ * **************************************************************************
+ * FRAME FLOW
+ * **************************************************************************
+ */
+
 std::vector<InputEvent> SdlRenderer::pollEvents()
 {
     std::vector<InputEvent> events;
@@ -209,6 +241,7 @@ bool SdlRenderer::shouldQuit() const noexcept
 
 std::filesystem::path SdlRenderer::findFontPath()
 {
+    // Let local dev override font lookup without changing committed settings
     if (const auto envPath = environmentVariable("ROGUELIKE_FONT_PATH")) {
         const std::filesystem::path candidate{*envPath};
         if (std::filesystem::exists(candidate)) {
@@ -219,6 +252,7 @@ std::filesystem::path SdlRenderer::findFontPath()
             candidate.string());
     }
 
+    // Fall back to common monospace fonts on the usual desktop targets
     const std::array<std::filesystem::path, 8> candidates{
         "C:/Windows/Fonts/consola.ttf",
         "C:/Windows/Fonts/lucon.ttf",
@@ -241,6 +275,7 @@ std::filesystem::path SdlRenderer::findFontPath()
 
 std::string SdlRenderer::toUtf8(char32_t glyph)
 {
+    // SDL_ttf takes UTF-8 text, while ConsoleBuffer stores code points
     if (glyph <= 0x7F) {
         return std::string(1, static_cast<char>(glyph));
     }

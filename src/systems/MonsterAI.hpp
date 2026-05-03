@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     MonsterAI.hpp
+ * @brief    Declares visible-monster movement and attack decisions
+ * **************************************************************************
+ */
+
 #pragma once
 
 #include <entt/entt.hpp>

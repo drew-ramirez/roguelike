@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     RenderSystem.cpp
+ * @brief    Sorts and draws visible ECS renderables
+ * **************************************************************************
+ */
+
 #include "systems/RenderSystem.hpp"
 
 #include <algorithm>

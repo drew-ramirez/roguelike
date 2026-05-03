@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     MapRenderSystem.cpp
+ * @brief    Draws revealed map tiles with visible and remembered colors
+ * **************************************************************************
+ */
+
 #include "systems/MapRenderSystem.hpp"
 
 #include "map/Map.hpp"

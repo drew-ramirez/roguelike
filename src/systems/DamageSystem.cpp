@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     DamageSystem.cpp
+ * @brief    Applies queued damage and removes defeated entities
+ * **************************************************************************
+ */
+
 #include "systems/DamageSystem.hpp"
 
 #include <algorithm>

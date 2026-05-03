@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     SpatialIndexSystem.hpp
+ * @brief    Declares blocking queries across map and ECS entities
+ * **************************************************************************
+ */
+
 #pragma once
 
 #include <optional>

@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     MapRenderSystem.hpp
+ * @brief    Declares map tile drawing into the console buffer
+ * **************************************************************************
+ */
+
 #pragma once
 
 namespace rl {

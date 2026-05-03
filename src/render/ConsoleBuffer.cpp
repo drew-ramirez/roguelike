@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     ConsoleBuffer.cpp
+ * @brief    Stores glyph and color cells for renderer-independent drawing
+ * **************************************************************************
+ */
+
 #include "render/ConsoleBuffer.hpp"
 
 #include <stdexcept>

@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     MeleeCombatSystem.hpp
+ * @brief    Declares melee intent resolution
+ * **************************************************************************
+ */
+
 #pragma once
 
 #include <entt/entt.hpp>

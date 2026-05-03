@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     ShadowcastingFov.hpp
+ * @brief    Declares the default field-of-view provider
+ * **************************************************************************
+ */
+
 #pragma once
 
 #include "fov/IFovProvider.hpp"

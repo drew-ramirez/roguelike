@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     SpatialIndexSystem.cpp
+ * @brief    Finds tile-blocking entities for movement and bump combat
+ * **************************************************************************
+ */
+
 #include "systems/SpatialIndexSystem.hpp"
 
 #include "ecs/Components.hpp"

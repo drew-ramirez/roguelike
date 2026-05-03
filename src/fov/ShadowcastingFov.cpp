@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     ShadowcastingFov.cpp
+ * @brief    Computes visible map cells with a simple line-of-sight pass
+ * **************************************************************************
+ */
+
 #include "fov/ShadowcastingFov.hpp"
 
 #include <algorithm>
@@ -9,6 +16,17 @@
 namespace rl {
 namespace {
 
+/**
+ * **************************************************************************
+ * LINE OF SIGHT
+ * **************************************************************************
+ */
+
+/**
+ * Checks whether two tiles can see each other through the current map
+ *
+ * This is a small Bresenham-style pass for the foundation version of FOV
+ */
 bool lineOfSight(const Map& map, Point from, Point to)
 {
     int x = from.x;
@@ -42,6 +60,12 @@ bool lineOfSight(const Map& map, Point from, Point to)
 
 } // namespace
 
+/**
+ * **************************************************************************
+ * FOV SCAN
+ * **************************************************************************
+ */
+
 std::vector<Point>
 ShadowcastingFov::compute(const Map& map, Point origin, int range) const
 {
@@ -54,6 +78,7 @@ ShadowcastingFov::compute(const Map& map, Point origin, int range) const
         static_cast<std::size_t>((range * 2 + 1) * (range * 2 + 1)));
     const int radiusSquared = range * range;
 
+    // Keep cells inside the radius that have a clear line back to the viewer
     for (int y = origin.y - range; y <= origin.y + range; ++y) {
         for (int x = origin.x - range; x <= origin.x + range; ++x) {
             if (!map.inBounds(x, y)) {

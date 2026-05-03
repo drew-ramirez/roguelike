@@ -1,3 +1,10 @@
+/**
+ * **************************************************************************
+ * @file     IRenderer.hpp
+ * @brief    Declares the renderer and input boundary used by the game loop
+ * **************************************************************************
+ */
+
 #pragma once
 
 #include <vector>
