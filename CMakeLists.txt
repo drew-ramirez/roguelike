@@ -22,6 +22,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/spawn/MonsterSpawner.cpp
     src/spawn/Spawner.cpp
     src/systems/DamageSystem.cpp
+    src/systems/EquipmentSystem.cpp
     src/systems/InputSystem.cpp
     src/systems/ItemSystem.cpp
     src/systems/MapRenderSystem.cpp
@@ -31,6 +32,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/systems/SpatialIndexSystem.cpp
     src/systems/VisibilitySystem.cpp
     src/ui/Hud.cpp
+    src/ui/InventoryMenu.cpp
     src/ui/Widgets.cpp
 )
 
@@ -64,6 +66,7 @@ set(ROGUELIKE_HEADERS
     src/spawn/MonsterSpawner.hpp
     src/spawn/Spawner.hpp
     src/systems/DamageSystem.hpp
+    src/systems/EquipmentSystem.hpp
     src/systems/InputSystem.hpp
     src/systems/ItemSystem.hpp
     src/systems/MapRenderSystem.hpp
@@ -73,6 +76,7 @@ set(ROGUELIKE_HEADERS
     src/systems/SpatialIndexSystem.hpp
     src/systems/VisibilitySystem.hpp
     src/ui/Hud.hpp
+    src/ui/InventoryMenu.hpp
     src/ui/MenuResult.hpp
     src/ui/Widgets.hpp
 )

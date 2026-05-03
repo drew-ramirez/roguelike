@@ -83,6 +83,11 @@ struct Equippable {
     EquipmentSlot slot = EquipmentSlot::Weapon;
 };
 
+struct Equipped {
+    entt::entity owner = entt::null;
+    EquipmentSlot slot = EquipmentSlot::Weapon;
+};
+
 struct MeleePowerBonus {
     int amount = 0;
 };

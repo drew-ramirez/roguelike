@@ -1,5 +1,6 @@
 #include "systems/ItemSystem.hpp"
 
+#include <algorithm>
 #include <string>
 
 #include "core/GameResources.hpp"
@@ -40,9 +41,83 @@ void removeCarriedOwnership(entt::registry& registry, entt::entity item)
     if (registry.all_of<InBackpack>(item)) {
         registry.remove<InBackpack>(item);
     }
+    if (registry.all_of<Equipped>(item)) {
+        registry.remove<Equipped>(item);
+    }
+}
+
+void consumeIfNeeded(entt::registry& registry, entt::entity item)
+{
+    if (registry.valid(item) && registry.all_of<Consumable>(item)) {
+        registry.destroy(item);
+    }
+}
+
+[[nodiscard]] bool healOwner(entt::registry& registry,
+                             GameResources& resources,
+                             entt::entity owner,
+                             entt::entity item)
+{
+    if (!registry.all_of<ProvidesHealing>(item) ||
+        !registry.all_of<CombatStats>(owner)) {
+        return false;
+    }
+
+    auto& stats = registry.get<CombatStats>(owner);
+    if (stats.hp >= stats.maxHp) {
+        resources.log.add("You are already at full health.");
+        return false;
+    }
+
+    const int amount = registry.get<ProvidesHealing>(item).amount;
+    stats.hp = std::min(stats.maxHp, stats.hp + amount);
+    resources.log.add("You drink " + entityName(registry, item) + ".");
+    consumeIfNeeded(registry, item);
+    return true;
+}
+
+[[nodiscard]] bool itemOwnedBy(const entt::registry& registry,
+                               entt::entity owner,
+                               entt::entity item)
+{
+    if (!registry.valid(item)) {
+        return false;
+    }
+    if (registry.all_of<InBackpack>(item) &&
+        registry.get<InBackpack>(item).owner == owner) {
+        return true;
+    }
+    return registry.all_of<Equipped>(item) &&
+           registry.get<Equipped>(item).owner == owner;
 }
 
 } // namespace
+
+std::vector<entt::entity> inventoryItems(const entt::registry& registry,
+                                         entt::entity owner)
+{
+    std::vector<entt::entity> items;
+
+    const auto backpackView = registry.view<const Item, const InBackpack>();
+    for (const auto item : backpackView) {
+        if (backpackView.get<const InBackpack>(item).owner == owner) {
+            items.push_back(item);
+        }
+    }
+
+    const auto equippedView = registry.view<const Item, const Equipped>();
+    for (const auto item : equippedView) {
+        if (equippedView.get<const Equipped>(item).owner == owner) {
+            items.push_back(item);
+        }
+    }
+
+    std::sort(
+        items.begin(), items.end(), [](entt::entity left, entt::entity right) {
+            return entt::to_integral(left) < entt::to_integral(right);
+        });
+    return items;
+}
 
 std::optional<entt::entity> itemAtPosition(const entt::registry& registry,
                                            Point position)
@@ -93,6 +168,42 @@ void processPickupItems(entt::registry& registry, GameResources& resources)
                           ".");
     }
     registry.clear<WantsToPickupItem>();
+}
+
+bool dropItemAtOwner(entt::registry& registry,
+                     GameResources& resources,
+                     entt::entity owner,
+                     entt::entity item)
+{
+    const auto ownerPosition = entityPosition(registry, owner);
+    if (!ownerPosition.has_value() || !itemOwnedBy(registry, owner, item)) {
+        return false;
+    }
+
+    removeCarriedOwnership(registry, item);
+    registry.emplace_or_replace<Position>(
+        item, Position{ownerPosition->x, ownerPosition->y});
+    resources.log.add("You drop " + entityName(registry, item) + ".");
+    return true;
+}
+
+bool useInventoryItem(entt::registry& registry,
+                      GameResources& resources,
+                      const Map& map,
+                      entt::entity owner,
+                      entt::entity item)
+{
+    if (!itemOwnedBy(registry, owner, item)) {
+        return false;
+    }
+
+    if (registry.all_of<ProvidesHealing>(item)) {
+        return healOwner(registry, resources, owner, item);
+    }
+
+    resources.log.add("Nothing happens.");
+    (void)map;
+    return false;
 }
 
 } // namespace rl
