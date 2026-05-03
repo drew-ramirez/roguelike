@@ -13,6 +13,8 @@ entt::entity spawnPlayer(entt::registry& registry, Point position)
     registry.emplace<Name>(entity, Name{"Player"});
     registry.emplace<Player>(entity);
     registry.emplace<BlocksTile>(entity);
+    registry.emplace<Viewshed>(entity);
+    registry.emplace<CombatStats>(entity, CombatStats{30, 30, 2, 5});
     return entity;
 }
 

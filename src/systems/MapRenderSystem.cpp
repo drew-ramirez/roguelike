@@ -10,10 +10,24 @@ void renderMap(const Map& map, ConsoleBuffer& console)
 {
     for (int y = 0; y < map.height(); ++y) {
         for (int x = 0; x < map.width(); ++x) {
+            if (!map.isRevealed(x, y)) {
+                continue;
+            }
+
+            const bool visible = map.isVisible(x, y);
             if (map.tileAt(x, y) == TileType::Wall) {
-                console.set(x, y, U'#', Color::white(), Color::black());
+                console.set(x,
+                            y,
+                            U'#',
+                            visible ? Color::white() : Color{80, 80, 80, 255},
+                            Color::black());
             } else {
-                console.set(x, y, U'.', Color{90, 90, 90, 255}, Color::black());
+                console.set(x,
+                            y,
+                            U'.',
+                            visible ? Color{120, 120, 120, 255}
+                                    : Color{45, 45, 45, 255},
+                            Color::black());
             }
         }
     }

@@ -18,9 +18,9 @@ class Map;
                                  entt::entity entity,
                                  const Map& map,
                                  Point delta);
-void handlePlayerInput(entt::registry& registry,
-                       const GameResources& resources,
-                       const Map& map,
-                       const std::vector<InputEvent>& events);
+[[nodiscard]] bool handlePlayerInput(entt::registry& registry,
+                                     const GameResources& resources,
+                                     const Map& map,
+                                     const std::vector<InputEvent>& events);
 
 } // namespace rl

@@ -12,25 +12,38 @@ find_package(EnTT CONFIG REQUIRED)
 
 set(ROGUELIKE_SOURCES
     src/core/Game.cpp
+    src/core/GameLog.cpp
     src/core/Rng.cpp
+    src/fov/ShadowcastingFov.cpp
     src/main.cpp
     src/map/Map.cpp
     src/map/generators/SimpleMapBuilder.cpp
     src/render/ConsoleBuffer.cpp
     src/render/SdlRenderer.cpp
+    src/spawn/MonsterSpawner.cpp
     src/spawn/Spawner.cpp
+    src/systems/DamageSystem.cpp
     src/systems/InputSystem.cpp
     src/systems/MapRenderSystem.cpp
+    src/systems/MeleeCombatSystem.cpp
+    src/systems/MonsterAI.cpp
     src/systems/RenderSystem.cpp
+    src/systems/SpatialIndexSystem.cpp
+    src/systems/VisibilitySystem.cpp
+    src/ui/Hud.cpp
+    src/ui/Widgets.cpp
 )
 
 set(ROGUELIKE_HEADERS
     src/core/Game.hpp
+    src/core/GameLog.hpp
     src/core/GameResources.hpp
     src/core/Point.hpp
     src/core/Rng.hpp
     src/core/RunState.hpp
     src/ecs/Components.hpp
+    src/fov/IFovProvider.hpp
+    src/fov/ShadowcastingFov.hpp
     src/input/InputEvent.hpp
     src/map/generators/SimpleMapBuilder.hpp
     src/map/Map.hpp
@@ -41,10 +54,19 @@ set(ROGUELIKE_HEADERS
     src/render/ConsoleBuffer.hpp
     src/render/IRenderer.hpp
     src/render/SdlRenderer.hpp
+    src/spawn/MonsterSpawner.hpp
     src/spawn/Spawner.hpp
+    src/systems/DamageSystem.hpp
     src/systems/InputSystem.hpp
     src/systems/MapRenderSystem.hpp
+    src/systems/MeleeCombatSystem.hpp
+    src/systems/MonsterAI.hpp
     src/systems/RenderSystem.hpp
+    src/systems/SpatialIndexSystem.hpp
+    src/systems/VisibilitySystem.hpp
+    src/ui/Hud.hpp
+    src/ui/MenuResult.hpp
+    src/ui/Widgets.hpp
 )
 
 set(ROGUELIKE_FORMAT_FILES
