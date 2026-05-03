@@ -47,6 +47,21 @@ set(ROGUELIKE_APP_SOURCES
     src/render/SdlRenderer.cpp
 )
 
+set(ROGUELIKE_TEST_SOURCES
+    tests/core_tests.cpp
+    tests/descent_spawn_tests.cpp
+    tests/equipment_tests.cpp
+    tests/input_tests.cpp
+    tests/inventory_tests.cpp
+    tests/save_load_tests.cpp
+    tests/targeting_tests.cpp
+)
+
+set(ROGUELIKE_TEST_HEADERS
+    tests/TestSuites.hpp
+    tests/TestSupport.hpp
+)
+
 set(ROGUELIKE_HEADERS
     src/core/Game.hpp
     src/core/GameLog.hpp
@@ -94,6 +109,8 @@ set(ROGUELIKE_FORMAT_FILES
     ${ROGUELIKE_CORE_SOURCES}
     ${ROGUELIKE_APP_SOURCES}
     ${ROGUELIKE_HEADERS}
+    ${ROGUELIKE_TEST_SOURCES}
+    ${ROGUELIKE_TEST_HEADERS}
 )
 
 add_library(roguelike_core STATIC
@@ -122,7 +139,15 @@ target_link_libraries(roguelike PRIVATE
     $<IF:$<TARGET_EXISTS:SDL2_ttf::SDL2_ttf>,SDL2_ttf::SDL2_ttf,SDL2_ttf::SDL2_ttf-static>
 )
 
-foreach(target_name roguelike_core roguelike)
+add_executable(roguelike_core_tests
+    ${ROGUELIKE_TEST_SOURCES}
+    ${ROGUELIKE_TEST_HEADERS}
+)
+target_compile_features(roguelike_core_tests PRIVATE cxx_std_20)
+set_target_properties(roguelike_core_tests PROPERTIES CXX_EXTENSIONS OFF)
+target_link_libraries(roguelike_core_tests PRIVATE roguelike_core)
+
+foreach(target_name roguelike_core roguelike roguelike_core_tests)
     if(MSVC)
         target_compile_options(${target_name} PRIVATE /W4 /permissive-)
     else()
@@ -208,4 +233,5 @@ else()
 endif()
 
 enable_testing()
+add_test(NAME roguelike_core_tests COMMAND roguelike_core_tests)
 add_test(NAME roguelike_smoke COMMAND roguelike --smoke)
