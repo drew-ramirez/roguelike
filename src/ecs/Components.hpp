@@ -30,6 +30,8 @@ struct Player {};
 
 struct Monster {};
 
+struct Item {};
+
 struct BlocksTile {};
 
 struct Viewshed {
@@ -51,6 +53,46 @@ struct WantsToMelee {
 
 struct SufferDamage {
     int amount = 0;
+};
+
+struct Consumable {};
+
+struct ProvidesHealing {
+    int amount = 0;
+};
+
+struct Ranged {
+    int range = 0;
+};
+
+struct AreaOfEffect {
+    int radius = 0;
+};
+
+struct InflictsDamage {
+    int amount = 0;
+};
+
+struct InBackpack {
+    entt::entity owner = entt::null;
+};
+
+enum class EquipmentSlot { Weapon, Armor };
+
+struct Equippable {
+    EquipmentSlot slot = EquipmentSlot::Weapon;
+};
+
+struct MeleePowerBonus {
+    int amount = 0;
+};
+
+struct DefenseBonus {
+    int amount = 0;
+};
+
+struct WantsToPickupItem {
+    entt::entity item = entt::null;
 };
 
 } // namespace rl

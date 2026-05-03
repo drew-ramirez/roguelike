@@ -3,6 +3,7 @@
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
+#include "systems/ItemSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
@@ -106,6 +107,11 @@ PlayerInputResult handleMapInput(entt::registry& registry,
         if (event.key == Key::I) {
             resources.inventorySelection = 0;
             return PlayerInputResult::OpenInventory;
+        }
+        if (event.key == Key::G) {
+            return queuePickupItemAtPlayer(registry, resources)
+                       ? PlayerInputResult::TookTurn
+                       : PlayerInputResult::None;
         }
         if (event.key == Key::F5) {
             return PlayerInputResult::Save;

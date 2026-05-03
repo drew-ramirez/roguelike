@@ -18,10 +18,12 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/Map.cpp
     src/map/generators/SimpleMapBuilder.cpp
     src/render/ConsoleBuffer.cpp
+    src/spawn/ItemSpawner.cpp
     src/spawn/MonsterSpawner.cpp
     src/spawn/Spawner.cpp
     src/systems/DamageSystem.cpp
     src/systems/InputSystem.cpp
+    src/systems/ItemSystem.cpp
     src/systems/MapRenderSystem.cpp
     src/systems/MeleeCombatSystem.cpp
     src/systems/MonsterAI.cpp
@@ -58,10 +60,12 @@ set(ROGUELIKE_HEADERS
     src/render/ConsoleBuffer.hpp
     src/render/IRenderer.hpp
     src/render/SdlRenderer.hpp
+    src/spawn/ItemSpawner.hpp
     src/spawn/MonsterSpawner.hpp
     src/spawn/Spawner.hpp
     src/systems/DamageSystem.hpp
     src/systems/InputSystem.hpp
+    src/systems/ItemSystem.hpp
     src/systems/MapRenderSystem.hpp
     src/systems/MeleeCombatSystem.hpp
     src/systems/MonsterAI.hpp
