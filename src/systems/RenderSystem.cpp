@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "ecs/Components.hpp"
+#include "map/Map.hpp"
 #include "render/ConsoleBuffer.hpp"
 
 namespace rl {
@@ -17,13 +18,17 @@ struct EntityDraw {
 
 } // namespace
 
-void renderEntities(const entt::registry& registry, ConsoleBuffer& console)
+void renderEntityView(const entt::registry& registry, const Map* map, ConsoleBuffer& console)
 {
     std::vector<EntityDraw> draws;
 
     const auto view = registry.view<const Position, const Renderable>();
     for (const auto entity : view) {
         const auto& position = view.get<const Position>(entity);
+        if (map != nullptr && !map->isVisible(position.x, position.y)) {
+            continue;
+        }
+
         const auto& renderable = view.get<const Renderable>(entity);
         draws.push_back(EntityDraw{position, renderable});
     }
@@ -40,6 +45,16 @@ void renderEntities(const entt::registry& registry, ConsoleBuffer& console)
             draw.renderable.foreground,
             draw.renderable.background);
     }
+}
+
+void renderEntities(const entt::registry& registry, ConsoleBuffer& console)
+{
+    renderEntityView(registry, nullptr, console);
+}
+
+void renderEntities(const entt::registry& registry, const Map& map, ConsoleBuffer& console)
+{
+    renderEntityView(registry, &map, console);
 }
 
 } // namespace rl

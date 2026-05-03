@@ -1,4 +1,5 @@
 #include <array>
+#include <algorithm>
 #include <charconv>
 #include <cstdint>
 #include <exception>
@@ -13,13 +14,22 @@
 #include "core/GameResources.hpp"
 #include "core/Rng.hpp"
 #include "ecs/Components.hpp"
+#include "fov/ShadowcastingFov.hpp"
 #include "map/Map.hpp"
 #include "map/Rect.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "render/ConsoleBuffer.hpp"
+#include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
+#include "systems/DamageSystem.hpp"
 #include "systems/InputSystem.hpp"
+#include "systems/MapRenderSystem.hpp"
+#include "systems/MeleeCombatSystem.hpp"
+#include "systems/MonsterAI.hpp"
 #include "systems/RenderSystem.hpp"
+#include "systems/SpatialIndexSystem.hpp"
+#include "systems/VisibilitySystem.hpp"
+#include "ui/Hud.hpp"
 
 namespace {
 
@@ -190,6 +200,49 @@ bool smokeGeneratedMap()
     return allWalkableTilesReachable(first.map, first.playerStart);
 }
 
+bool smokeVisibility()
+{
+    rl::Map map{12, 8};
+    map.setTile(3, 1, rl::TileType::Wall);
+
+    entt::registry registry;
+    const auto player = rl::spawnPlayer(registry, rl::Point{1, 1});
+    rl::ShadowcastingFov fov;
+    rl::updateVisibility(registry, map, player, fov);
+
+    if (!map.isVisible(1, 1) || !map.isVisible(3, 1) || map.isVisible(4, 1)) {
+        return false;
+    }
+    if (!map.isRevealed(1, 1)) {
+        return false;
+    }
+
+    map.clearVisible();
+    return map.isRevealed(1, 1) && !map.isVisible(1, 1);
+}
+
+bool smokeVisibleEntityRendering()
+{
+    rl::Map map{8, 6};
+    map.setVisible(1, 1);
+
+    entt::registry registry;
+    [[maybe_unused]] const auto player = rl::spawnPlayer(registry, rl::Point{1, 1});
+    [[maybe_unused]] const auto goblin = rl::spawnGoblin(registry, rl::Point{2, 1});
+
+    rl::ConsoleBuffer console{8, 6};
+    console.clear();
+    rl::renderEntities(registry, map, console);
+    if (console.cellAt(1, 1).glyph != U'@' || console.cellAt(2, 1).glyph != U' ') {
+        return false;
+    }
+
+    map.setVisible(2, 1);
+    console.clear();
+    rl::renderEntities(registry, map, console);
+    return console.cellAt(2, 1).glyph == U'g' || console.cellAt(2, 1).glyph == U'o';
+}
+
 bool smokeSeedParsing()
 {
     char executable[] = "roguelike";
@@ -257,6 +310,106 @@ bool smokeMapAndMovement()
     return blocked.x == 2 && blocked.y == 1;
 }
 
+bool smokeMonsterSpawning()
+{
+    rl::Rng rng{12345U};
+    auto build = rl::SimpleMapBuilder::build(40, 25, rng);
+
+    entt::registry registry;
+    [[maybe_unused]] const auto player = rl::spawnPlayer(registry, build.playerStart);
+    const auto spawned = rl::spawnMonsters(registry, build.rooms, rng, build.playerStart);
+    if (spawned < 2) {
+        return false;
+    }
+
+    std::vector<rl::Point> occupied;
+    const auto view = registry.view<const rl::Monster, const rl::Position>();
+    for (const auto entity : view) {
+        const auto& position = view.get<const rl::Position>(entity);
+        const rl::Point point{position.x, position.y};
+        if (point == build.playerStart || !build.map.isWalkable(point.x, point.y)) {
+            return false;
+        }
+        if (std::find(occupied.begin(), occupied.end(), point) != occupied.end()) {
+            return false;
+        }
+        occupied.push_back(point);
+    }
+
+    return occupied.size() == spawned;
+}
+
+bool smokeCombatAndDeath()
+{
+    rl::Map map = rl::Map::createStarter(8, 6);
+    entt::registry registry;
+    rl::GameResources resources;
+    resources.player = rl::spawnPlayer(registry, rl::Point{1, 1});
+    const auto goblin = rl::spawnGoblin(registry, rl::Point{2, 1});
+
+    const std::vector<rl::InputEvent> attackInput{{rl::InputEventType::KeyDown, rl::Key::Right}};
+    if (!rl::handlePlayerInput(registry, resources, map, attackInput)) {
+        return false;
+    }
+
+    const auto& playerPosition = registry.get<rl::Position>(resources.player);
+    if (playerPosition.x != 1 || playerPosition.y != 1 || !registry.all_of<rl::WantsToMelee>(resources.player)) {
+        return false;
+    }
+
+    rl::RunState state = rl::RunState::PlayerTurn;
+    rl::processMeleeCombat(registry, resources.log);
+    rl::applyDamageAndCleanup(registry, resources, state);
+    if (!registry.valid(goblin)) {
+        return false;
+    }
+
+    registry.emplace_or_replace<rl::WantsToMelee>(resources.player, rl::WantsToMelee{goblin});
+    rl::processMeleeCombat(registry, resources.log);
+    rl::applyDamageAndCleanup(registry, resources, state);
+    if (registry.valid(goblin) || rl::blockingEntityAt(registry, rl::Point{2, 1}).has_value()) {
+        return false;
+    }
+
+    entt::registry monsterRegistry;
+    rl::GameResources monsterResources;
+    monsterResources.player = rl::spawnPlayer(monsterRegistry, rl::Point{1, 1});
+    [[maybe_unused]] const auto attackingGoblin = rl::spawnGoblin(monsterRegistry, rl::Point{2, 1});
+    auto& playerStats = monsterRegistry.get<rl::CombatStats>(monsterResources.player);
+    playerStats.hp = 1;
+    playerStats.defense = 0;
+
+    rl::RunState monsterState = rl::RunState::MonsterTurn;
+    rl::runMonsterAi(monsterRegistry, monsterResources, map);
+    rl::processMeleeCombat(monsterRegistry, monsterResources.log);
+    rl::applyDamageAndCleanup(monsterRegistry, monsterResources, monsterState);
+    return monsterState == rl::RunState::GameOver;
+}
+
+bool smokeHudAndLog()
+{
+    rl::ConsoleBuffer console{80, 50};
+    entt::registry registry;
+    rl::GameResources resources;
+    resources.player = rl::spawnPlayer(registry, rl::Point{1, 1});
+
+    resources.log.add("one");
+    resources.log.add("two");
+    resources.log.add("three");
+    resources.log.add("four");
+    resources.log.add("five");
+    resources.log.add("six");
+
+    const auto recent = resources.log.recent(5);
+    if (recent.size() != 5 || recent.front() != "two" || recent.back() != "six") {
+        return false;
+    }
+
+    console.clear();
+    rl::drawHud(console, resources, registry, rl::RunState::AwaitingInput);
+    return console.cellAt(1, 44).glyph == U'H' && console.cellAt(1, 45).glyph == U't';
+}
+
 int runSmoke()
 {
     if (!smokeConsoleBuffer()) {
@@ -268,6 +421,12 @@ int runSmoke()
     if (!smokeGeneratedMap()) {
         return 1;
     }
+    if (!smokeVisibility()) {
+        return 1;
+    }
+    if (!smokeVisibleEntityRendering()) {
+        return 1;
+    }
     if (!smokeSeedParsing()) {
         return 1;
     }
@@ -275,6 +434,15 @@ int runSmoke()
         return 1;
     }
     if (!smokeMapAndMovement()) {
+        return 1;
+    }
+    if (!smokeMonsterSpawning()) {
+        return 1;
+    }
+    if (!smokeCombatAndDeath()) {
+        return 1;
+    }
+    if (!smokeHudAndLog()) {
         return 1;
     }
     return 0;

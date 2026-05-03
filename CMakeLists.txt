@@ -8,16 +8,26 @@ find_package(EnTT CONFIG REQUIRED)
 
 add_executable(roguelike
     src/core/Game.cpp
+    src/core/GameLog.cpp
     src/core/Rng.cpp
+    src/fov/ShadowcastingFov.cpp
     src/main.cpp
     src/map/Map.cpp
     src/map/generators/SimpleMapBuilder.cpp
     src/render/ConsoleBuffer.cpp
     src/render/SdlRenderer.cpp
+    src/spawn/MonsterSpawner.cpp
     src/spawn/Spawner.cpp
+    src/systems/DamageSystem.cpp
     src/systems/InputSystem.cpp
     src/systems/MapRenderSystem.cpp
+    src/systems/MeleeCombatSystem.cpp
+    src/systems/MonsterAI.cpp
     src/systems/RenderSystem.cpp
+    src/systems/SpatialIndexSystem.cpp
+    src/systems/VisibilitySystem.cpp
+    src/ui/Hud.cpp
+    src/ui/Widgets.cpp
 )
 
 target_compile_features(roguelike PRIVATE cxx_std_20)

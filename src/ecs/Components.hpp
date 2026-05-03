@@ -1,7 +1,11 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
+#include <entt/entt.hpp>
+
+#include "core/Point.hpp"
 #include "render/Color.hpp"
 
 namespace rl {
@@ -25,7 +29,31 @@ struct Name {
 struct Player {
 };
 
+struct Monster {
+};
+
 struct BlocksTile {
+};
+
+struct Viewshed {
+    std::vector<Point> visible;
+    int range = 8;
+    bool dirty = true;
+};
+
+struct CombatStats {
+    int maxHp = 1;
+    int hp = 1;
+    int defense = 0;
+    int power = 1;
+};
+
+struct WantsToMelee {
+    entt::entity target = entt::null;
+};
+
+struct SufferDamage {
+    int amount = 0;
 };
 
 } // namespace rl

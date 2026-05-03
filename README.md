@@ -1,10 +1,18 @@
 # Roguelike
 
-A C++20 roguelike project built in small, playable slices.
+Generic roguelike
 
-## Status
+## Features
 
-Chapters 2-4 ECS/map/movement/mapgen bootstrap. The app opens an SDL2 window, draws a seeded rooms-and-corridors dungeon, renders the player through EnTT, and supports blocked tile movement.
+- SDL2 console renderer
+- ECS entities
+- Tile map rendering
+- Movement input
+- Seeded map generation
+- Field of view and map memory
+- Monster spawning
+- Bump combat
+- HUD and message log
 
 ## Planned Stack
 

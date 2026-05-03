@@ -3,6 +3,7 @@
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
+#include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
 
@@ -36,16 +37,21 @@ bool tryMoveEntity(entt::registry& registry, entt::entity entity, const Map& map
 
     auto& position = registry.get<Position>(entity);
     const Point target{position.x + delta.x, position.y + delta.y};
-    if (map.blocksMovement(target.x, target.y)) {
+    if (isBlocked(map, registry, target, entity)) {
         return false;
     }
 
     position.x = target.x;
     position.y = target.y;
+    if (registry.all_of<Viewshed>(entity)) {
+        registry.patch<Viewshed>(entity, [](Viewshed& viewshed) {
+            viewshed.dirty = true;
+        });
+    }
     return true;
 }
 
-void handlePlayerInput(entt::registry& registry, const GameResources& resources, const Map& map, const std::vector<InputEvent>& events)
+bool handlePlayerInput(entt::registry& registry, const GameResources& resources, const Map& map, const std::vector<InputEvent>& events)
 {
     for (const auto& event : events) {
         if (event.type != InputEventType::KeyDown) {
@@ -54,9 +60,22 @@ void handlePlayerInput(entt::registry& registry, const GameResources& resources,
 
         const auto delta = movementDeltaForKey(event.key);
         if (delta.has_value()) {
-            [[maybe_unused]] const bool moved = tryMoveEntity(registry, resources.player, map, *delta);
+            if (resources.player == entt::null || !registry.valid(resources.player) || !registry.all_of<Position>(resources.player)) {
+                return false;
+            }
+
+            const auto& position = registry.get<Position>(resources.player);
+            const Point target{position.x + delta->x, position.y + delta->y};
+            if (const auto blocker = blockingEntityAt(registry, target, resources.player); blocker.has_value()) {
+                registry.emplace_or_replace<WantsToMelee>(resources.player, WantsToMelee{*blocker});
+                return true;
+            }
+
+            return tryMoveEntity(registry, resources.player, map, *delta);
         }
     }
+
+    return false;
 }
 
 } // namespace rl
