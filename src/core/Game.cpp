@@ -9,8 +9,10 @@
 #include "render/SdlRenderer.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
+#include "systems/DamageSystem.hpp"
 #include "systems/InputSystem.hpp"
 #include "systems/MapRenderSystem.hpp"
+#include "systems/MeleeCombatSystem.hpp"
 #include "systems/RenderSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
 
@@ -51,14 +53,21 @@ void Game::tick(const std::vector<InputEvent>& events)
         }
     }
 
-    handlePlayerInput(registry_, resources_, map_, events);
-    updateVisibility(registry_, map_, resources_.player, fovProvider_);
+    if (state_ != RunState::GameOver) {
+        const bool playerActed = handlePlayerInput(registry_, resources_, map_, events);
+        if (playerActed) {
+            state_ = RunState::PlayerTurn;
+            processMeleeCombat(registry_, resources_.log);
+            applyDamageAndCleanup(registry_, resources_, state_);
+            updateVisibility(registry_, map_, resources_.player, fovProvider_);
+
+            if (state_ != RunState::GameOver) {
+                state_ = RunState::AwaitingInput;
+            }
+        }
+    }
 
     render();
-
-    if (state_ == RunState::GameOver) {
-        running_ = false;
-    }
 }
 
 void Game::render()

@@ -18,8 +18,10 @@ add_executable(roguelike
     src/render/SdlRenderer.cpp
     src/spawn/MonsterSpawner.cpp
     src/spawn/Spawner.cpp
+    src/systems/DamageSystem.cpp
     src/systems/InputSystem.cpp
     src/systems/MapRenderSystem.cpp
+    src/systems/MeleeCombatSystem.cpp
     src/systems/RenderSystem.cpp
     src/systems/SpatialIndexSystem.cpp
     src/systems/VisibilitySystem.cpp

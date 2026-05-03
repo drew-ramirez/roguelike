@@ -51,7 +51,7 @@ bool tryMoveEntity(entt::registry& registry, entt::entity entity, const Map& map
     return true;
 }
 
-void handlePlayerInput(entt::registry& registry, const GameResources& resources, const Map& map, const std::vector<InputEvent>& events)
+bool handlePlayerInput(entt::registry& registry, const GameResources& resources, const Map& map, const std::vector<InputEvent>& events)
 {
     for (const auto& event : events) {
         if (event.type != InputEventType::KeyDown) {
@@ -60,9 +60,22 @@ void handlePlayerInput(entt::registry& registry, const GameResources& resources,
 
         const auto delta = movementDeltaForKey(event.key);
         if (delta.has_value()) {
-            [[maybe_unused]] const bool moved = tryMoveEntity(registry, resources.player, map, *delta);
+            if (resources.player == entt::null || !registry.valid(resources.player) || !registry.all_of<Position>(resources.player)) {
+                return false;
+            }
+
+            const auto& position = registry.get<Position>(resources.player);
+            const Point target{position.x + delta->x, position.y + delta->y};
+            if (const auto blocker = blockingEntityAt(registry, target, resources.player); blocker.has_value()) {
+                registry.emplace_or_replace<WantsToMelee>(resources.player, WantsToMelee{*blocker});
+                return true;
+            }
+
+            return tryMoveEntity(registry, resources.player, map, *delta);
         }
     }
+
+    return false;
 }
 
 } // namespace rl

@@ -21,7 +21,9 @@
 #include "render/ConsoleBuffer.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
+#include "systems/DamageSystem.hpp"
 #include "systems/InputSystem.hpp"
+#include "systems/MeleeCombatSystem.hpp"
 #include "systems/RenderSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
@@ -354,6 +356,43 @@ bool smokeEntityBlocking()
     return position.x == 1 && position.y == 1;
 }
 
+bool smokeCombatAndDeath()
+{
+    rl::Map map = rl::Map::createStarter(8, 6);
+    entt::registry registry;
+    rl::GameResources resources;
+    resources.player = rl::spawnPlayer(registry, rl::Point{1, 1});
+    const auto goblin = rl::spawnGoblin(registry, rl::Point{2, 1});
+
+    const std::vector<rl::InputEvent> attackInput{{rl::InputEventType::KeyDown, rl::Key::Right}};
+    if (!rl::handlePlayerInput(registry, resources, map, attackInput)) {
+        return false;
+    }
+
+    const auto& playerPosition = registry.get<rl::Position>(resources.player);
+    if (playerPosition.x != 1 || playerPosition.y != 1 || !registry.all_of<rl::WantsToMelee>(resources.player)) {
+        return false;
+    }
+
+    rl::RunState state = rl::RunState::PlayerTurn;
+    rl::processMeleeCombat(registry, resources.log);
+    rl::applyDamageAndCleanup(registry, resources, state);
+    if (!registry.valid(goblin)) {
+        return false;
+    }
+
+    registry.emplace_or_replace<rl::WantsToMelee>(resources.player, rl::WantsToMelee{goblin});
+    rl::processMeleeCombat(registry, resources.log);
+    rl::applyDamageAndCleanup(registry, resources, state);
+    if (registry.valid(goblin) || rl::blockingEntityAt(registry, rl::Point{2, 1}).has_value()) {
+        return false;
+    }
+
+    registry.emplace_or_replace<rl::SufferDamage>(resources.player, rl::SufferDamage{100});
+    rl::applyDamageAndCleanup(registry, resources, state);
+    return state == rl::RunState::GameOver;
+}
+
 int runSmoke()
 {
     if (!smokeConsoleBuffer()) {
@@ -384,6 +423,9 @@ int runSmoke()
         return 1;
     }
     if (!smokeEntityBlocking()) {
+        return 1;
+    }
+    if (!smokeCombatAndDeath()) {
         return 1;
     }
     return 0;

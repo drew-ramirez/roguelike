@@ -1,5 +1,7 @@
 #include "spawn/MonsterSpawner.hpp"
 
+#include <algorithm>
+
 #include "ecs/Components.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 
@@ -47,6 +49,7 @@ entt::entity spawnGoblin(entt::registry& registry, Point position)
     registry.emplace<Name>(entity, Name{"Goblin"});
     registry.emplace<Monster>(entity);
     registry.emplace<BlocksTile>(entity);
+    registry.emplace<CombatStats>(entity, CombatStats{8, 8, 0, 3});
     return entity;
 }
 
@@ -58,6 +61,7 @@ entt::entity spawnOrc(entt::registry& registry, Point position)
     registry.emplace<Name>(entity, Name{"Orc"});
     registry.emplace<Monster>(entity);
     registry.emplace<BlocksTile>(entity);
+    registry.emplace<CombatStats>(entity, CombatStats{12, 12, 1, 4});
     return entity;
 }
 
