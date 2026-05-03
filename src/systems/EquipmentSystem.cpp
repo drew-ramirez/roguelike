@@ -64,4 +64,40 @@ bool equipOrUnequipItem(entt::registry& registry,
     return true;
 }
 
+int meleePowerWithEquipment(const entt::registry& registry, entt::entity entity)
+{
+    if (entity == entt::null || !registry.valid(entity) ||
+        !registry.all_of<CombatStats>(entity)) {
+        return 0;
+    }
+
+    int power = registry.get<CombatStats>(entity).power;
+    const auto view = registry.view<const Equipped, const MeleePowerBonus>();
+    for (const auto item : view) {
+        const auto& equipped = view.get<const Equipped>(item);
+        if (equipped.owner == entity) {
+            power += view.get<const MeleePowerBonus>(item).amount;
+        }
+    }
+    return power;
+}
+
+int defenseWithEquipment(const entt::registry& registry, entt::entity entity)
+{
+    if (entity == entt::null || !registry.valid(entity) ||
+        !registry.all_of<CombatStats>(entity)) {
+        return 0;
+    }
+
+    int defense = registry.get<CombatStats>(entity).defense;
+    const auto view = registry.view<const Equipped, const DefenseBonus>();
+    for (const auto item : view) {
+        const auto& equipped = view.get<const Equipped>(item);
+        if (equipped.owner == entity) {
+            defense += view.get<const DefenseBonus>(item).amount;
+        }
+    }
+    return defense;
+}
+
 } // namespace rl

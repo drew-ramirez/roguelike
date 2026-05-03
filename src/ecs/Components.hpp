@@ -111,4 +111,8 @@ struct WantsToUseItem {
     std::optional<Point> target;
 };
 
+struct WantsToDropItem {
+    entt::entity item = entt::null;
+};
+
 } // namespace rl

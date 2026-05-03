@@ -1,7 +1,7 @@
 /**
  * **************************************************************************
  * @file     EquipmentSystem.hpp
- * @brief    Declares equipment ownership helpers
+ * @brief    Declares equipment ownership and derived combat stat helpers
  * **************************************************************************
  */
 
@@ -17,5 +17,11 @@ class GameLog;
                                       GameLog& log,
                                       entt::entity owner,
                                       entt::entity item);
+
+[[nodiscard]] int meleePowerWithEquipment(const entt::registry& registry,
+                                          entt::entity entity);
+
+[[nodiscard]] int defenseWithEquipment(const entt::registry& registry,
+                                       entt::entity entity);
 
 } // namespace rl
