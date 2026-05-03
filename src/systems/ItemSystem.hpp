@@ -1,7 +1,7 @@
 /**
  * **************************************************************************
  * @file     ItemSystem.hpp
- * @brief    Declares pickup, inventory, use, and drop systems
+ * @brief    Declares pickup, inventory, use, drop, and targeting systems
  * **************************************************************************
  */
 
@@ -40,5 +40,22 @@ void processPickupItems(entt::registry& registry, GameResources& resources);
                                     const Map& map,
                                     entt::entity owner,
                                     entt::entity item);
+
+[[nodiscard]] bool processItemUses(entt::registry& registry,
+                                   GameResources& resources,
+                                   const Map& map);
+
+[[nodiscard]] bool isValidTarget(const entt::registry& registry,
+                                 const GameResources& resources,
+                                 const Map& map,
+                                 Point target);
+
+[[nodiscard]] bool confirmPendingTarget(entt::registry& registry,
+                                        GameResources& resources,
+                                        const Map& map);
+
+void cancelPendingTarget(GameResources& resources);
+
+void moveTargetCursor(GameResources& resources, Point delta);
 
 } // namespace rl

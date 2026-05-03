@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -98,6 +99,11 @@ struct DefenseBonus {
 
 struct WantsToPickupItem {
     entt::entity item = entt::null;
+};
+
+struct WantsToUseItem {
+    entt::entity item = entt::null;
+    std::optional<Point> target;
 };
 
 } // namespace rl
