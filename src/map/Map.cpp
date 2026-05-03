@@ -5,9 +5,10 @@
 namespace rl {
 
 Map::Map(int width, int height, TileType fill)
-    : width_(width),
-      height_(height),
-      tiles_(width > 0 && height > 0 ? static_cast<std::size_t>(width * height) : 0U, fill)
+    : width_(width), height_(height),
+      tiles_(width > 0 && height > 0 ? static_cast<std::size_t>(width * height)
+                                     : 0U,
+             fill)
 {
     if (width <= 0 || height <= 0) {
         throw std::invalid_argument("Map dimensions must be positive");

@@ -17,12 +17,12 @@
 namespace rl {
 
 class Game {
-public:
+  public:
     explicit Game(std::optional<Rng::Seed> seed = std::nullopt);
 
     void run();
 
-private:
+  private:
     void tick(const std::vector<InputEvent>& events);
 
     RunState state_ = RunState::AwaitingInput;

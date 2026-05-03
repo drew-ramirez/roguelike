@@ -117,7 +117,8 @@ void SdlRenderer::WindowDeleter::operator()(SDL_Window* window) const noexcept
     }
 }
 
-void SdlRenderer::RendererDeleter::operator()(SDL_Renderer* renderer) const noexcept
+void SdlRenderer::RendererDeleter::operator()(
+    SDL_Renderer* renderer) const noexcept
 {
     if (renderer != nullptr) {
         SDL_DestroyRenderer(renderer);
@@ -127,13 +128,15 @@ void SdlRenderer::RendererDeleter::operator()(SDL_Renderer* renderer) const noex
 SdlRenderer::SdlRenderer(int consoleWidth, int consoleHeight)
 {
     if (consoleWidth <= 0 || consoleHeight <= 0) {
-        throw std::invalid_argument("Renderer console dimensions must be positive");
+        throw std::invalid_argument(
+            "Renderer console dimensions must be positive");
     }
 
     const auto fontPath = findFontPath();
     font_.reset(TTF_OpenFont(fontPath.string().c_str(), 16));
     if (!font_) {
-        throw std::runtime_error(ttfError(("Failed to load font " + fontPath.string()).c_str()));
+        throw std::runtime_error(
+            ttfError(("Failed to load font " + fontPath.string()).c_str()));
     }
 
     int measuredWidth = 0;
@@ -141,22 +144,26 @@ SdlRenderer::SdlRenderer(int consoleWidth, int consoleHeight)
     if (TTF_SizeUTF8(font_.get(), "M", &measuredWidth, &measuredHeight) == 0) {
         cellWidth_ = measuredWidth > 0 ? measuredWidth : cellWidth_;
     }
-    cellHeight_ = TTF_FontHeight(font_.get()) > 0 ? TTF_FontHeight(font_.get()) : cellHeight_;
+    cellHeight_ = TTF_FontHeight(font_.get()) > 0 ? TTF_FontHeight(font_.get())
+                                                  : cellHeight_;
 
-    window_.reset(SDL_CreateWindow(
-        "Roguelike",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        consoleWidth * cellWidth_,
-        consoleHeight * cellHeight_,
-        SDL_WINDOW_SHOWN));
+    window_.reset(SDL_CreateWindow("Roguelike",
+                                   SDL_WINDOWPOS_CENTERED,
+                                   SDL_WINDOWPOS_CENTERED,
+                                   consoleWidth * cellWidth_,
+                                   consoleHeight * cellHeight_,
+                                   SDL_WINDOW_SHOWN));
     if (!window_) {
         throw std::runtime_error(sdlError("SDL_CreateWindow failed"));
     }
 
-    renderer_.reset(SDL_CreateRenderer(window_.get(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC));
+    renderer_.reset(SDL_CreateRenderer(window_.get(),
+                                       -1,
+                                       SDL_RENDERER_ACCELERATED |
+                                           SDL_RENDERER_PRESENTVSYNC));
     if (!renderer_) {
-        renderer_.reset(SDL_CreateRenderer(window_.get(), -1, SDL_RENDERER_SOFTWARE));
+        renderer_.reset(
+            SDL_CreateRenderer(window_.get(), -1, SDL_RENDERER_SOFTWARE));
     }
     if (!renderer_) {
         throw std::runtime_error(sdlError("SDL_CreateRenderer failed"));
@@ -174,7 +181,8 @@ std::vector<InputEvent> SdlRenderer::pollEvents()
             shouldQuit_ = true;
             events.push_back(InputEvent{InputEventType::Quit});
         } else if (event.type == SDL_KEYDOWN) {
-            events.push_back(InputEvent{InputEventType::KeyDown, mapSdlKey(event.key.keysym.sym)});
+            events.push_back(InputEvent{InputEventType::KeyDown,
+                                        mapSdlKey(event.key.keysym.sym)});
         }
     }
     return events;
@@ -206,7 +214,9 @@ std::filesystem::path SdlRenderer::findFontPath()
         if (std::filesystem::exists(candidate)) {
             return candidate;
         }
-        throw std::runtime_error("ROGUELIKE_FONT_PATH points to a missing font: " + candidate.string());
+        throw std::runtime_error(
+            "ROGUELIKE_FONT_PATH points to a missing font: " +
+            candidate.string());
     }
 
     const std::array<std::filesystem::path, 8> candidates{
@@ -225,7 +235,8 @@ std::filesystem::path SdlRenderer::findFontPath()
         }
     }
 
-    throw std::runtime_error("No usable monospace font found. Set ROGUELIKE_FONT_PATH to a .ttf or .ttc file.");
+    throw std::runtime_error("No usable monospace font found. Set "
+                             "ROGUELIKE_FONT_PATH to a .ttf or .ttc file.");
 }
 
 std::string SdlRenderer::toUtf8(char32_t glyph)
@@ -234,28 +245,30 @@ std::string SdlRenderer::toUtf8(char32_t glyph)
         return std::string(1, static_cast<char>(glyph));
     }
     if (glyph <= 0x7FF) {
-        return {
-            static_cast<char>(0xC0 | ((glyph >> 6) & 0x1F)),
-            static_cast<char>(0x80 | (glyph & 0x3F))};
+        return {static_cast<char>(0xC0 | ((glyph >> 6) & 0x1F)),
+                static_cast<char>(0x80 | (glyph & 0x3F))};
     }
     if (glyph <= 0xFFFF) {
-        return {
-            static_cast<char>(0xE0 | ((glyph >> 12) & 0x0F)),
-            static_cast<char>(0x80 | ((glyph >> 6) & 0x3F)),
-            static_cast<char>(0x80 | (glyph & 0x3F))};
+        return {static_cast<char>(0xE0 | ((glyph >> 12) & 0x0F)),
+                static_cast<char>(0x80 | ((glyph >> 6) & 0x3F)),
+                static_cast<char>(0x80 | (glyph & 0x3F))};
     }
 
-    return {
-        static_cast<char>(0xF0 | ((glyph >> 18) & 0x07)),
-        static_cast<char>(0x80 | ((glyph >> 12) & 0x3F)),
-        static_cast<char>(0x80 | ((glyph >> 6) & 0x3F)),
-        static_cast<char>(0x80 | (glyph & 0x3F))};
+    return {static_cast<char>(0xF0 | ((glyph >> 18) & 0x07)),
+            static_cast<char>(0x80 | ((glyph >> 12) & 0x3F)),
+            static_cast<char>(0x80 | ((glyph >> 6) & 0x3F)),
+            static_cast<char>(0x80 | (glyph & 0x3F))};
 }
 
 void SdlRenderer::drawCell(int x, int y, const Cell& cell)
 {
-    const SDL_Rect destination{x * cellWidth_, y * cellHeight_, cellWidth_, cellHeight_};
-    SDL_SetRenderDrawColor(renderer_.get(), cell.background.r, cell.background.g, cell.background.b, cell.background.a);
+    const SDL_Rect destination{
+        x * cellWidth_, y * cellHeight_, cellWidth_, cellHeight_};
+    SDL_SetRenderDrawColor(renderer_.get(),
+                           cell.background.r,
+                           cell.background.g,
+                           cell.background.b,
+                           cell.background.a);
     SDL_RenderFillRect(renderer_.get(), &destination);
 
     if (cell.glyph == U' ') {
@@ -263,12 +276,14 @@ void SdlRenderer::drawCell(int x, int y, const Cell& cell)
     }
 
     const auto text = toUtf8(cell.glyph);
-    auto* rawSurface = TTF_RenderUTF8_Blended(font_.get(), text.c_str(), toSdlColor(cell.foreground));
+    auto* rawSurface = TTF_RenderUTF8_Blended(
+        font_.get(), text.c_str(), toSdlColor(cell.foreground));
     if (rawSurface == nullptr) {
         return;
     }
 
-    std::unique_ptr<SDL_Surface, decltype(&SDL_FreeSurface)> surface{rawSurface, SDL_FreeSurface};
+    std::unique_ptr<SDL_Surface, decltype(&SDL_FreeSurface)> surface{
+        rawSurface, SDL_FreeSurface};
     std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> texture{
         SDL_CreateTextureFromSurface(renderer_.get(), surface.get()),
         SDL_DestroyTexture};
@@ -276,11 +291,10 @@ void SdlRenderer::drawCell(int x, int y, const Cell& cell)
         return;
     }
 
-    SDL_Rect glyphDestination{
-        destination.x + ((cellWidth_ - surface->w) / 2),
-        destination.y + ((cellHeight_ - surface->h) / 2),
-        surface->w,
-        surface->h};
+    SDL_Rect glyphDestination{destination.x + ((cellWidth_ - surface->w) / 2),
+                              destination.y + ((cellHeight_ - surface->h) / 2),
+                              surface->w,
+                              surface->h};
     SDL_RenderCopy(renderer_.get(), texture.get(), nullptr, &glyphDestination);
 }
 

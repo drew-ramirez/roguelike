@@ -16,7 +16,7 @@ namespace rl {
 struct Cell;
 
 class SdlRenderer final : public IRenderer {
-public:
+  public:
     SdlRenderer(int consoleWidth, int consoleHeight);
     ~SdlRenderer() override;
 
@@ -29,7 +29,7 @@ public:
     void present(const ConsoleBuffer& console) override;
     [[nodiscard]] bool shouldQuit() const noexcept override;
 
-private:
+  private:
     struct SdlContext {
         SdlContext();
         ~SdlContext();

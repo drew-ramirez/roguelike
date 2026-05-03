@@ -9,7 +9,7 @@ namespace rl {
 class ConsoleBuffer;
 
 class IRenderer {
-public:
+  public:
     virtual ~IRenderer() = default;
 
     [[nodiscard]] virtual std::vector<InputEvent> pollEvents() = 0;

@@ -28,17 +28,18 @@ void renderEntities(const entt::registry& registry, ConsoleBuffer& console)
         draws.push_back(EntityDraw{position, renderable});
     }
 
-    std::sort(draws.begin(), draws.end(), [](const EntityDraw& left, const EntityDraw& right) {
-        return left.renderable.order < right.renderable.order;
-    });
+    std::sort(draws.begin(),
+              draws.end(),
+              [](const EntityDraw& left, const EntityDraw& right) {
+                  return left.renderable.order < right.renderable.order;
+              });
 
     for (const auto& draw : draws) {
-        console.set(
-            draw.position.x,
-            draw.position.y,
-            draw.renderable.glyph,
-            draw.renderable.foreground,
-            draw.renderable.background);
+        console.set(draw.position.x,
+                    draw.position.y,
+                    draw.renderable.glyph,
+                    draw.renderable.foreground,
+                    draw.renderable.background);
     }
 }
 

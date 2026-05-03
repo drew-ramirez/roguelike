@@ -7,7 +7,7 @@
 namespace rl {
 
 class Map {
-public:
+  public:
     Map(int width, int height, TileType fill = TileType::Floor);
 
     [[nodiscard]] static Map createStarter(int width = 80, int height = 45);
@@ -22,7 +22,7 @@ public:
 
     void setTile(int x, int y, TileType tile);
 
-private:
+  private:
     int width_ = 0;
     int height_ = 0;
     std::vector<TileType> tiles_;

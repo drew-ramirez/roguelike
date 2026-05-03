@@ -5,12 +5,13 @@
 namespace rl {
 
 ConsoleBuffer::ConsoleBuffer(int width, int height)
-    : width_(width),
-      height_(height),
-      cells_(width > 0 && height > 0 ? static_cast<std::size_t>(width * height) : 0U)
+    : width_(width), height_(height),
+      cells_(width > 0 && height > 0 ? static_cast<std::size_t>(width * height)
+                                     : 0U)
 {
     if (width <= 0 || height <= 0) {
-        throw std::invalid_argument("ConsoleBuffer dimensions must be positive");
+        throw std::invalid_argument(
+            "ConsoleBuffer dimensions must be positive");
     }
 }
 
@@ -31,16 +32,19 @@ void ConsoleBuffer::clear(Color foreground, Color background, char32_t glyph)
     }
 }
 
-void ConsoleBuffer::set(int x, int y, char32_t glyph, Color foreground, Color background)
+void ConsoleBuffer::set(
+    int x, int y, char32_t glyph, Color foreground, Color background)
 {
     if (!inBounds(x, y)) {
         return;
     }
 
-    cells_[static_cast<std::size_t>(indexOf(x, y))] = Cell{glyph, foreground, background};
+    cells_[static_cast<std::size_t>(indexOf(x, y))] =
+        Cell{glyph, foreground, background};
 }
 
-void ConsoleBuffer::print(int x, int y, std::string_view text, Color foreground, Color background)
+void ConsoleBuffer::print(
+    int x, int y, std::string_view text, Color foreground, Color background)
 {
     for (char ch : text) {
         set(x, y, static_cast<unsigned char>(ch), foreground, background);
@@ -51,7 +55,8 @@ void ConsoleBuffer::print(int x, int y, std::string_view text, Color foreground,
 const Cell& ConsoleBuffer::cellAt(int x, int y) const
 {
     if (!inBounds(x, y)) {
-        throw std::out_of_range("ConsoleBuffer cell coordinate is out of bounds");
+        throw std::out_of_range(
+            "ConsoleBuffer cell coordinate is out of bounds");
     }
 
     return cells_[static_cast<std::size_t>(indexOf(x, y))];

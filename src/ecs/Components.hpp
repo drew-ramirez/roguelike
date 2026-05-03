@@ -22,10 +22,8 @@ struct Name {
     std::string value;
 };
 
-struct Player {
-};
+struct Player {};
 
-struct BlocksTile {
-};
+struct BlocksTile {};
 
 } // namespace rl

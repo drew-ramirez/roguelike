@@ -110,7 +110,8 @@ bool allWalkableTilesReachable(const rl::Map& map, rl::Point start)
 
     const int totalWalkable = countWalkableTiles(map);
     int reached = 0;
-    std::vector<bool> visited(static_cast<std::size_t>(map.width() * map.height()), false);
+    std::vector<bool> visited(
+        static_cast<std::size_t>(map.width() * map.height()), false);
     std::vector<rl::Point> frontier{start};
     visited[static_cast<std::size_t>(map.xyIdx(start.x, start.y))] = true;
 
@@ -132,7 +133,8 @@ bool allWalkableTilesReachable(const rl::Map& map, rl::Point start)
                 continue;
             }
 
-            const auto index = static_cast<std::size_t>(map.xyIdx(next.x, next.y));
+            const auto index =
+                static_cast<std::size_t>(map.xyIdx(next.x, next.y));
             if (!visited[index]) {
                 visited[index] = true;
                 frontier.push_back(next);
@@ -162,7 +164,8 @@ bool smokeConsoleBuffer()
 bool smokeRect()
 {
     const rl::Rect room{1, 2, 5, 8};
-    if (room.width() != 4 || room.height() != 6 || room.center() != rl::Point{3, 5}) {
+    if (room.width() != 4 || room.height() != 6 ||
+        room.center() != rl::Point{3, 5}) {
         return false;
     }
     if (!room.intersects(rl::Rect{4, 7, 8, 10})) {
@@ -178,7 +181,8 @@ bool smokeGeneratedMap()
     auto first = rl::SimpleMapBuilder::build(40, 25, firstRng);
     auto second = rl::SimpleMapBuilder::build(40, 25, secondRng);
 
-    if (!sameMapTiles(first.map, second.map) || first.playerStart != second.playerStart) {
+    if (!sameMapTiles(first.map, second.map) ||
+        first.playerStart != second.playerStart) {
         return false;
     }
     if (first.rooms.size() < 2) {
@@ -212,7 +216,11 @@ bool smokeEntityRendering()
     entt::registry registry;
     const auto player = rl::spawnPlayer(registry, rl::Point{3, 2});
 
-    if (!registry.all_of<rl::Position, rl::Renderable, rl::Name, rl::Player, rl::BlocksTile>(player)) {
+    if (!registry.all_of<rl::Position,
+                         rl::Renderable,
+                         rl::Name,
+                         rl::Player,
+                         rl::BlocksTile>(player)) {
         return false;
     }
 
@@ -232,7 +240,8 @@ bool smokeEntityRendering()
 bool smokeMapAndMovement()
 {
     rl::Map map = rl::Map::createStarter(8, 6);
-    if (!map.blocksMovement(0, 0) || !map.blocksMovement(7, 5) || !map.isWalkable(1, 1)) {
+    if (!map.blocksMovement(0, 0) || !map.blocksMovement(7, 5) ||
+        !map.isWalkable(1, 1)) {
         return false;
     }
 

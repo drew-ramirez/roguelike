@@ -6,7 +6,7 @@
 namespace rl {
 
 class SimpleMapBuilder {
-public:
+  public:
     [[nodiscard]] static MapBuildResult build(int width, int height, Rng& rng);
 };
 

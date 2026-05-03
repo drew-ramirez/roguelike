@@ -28,9 +28,13 @@ std::optional<Point> movementDeltaForKey(Key key)
     return std::nullopt;
 }
 
-bool tryMoveEntity(entt::registry& registry, entt::entity entity, const Map& map, Point delta)
+bool tryMoveEntity(entt::registry& registry,
+                   entt::entity entity,
+                   const Map& map,
+                   Point delta)
 {
-    if (entity == entt::null || !registry.valid(entity) || !registry.all_of<Position>(entity)) {
+    if (entity == entt::null || !registry.valid(entity) ||
+        !registry.all_of<Position>(entity)) {
         return false;
     }
 
@@ -45,7 +49,10 @@ bool tryMoveEntity(entt::registry& registry, entt::entity entity, const Map& map
     return true;
 }
 
-void handlePlayerInput(entt::registry& registry, const GameResources& resources, const Map& map, const std::vector<InputEvent>& events)
+void handlePlayerInput(entt::registry& registry,
+                       const GameResources& resources,
+                       const Map& map,
+                       const std::vector<InputEvent>& events)
 {
     for (const auto& event : events) {
         if (event.type != InputEventType::KeyDown) {
@@ -54,7 +61,8 @@ void handlePlayerInput(entt::registry& registry, const GameResources& resources,
 
         const auto delta = movementDeltaForKey(event.key);
         if (delta.has_value()) {
-            [[maybe_unused]] const bool moved = tryMoveEntity(registry, resources.player, map, *delta);
+            [[maybe_unused]] const bool moved =
+                tryMoveEntity(registry, resources.player, map, *delta);
         }
     }
 }

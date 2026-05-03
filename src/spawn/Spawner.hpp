@@ -6,6 +6,7 @@
 
 namespace rl {
 
-[[nodiscard]] entt::entity spawnPlayer(entt::registry& registry, Point position);
+[[nodiscard]] entt::entity spawnPlayer(entt::registry& registry,
+                                       Point position);
 
 } // namespace rl

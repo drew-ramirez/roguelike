@@ -66,7 +66,8 @@ bool allWalkableTilesReachable(const Map& map, Point start)
 
     const int totalWalkable = countWalkableTiles(map);
     int reached = 0;
-    std::vector<bool> visited(static_cast<std::size_t>(map.width() * map.height()), false);
+    std::vector<bool> visited(
+        static_cast<std::size_t>(map.width() * map.height()), false);
     std::vector<Point> frontier{start};
     visited[static_cast<std::size_t>(map.xyIdx(start.x, start.y))] = true;
 
@@ -88,7 +89,8 @@ bool allWalkableTilesReachable(const Map& map, Point start)
                 continue;
             }
 
-            const auto index = static_cast<std::size_t>(map.xyIdx(next.x, next.y));
+            const auto index =
+                static_cast<std::size_t>(map.xyIdx(next.x, next.y));
             if (!visited[index]) {
                 visited[index] = true;
                 frontier.push_back(next);
@@ -113,24 +115,30 @@ void connectRooms(Map& map, Point previous, Point next, Rng& rng)
 
 bool intersectsAnyRoom(const Rect& candidate, const std::vector<Rect>& rooms)
 {
-    return std::any_of(rooms.begin(), rooms.end(), [&candidate](const Rect& room) {
-        return candidate.intersects(room);
-    });
+    return std::any_of(
+        rooms.begin(), rooms.end(), [&candidate](const Rect& room) {
+            return candidate.intersects(room);
+        });
 }
 
-void validateGeneratedMap(const Map& map, Point playerStart, const std::vector<Rect>& rooms)
+void validateGeneratedMap(const Map& map,
+                          Point playerStart,
+                          const std::vector<Rect>& rooms)
 {
     if (static_cast<int>(rooms.size()) < minAcceptedRooms) {
         throw std::runtime_error("Map generation failed to place enough rooms");
     }
     if (countWalkableTiles(map) < minFloorTiles) {
-        throw std::runtime_error("Map generation failed to carve enough floor tiles");
+        throw std::runtime_error(
+            "Map generation failed to carve enough floor tiles");
     }
     if (!map.isWalkable(playerStart.x, playerStart.y)) {
-        throw std::runtime_error("Map generation placed the player start in a wall");
+        throw std::runtime_error(
+            "Map generation placed the player start in a wall");
     }
     if (!allWalkableTilesReachable(map, playerStart)) {
-        throw std::runtime_error("Map generation produced isolated floor tiles");
+        throw std::runtime_error(
+            "Map generation produced isolated floor tiles");
     }
 }
 
@@ -139,7 +147,8 @@ void validateGeneratedMap(const Map& map, Point playerStart, const std::vector<R
 MapBuildResult SimpleMapBuilder::build(int width, int height, Rng& rng)
 {
     if (width < minMapWidth || height < minMapHeight) {
-        throw std::invalid_argument("SimpleMapBuilder requires at least a 20x15 map");
+        throw std::invalid_argument(
+            "SimpleMapBuilder requires at least a 20x15 map");
     }
 
     Map map{width, height, TileType::Wall};

@@ -6,7 +6,7 @@
 namespace rl {
 
 class Rng {
-public:
+  public:
     using Seed = std::uint32_t;
 
     Rng();
@@ -19,7 +19,7 @@ public:
 
     void reseed(Seed seed);
 
-private:
+  private:
     Seed seed_ = 0;
     std::mt19937 engine_;
 };

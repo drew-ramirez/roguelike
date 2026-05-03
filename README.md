@@ -39,6 +39,17 @@ Use a reproducible map seed with:
 
 The SDL_ttf renderer looks for a local monospace font. Set `ROGUELIKE_FONT_PATH` to a `.ttf` or `.ttc` file if automatic font discovery fails.
 
+## Formatting And Linting
+
+Use CMake targets:
+
+```bash
+cmake -S . -B build-lint -G Ninja -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+cmake --build build-lint --target format-check
+cmake --build build-lint --target format
+cmake --build build-lint --target lint
+```
+
 ## Controls
 
 - Arrow keys or WASD: move one tile.

@@ -5,16 +5,9 @@
 
 namespace rl {
 
-Rng::Rng()
-    : Rng(0)
-{
-}
+Rng::Rng() : Rng(0) {}
 
-Rng::Rng(Seed seed)
-    : seed_(seed),
-      engine_(seed)
-{
-}
+Rng::Rng(Seed seed) : seed_(seed), engine_(seed) {}
 
 Rng::Seed Rng::makeSeed()
 {
