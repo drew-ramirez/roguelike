@@ -12,6 +12,7 @@
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
+#include "spawn/TrapSpawner.hpp"
 #include "systems/VisibilitySystem.hpp"
 
 namespace rl {
@@ -100,6 +101,12 @@ bool tryDescendToNextLevel(entt::registry& registry,
                                                    build.rooms,
                                                    resources.rng,
                                                    build.playerStart,
+                                                   resources.depth);
+    [[maybe_unused]] const auto traps = spawnTraps(registry,
+                                                   build.rooms,
+                                                   resources.rng,
+                                                   build.playerStart,
+                                                   build.stairsPosition,
                                                    resources.depth);
     resources.log.add("You descend to depth " +
                       std::to_string(resources.depth) + ".");

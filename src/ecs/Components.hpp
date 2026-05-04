@@ -134,4 +134,11 @@ struct WantsToDropItem {
     entt::entity item = entt::null;
 };
 
+struct Trap {
+    int damage = 3;
+    bool triggered = false;
+};
+
+struct Hidden {};
+
 } // namespace rl

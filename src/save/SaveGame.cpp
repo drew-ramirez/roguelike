@@ -331,6 +331,14 @@ void loadResources(const Json& json,
             Json{{"owner", entityId(registry, component.owner)},
                  {"slot", slotToString(component.slot)}};
     }
+    if (registry.all_of<Trap>(entity)) {
+        const auto& component = registry.get<Trap>(entity);
+        components["trap"] = Json{{"damage", component.damage},
+                                  {"triggered", component.triggered}};
+    }
+    if (registry.all_of<Hidden>(entity)) {
+        components["hidden"] = true;
+    }
 
     return Json{{"id", entityId(registry, entity)},
                 {"components", std::move(components)}};
@@ -437,6 +445,15 @@ void loadEntityImmediateComponents(entt::registry& registry,
     if (components.contains("defense_bonus")) {
         registry.emplace<DefenseBonus>(
             entity, DefenseBonus{components.at("defense_bonus").get<int>()});
+    }
+    if (components.contains("trap")) {
+        const auto& json = components.at("trap");
+        registry.emplace<Trap>(entity,
+                               Trap{json.at("damage").get<int>(),
+                                    json.at("triggered").get<bool>()});
+    }
+    if (components.contains("hidden")) {
+        registry.emplace<Hidden>(entity);
     }
 }
 

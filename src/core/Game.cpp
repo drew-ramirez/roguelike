@@ -21,6 +21,7 @@
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
+#include "spawn/TrapSpawner.hpp"
 #include "systems/DamageSystem.hpp"
 #include "systems/HungerSystem.hpp"
 #include "systems/InputSystem.hpp"
@@ -31,6 +32,7 @@
 #include "systems/MonsterAI.hpp"
 #include "systems/ParticleSystem.hpp"
 #include "systems/RenderSystem.hpp"
+#include "systems/TrapSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
 #include "ui/Hud.hpp"
 #include "ui/InventoryMenu.hpp"
@@ -78,6 +80,12 @@ void Game::startNewGame(std::optional<Rng::Seed> seed)
                                                           build.rooms,
                                                           resources_.rng,
                                                           build.playerStart,
+                                                          resources_.depth);
+    [[maybe_unused]] const auto spawnedTraps = spawnTraps(registry_,
+                                                          build.rooms,
+                                                          resources_.rng,
+                                                          build.playerStart,
+                                                          build.stairsPosition,
                                                           resources_.depth);
     if (spawned > 0) {
         resources_.log.add("You hear movement in the dark.");
@@ -178,6 +186,7 @@ void Game::resolvePlayerTurn(bool runMonsters)
     [[maybe_unused]] const bool usedItem =
         processItemUses(registry_, resources_, map_);
     processMeleeCombat(registry_, resources_.log);
+    processPlayerTraps(registry_, resources_);
     processHunger(registry_, resources_);
     applyDamageAndCleanup(registry_, resources_, state_, &map_);
     updateVisibility(registry_, map_, resources_.player, fovProvider_);
