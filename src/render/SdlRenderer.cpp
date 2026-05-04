@@ -13,10 +13,13 @@
 #include <SDL_ttf.h>
 
 #include <array>
+#include <cstdint>
 #include <cstdlib>
+#include <functional>
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 #include "render/ConsoleBuffer.hpp"
 
@@ -31,6 +34,13 @@ namespace {
 SDL_Color toSdlColor(rl::Color color)
 {
     return SDL_Color{color.r, color.g, color.b, color.a};
+}
+
+std::uint32_t packColor(rl::Color color) noexcept
+{
+    return (std::uint32_t{color.r} << 24U) |
+           (std::uint32_t{color.g} << 16U) |
+           (std::uint32_t{color.b} << 8U) | std::uint32_t{color.a};
 }
 
 std::string sdlError(const char* prefix)
@@ -215,6 +225,29 @@ void SdlRenderer::RendererDeleter::operator()(
     }
 }
 
+void SdlRenderer::TextureDeleter::operator()(
+    SDL_Texture* texture) const noexcept
+{
+    if (texture != nullptr) {
+        SDL_DestroyTexture(texture);
+    }
+}
+
+bool SdlRenderer::GlyphCacheKey::operator==(
+    const GlyphCacheKey& other) const noexcept
+{
+    return glyph == other.glyph && foregroundRgba == other.foregroundRgba;
+}
+
+std::size_t SdlRenderer::GlyphCacheKeyHash::operator()(
+    const GlyphCacheKey& key) const noexcept
+{
+    const auto glyphHash = std::hash<char32_t>{}(key.glyph);
+    const auto colorHash = std::hash<std::uint32_t>{}(key.foregroundRgba);
+    return glyphHash ^ (colorHash + static_cast<std::size_t>(0x9E3779B9U) +
+                        (glyphHash << 6U) + (glyphHash >> 2U));
+}
+
 /**
  * **************************************************************************
  * RENDERER SETUP
@@ -380,27 +413,46 @@ void SdlRenderer::drawCell(int x, int y, const Cell& cell)
         return;
     }
 
-    const auto text = toUtf8(cell.glyph);
-    auto* rawSurface = TTF_RenderUTF8_Blended(
-        font_.get(), text.c_str(), toSdlColor(cell.foreground));
-    if (rawSurface == nullptr) {
-        return;
+    // Rendering a glyph through SDL_ttf allocates transient surface/texture
+    // resources, so we have to cache by glyph & foreground color instead 
+    // of repeating that for every visible cell on every frame
+    const GlyphCacheKey key{cell.glyph, packColor(cell.foreground)};
+    auto cachedGlyph = glyphCache_.find(key);
+    if (cachedGlyph == glyphCache_.end()) {
+        const auto text = toUtf8(cell.glyph);
+        auto* rawSurface = TTF_RenderUTF8_Blended(
+            font_.get(), text.c_str(), toSdlColor(cell.foreground));
+        if (rawSurface == nullptr) {
+            return;
+        }
+
+        std::unique_ptr<SDL_Surface, decltype(&SDL_FreeSurface)> surface{
+            rawSurface, SDL_FreeSurface};
+        std::unique_ptr<SDL_Texture, TextureDeleter> texture{
+            SDL_CreateTextureFromSurface(renderer_.get(), surface.get()),
+            TextureDeleter{}};
+        if (!texture) {
+            return;
+        }
+
+        SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND);
+
+        CachedGlyph glyph{std::move(texture), surface->w, surface->h};
+        cachedGlyph = glyphCache_.emplace(key, std::move(glyph)).first;
     }
 
-    std::unique_ptr<SDL_Surface, decltype(&SDL_FreeSurface)> surface{
-        rawSurface, SDL_FreeSurface};
-    std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> texture{
-        SDL_CreateTextureFromSurface(renderer_.get(), surface.get()),
-        SDL_DestroyTexture};
-    if (!texture) {
-        return;
-    }
-
-    SDL_Rect glyphDestination{destination.x + ((cellWidth_ - surface->w) / 2),
-                              destination.y + ((cellHeight_ - surface->h) / 2),
-                              surface->w,
-                              surface->h};
-    SDL_RenderCopy(renderer_.get(), texture.get(), nullptr, &glyphDestination);
+    SDL_Rect glyphDestination{destination.x +
+                                  ((cellWidth_ - cachedGlyph->second.width) /
+                                   2),
+                              destination.y +
+                                  ((cellHeight_ - cachedGlyph->second.height) /
+                                   2),
+                              cachedGlyph->second.width,
+                              cachedGlyph->second.height};
+    SDL_RenderCopy(renderer_.get(),
+                   cachedGlyph->second.texture.get(),
+                   nullptr,
+                   &glyphDestination);
 }
 
 } // namespace rl
