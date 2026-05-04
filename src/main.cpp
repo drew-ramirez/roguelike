@@ -7,12 +7,14 @@
 #include <limits>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <vector>
 
 #include "core/Game.hpp"
 #include "core/GameResources.hpp"
 #include "core/Rng.hpp"
+#include "debug/MapgenViewer.hpp"
 #include "ecs/Components.hpp"
 #include "fov/ShadowcastingFov.hpp"
 #include "map/Map.hpp"
@@ -80,6 +82,31 @@ std::optional<rl::Rng::Seed> parseSeedArgument(int argc, char* argv[])
     }
 
     return std::nullopt;
+}
+
+std::optional<std::string_view>
+parseStringArgument(int argc, char* argv[], std::string_view name)
+{
+    const std::string prefix = std::string{name} + "=";
+    for (int i = 1; i < argc; ++i) {
+        const std::string_view argument{argv[i]};
+        if (argument == name) {
+            if (i + 1 >= argc) {
+                throw std::invalid_argument("Missing value for " +
+                                            std::string{name});
+            }
+            return std::string_view{argv[i + 1]};
+        }
+        if (argument.starts_with(prefix)) {
+            return argument.substr(prefix.size());
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<std::string_view> parseBuilderArgument(int argc, char* argv[])
+{
+    return parseStringArgument(argc, argv, "--builder");
 }
 
 bool sameMapTiles(const rl::Map& left, const rl::Map& right)
@@ -480,6 +507,16 @@ int main(int argc, char* argv[])
     try {
         if (hasArgument(argc, argv, "--smoke")) {
             return runSmoke();
+        }
+
+        if (hasArgument(argc, argv, "--mapgen")) {
+            rl::MapgenViewerOptions options;
+            if (const auto builder = parseBuilderArgument(argc, argv)) {
+                options.builderId = std::string{*builder};
+            }
+            options.seed = parseSeedArgument(argc, argv);
+            options.showSnapshots = hasArgument(argc, argv, "--snapshots");
+            return rl::runMapgenViewer(options, std::cout);
         }
 
         rl::Game game{parseSeedArgument(argc, argv),

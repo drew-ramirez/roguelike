@@ -15,6 +15,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 set(ROGUELIKE_CORE_SOURCES
     src/core/GameLog.cpp
     src/core/Rng.cpp
+    src/debug/MapgenViewer.cpp
     src/fov/ShadowcastingFov.cpp
     src/map/Map.cpp
     src/map/MapValidation.cpp
@@ -76,6 +77,7 @@ set(ROGUELIKE_HEADERS
     src/core/Point.hpp
     src/core/Rng.hpp
     src/core/RunState.hpp
+    src/debug/MapgenViewer.hpp
     src/ecs/Components.hpp
     src/fov/IFovProvider.hpp
     src/fov/ShadowcastingFov.hpp
