@@ -40,6 +40,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/systems/VisibilitySystem.cpp
     src/ui/Hud.cpp
     src/ui/InventoryMenu.cpp
+    src/ui/MainMenu.cpp
     src/ui/Targeting.cpp
     src/ui/Widgets.cpp
 )
@@ -106,6 +107,7 @@ set(ROGUELIKE_HEADERS
     src/systems/VisibilitySystem.hpp
     src/ui/Hud.hpp
     src/ui/InventoryMenu.hpp
+    src/ui/MainMenu.hpp
     src/ui/MenuResult.hpp
     src/ui/Targeting.hpp
     src/ui/Widgets.hpp

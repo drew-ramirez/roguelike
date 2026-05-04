@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <exception>
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -33,26 +34,33 @@
 #include "systems/VisibilitySystem.hpp"
 #include "ui/Hud.hpp"
 #include "ui/InventoryMenu.hpp"
+#include "ui/MainMenu.hpp"
 #include "ui/Targeting.hpp"
 
 namespace rl {
 
 Game::Game(std::optional<Rng::Seed> seed, bool loadExisting)
-    : renderer_(
-          std::make_unique<SdlRenderer>(console_.width(), console_.height()))
+    : initialSeed_(seed), renderer_(std::make_unique<SdlRenderer>(
+                              console_.width(), console_.height()))
 {
     if (loadExisting &&
         loadGame(defaultSavePath(), registry_, resources_, map_)) {
         resources_.log.add("Loaded saved game.");
         updateVisibility(registry_, map_, resources_.player, fovProvider_);
+        state_ = RunState::AwaitingInput;
         return;
     }
 
-    startNewGame(seed);
+    if (loadExisting) {
+        startNewGame(seed);
+    }
 }
 
 void Game::startNewGame(std::optional<Rng::Seed> seed)
 {
+    registry_ = entt::registry{};
+    resources_ = GameResources{};
+    map_ = Map{80, 43, TileType::Wall};
     resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
     std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
 
@@ -75,6 +83,7 @@ void Game::startNewGame(std::optional<Rng::Seed> seed)
         resources_.log.add("You hear movement in the dark.");
     }
     updateVisibility(registry_, map_, resources_.player, fovProvider_);
+    state_ = RunState::AwaitingInput;
 }
 
 void Game::run()
@@ -97,7 +106,25 @@ void Game::tick(const std::vector<InputEvent>& events)
         }
     }
 
-    if (state_ == RunState::GameOver) {
+    if (state_ == RunState::MainMenu || state_ == RunState::GameOver) {
+        const bool loadAvailable = std::filesystem::exists(defaultSavePath());
+        const MainMenuMode mode = state_ == RunState::MainMenu
+                                      ? MainMenuMode::Title
+                                      : MainMenuMode::GameOver;
+        const auto action =
+            handleMainMenuInput(events, loadAvailable, mode, menuSelection_);
+        if (action == MainMenuAction::NewGame) {
+            startNewGame(initialSeed_);
+        } else if (action == MainMenuAction::LoadGame && loadAvailable) {
+            if (loadGame(defaultSavePath(), registry_, resources_, map_)) {
+                resources_.log.add("Loaded saved game.");
+                updateVisibility(
+                    registry_, map_, resources_.player, fovProvider_);
+                state_ = RunState::AwaitingInput;
+            }
+        } else if (action == MainMenuAction::Quit) {
+            running_ = false;
+        }
         render();
         return;
     }
@@ -172,6 +199,16 @@ void Game::resolvePlayerTurn(bool runMonsters)
 void Game::render()
 {
     console_.clear();
+    if (state_ == RunState::MainMenu || state_ == RunState::GameOver) {
+        drawMainMenu(console_,
+                     std::filesystem::exists(defaultSavePath()),
+                     state_ == RunState::MainMenu ? MainMenuMode::Title
+                                                  : MainMenuMode::GameOver,
+                     menuSelection_,
+                     "assets/title.txt");
+        return;
+    }
+
     renderMap(map_, console_);
     renderEntities(registry_, map_, console_);
     if (state_ == RunState::ShowTargeting) {
