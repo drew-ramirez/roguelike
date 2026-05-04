@@ -13,6 +13,8 @@
 #include "map/Map.hpp"
 #include "map/MapValidation.hpp"
 #include "map/TileType.hpp"
+#include "map/generators/BspDungeonBuilder.hpp"
+#include "map/generators/BspInteriorBuilder.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
 
 namespace rl {
@@ -62,7 +64,7 @@ void printValidation(std::ostream& output,
 
 std::vector<std::string> availableMapBuilders()
 {
-    return {"simple"};
+    return {"simple", "bsp", "bsp-interior"};
 }
 
 bool isKnownMapBuilder(std::string_view builderId)
@@ -84,7 +86,12 @@ MapBuildResult buildMapById(std::string_view builderId,
     if (builderId == "simple") {
         return SimpleMapBuilder::build(width, height, rng, options);
     }
-
+    if (builderId == "bsp") {
+        return BspDungeonBuilder::build(width, height, rng, options);
+    }
+    if (builderId == "bsp-interior") {
+        return BspInteriorBuilder::build(width, height, rng, options);
+    }
     throw std::invalid_argument("Unknown map builder");
 }
 

@@ -19,6 +19,8 @@ set(ROGUELIKE_CORE_SOURCES
     src/fov/ShadowcastingFov.cpp
     src/map/Map.cpp
     src/map/MapValidation.cpp
+    src/map/generators/BspDungeonBuilder.cpp
+    src/map/generators/BspInteriorBuilder.cpp
     src/map/generators/SimpleMapBuilder.cpp
     src/render/ConsoleBuffer.cpp
     src/render/WallGlyph.cpp
@@ -82,6 +84,8 @@ set(ROGUELIKE_HEADERS
     src/fov/IFovProvider.hpp
     src/fov/ShadowcastingFov.hpp
     src/input/InputEvent.hpp
+    src/map/generators/BspDungeonBuilder.hpp
+    src/map/generators/BspInteriorBuilder.hpp
     src/map/generators/SimpleMapBuilder.hpp
     src/map/Map.hpp
     src/map/MapBuilder.hpp

@@ -19,6 +19,8 @@
 #include "fov/ShadowcastingFov.hpp"
 #include "map/Map.hpp"
 #include "map/Rect.hpp"
+#include "map/generators/BspDungeonBuilder.hpp"
+#include "map/generators/BspInteriorBuilder.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "spawn/MonsterSpawner.hpp"
@@ -229,6 +231,21 @@ bool smokeGeneratedMap()
         return false;
     }
     return allWalkableTilesReachable(first.map, first.playerStart);
+}
+
+bool smokeBspGeneratedMaps()
+{
+    rl::Rng bspRng{222U};
+    auto bsp = rl::BspDungeonBuilder::build(40, 25, bspRng);
+    if (!allWalkableTilesReachable(bsp.map, bsp.playerStart) ||
+        bsp.builderName != "bsp") {
+        return false;
+    }
+
+    rl::Rng interiorRng{333U};
+    auto interior = rl::BspInteriorBuilder::build(40, 25, interiorRng);
+    return allWalkableTilesReachable(interior.map, interior.playerStart) &&
+           interior.builderName == "bsp-interior";
 }
 
 bool smokeVisibility()
@@ -471,6 +488,9 @@ int runSmoke()
         return 1;
     }
     if (!smokeGeneratedMap()) {
+        return 1;
+    }
+    if (!smokeBspGeneratedMaps()) {
         return 1;
     }
     if (!smokeVisibility()) {
