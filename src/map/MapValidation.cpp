@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "map/Map.hpp"
+#include "map/MapAlgorithms.hpp"
 
 namespace rl {
 namespace {
@@ -20,7 +21,7 @@ namespace {
     int count = 0;
     for (int y = 0; y < map.height(); ++y) {
         for (int x = 0; x < map.width(); ++x) {
-            if (map.isWalkable(x, y)) {
+            if (isConnectivityPassable(map, Point{x, y})) {
                 ++count;
             }
         }
@@ -30,7 +31,7 @@ namespace {
 
 [[nodiscard]] int countReachableTiles(const Map& map, Point start)
 {
-    if (!map.isWalkable(start.x, start.y)) {
+    if (!isConnectivityPassable(map, start)) {
         return 0;
     }
 
@@ -54,7 +55,7 @@ namespace {
 
         for (const Point delta : neighbors) {
             const Point next{current.x + delta.x, current.y + delta.y};
-            if (!map.isWalkable(next.x, next.y)) {
+            if (!isConnectivityPassable(map, next)) {
                 continue;
             }
 
@@ -77,11 +78,12 @@ MapValidationResult validateMapBuild(const Map& map, Point start, Point stairs)
     MapValidationResult result;
     result.walkableTiles = countWalkableTiles(map);
 
-    if (!map.inBounds(start.x, start.y) || !map.isWalkable(start.x, start.y)) {
+    if (!map.inBounds(start.x, start.y) ||
+        !isConnectivityPassable(map, start)) {
         result.errors.push_back("start is not walkable");
     }
     if (!map.inBounds(stairs.x, stairs.y) ||
-        !map.isWalkable(stairs.x, stairs.y)) {
+        !isConnectivityPassable(map, stairs)) {
         result.errors.push_back("stairs are not walkable");
     }
 
