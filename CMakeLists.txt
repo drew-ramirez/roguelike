@@ -19,10 +19,13 @@ set(ROGUELIKE_CORE_SOURCES
     src/fov/ShadowcastingFov.cpp
     src/map/Map.cpp
     src/map/MapAlgorithms.cpp
+    src/map/MapBrush.cpp
     src/map/MapValidation.cpp
     src/map/generators/BspDungeonBuilder.cpp
     src/map/generators/BspInteriorBuilder.cpp
     src/map/generators/SimpleMapBuilder.cpp
+    src/map/corridors/CorridorBuilder.cpp
+    src/map/rooms/RoomCarver.cpp
     src/render/ConsoleBuffer.cpp
     src/render/WallGlyph.cpp
     src/save/SaveGame.cpp
@@ -90,9 +93,12 @@ set(ROGUELIKE_HEADERS
     src/map/generators/BspDungeonBuilder.hpp
     src/map/generators/BspInteriorBuilder.hpp
     src/map/generators/SimpleMapBuilder.hpp
+    src/map/corridors/CorridorBuilder.hpp
+    src/map/rooms/RoomCarver.hpp
     src/map/Map.hpp
     src/map/MapBuilder.hpp
     src/map/MapAlgorithms.hpp
+    src/map/MapBrush.hpp
     src/map/MapBuilderTypes.hpp
     src/map/MapValidation.hpp
     src/map/Rect.hpp

@@ -8,14 +8,16 @@
 #include "map/generators/SimpleMapBuilder.hpp"
 
 #include <algorithm>
-#include <array>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "map/Map.hpp"
+#include "map/MapAlgorithms.hpp"
+#include "map/MapValidation.hpp"
 #include "map/TileType.hpp"
+#include "map/corridors/CorridorBuilder.hpp"
+#include "map/rooms/RoomCarver.hpp"
 
 namespace rl {
 namespace {
@@ -26,119 +28,6 @@ constexpr int maxRooms = 30;
 constexpr int minRoomSize = 6;
 constexpr int maxRoomSize = 10;
 constexpr int minAcceptedRooms = 2;
-constexpr int minFloorTiles = 20;
-
-/**
- * **************************************************************************
- * MAP CARVING
- * **************************************************************************
- */
-
-void carveRoom(Map& map, const Rect& room)
-{
-    for (int y = room.y1; y < room.y2; ++y) {
-        for (int x = room.x1; x < room.x2; ++x) {
-            map.setTile(x, y, TileType::Floor);
-        }
-    }
-}
-
-void carveHorizontalTunnel(Map& map, int x1, int x2, int y)
-{
-    const auto [from, to] = std::minmax(x1, x2);
-    for (int x = from; x <= to; ++x) {
-        map.setTile(x, y, TileType::Floor);
-    }
-}
-
-void carveVerticalTunnel(Map& map, int y1, int y2, int x)
-{
-    const auto [from, to] = std::minmax(y1, y2);
-    for (int y = from; y <= to; ++y) {
-        map.setTile(x, y, TileType::Floor);
-    }
-}
-
-/**
- * **************************************************************************
- * REACHABILITY CHECKS
- * **************************************************************************
- */
-
-int countWalkableTiles(const Map& map)
-{
-    int count = 0;
-    for (int y = 0; y < map.height(); ++y) {
-        for (int x = 0; x < map.width(); ++x) {
-            if (map.isWalkable(x, y)) {
-                ++count;
-            }
-        }
-    }
-    return count;
-}
-
-bool allWalkableTilesReachable(const Map& map, Point start)
-{
-    if (!map.isWalkable(start.x, start.y)) {
-        return false;
-    }
-
-    const int totalWalkable = countWalkableTiles(map);
-    int reached = 0;
-    std::vector<bool> visited(
-        static_cast<std::size_t>(map.width() * map.height()), false);
-    std::vector<Point> frontier{start};
-    visited[static_cast<std::size_t>(map.xyIdx(start.x, start.y))] = true;
-
-    constexpr std::array<Point, 4> neighbors{
-        Point{1, 0},
-        Point{-1, 0},
-        Point{0, 1},
-        Point{0, -1},
-    };
-
-    while (!frontier.empty()) {
-        const Point current = frontier.back();
-        frontier.pop_back();
-        ++reached;
-
-        for (const Point delta : neighbors) {
-            const Point next{current.x + delta.x, current.y + delta.y};
-            if (!map.isWalkable(next.x, next.y)) {
-                continue;
-            }
-
-            const auto index =
-                static_cast<std::size_t>(map.xyIdx(next.x, next.y));
-            if (!visited[index]) {
-                visited[index] = true;
-                frontier.push_back(next);
-            }
-        }
-    }
-
-    return reached == totalWalkable;
-}
-
-/**
- * **************************************************************************
- * ROOM LINKING
- * **************************************************************************
- */
-
-void connectRooms(Map& map, Point previous, Point next, Rng& rng)
-{
-    // Connect rooms in placement order so accepted rooms form one chain
-    if (rng.coinFlip()) {
-        carveHorizontalTunnel(map, previous.x, next.x, previous.y);
-        carveVerticalTunnel(map, previous.y, next.y, next.x);
-        return;
-    }
-
-    carveVerticalTunnel(map, previous.y, next.y, previous.x);
-    carveHorizontalTunnel(map, previous.x, next.x, next.y);
-}
 
 bool intersectsAnyRoom(const Rect& candidate, const std::vector<Rect>& rooms)
 {
@@ -148,57 +37,17 @@ bool intersectsAnyRoom(const Rect& candidate, const std::vector<Rect>& rooms)
         });
 }
 
-[[nodiscard]] SpawnRegion roomSpawnRegion(const Rect& room)
+[[nodiscard]] SpawnRegion roomSpawnRegion(std::vector<Point> tiles)
 {
-    SpawnRegion region;
-    region.kind = SpawnRegionKind::Room;
-    for (int y = room.y1; y < room.y2; ++y) {
-        for (int x = room.x1; x < room.x2; ++x) {
-            region.tiles.push_back(Point{x, y});
-        }
-    }
-    return region;
+    return spawnRegionFromTiles(std::move(tiles), SpawnRegionKind::Room);
 }
 
-void recordSnapshot(std::vector<MapSnapshot>& snapshots,
-                    const Map& map,
-                    std::string label,
-                    bool enabled)
+[[nodiscard]] SpawnRegion corridorSpawnRegion(const CorridorPath& path)
 {
-    if (enabled) {
-        snapshots.push_back(MapSnapshot{std::move(label), map});
-    }
-}
-
-void validateGeneratedMap(const Map& map,
-                          Point playerStart,
-                          const std::vector<Rect>& rooms)
-{
-    // Fail early when generation breaks the playable-map assumptions
-    if (static_cast<int>(rooms.size()) < minAcceptedRooms) {
-        throw std::runtime_error("Map generation failed to place enough rooms");
-    }
-    if (countWalkableTiles(map) < minFloorTiles) {
-        throw std::runtime_error(
-            "Map generation failed to carve enough floor tiles");
-    }
-    if (!map.isWalkable(playerStart.x, playerStart.y)) {
-        throw std::runtime_error(
-            "Map generation placed the player start in a wall");
-    }
-    if (!allWalkableTilesReachable(map, playerStart)) {
-        throw std::runtime_error(
-            "Map generation produced isolated floor tiles");
-    }
+    return spawnRegionFromTiles(path.tiles, SpawnRegionKind::Corridor);
 }
 
 } // namespace
-
-/**
- * **************************************************************************
- * BUILD ENTRYPOINT
- * **************************************************************************
- */
 
 MapBuildResult SimpleMapBuilder::build(int width,
                                        int height,
@@ -210,11 +59,10 @@ MapBuildResult SimpleMapBuilder::build(int width,
             "SimpleMapBuilder requires at least a 20x15 map");
     }
 
-    Map map{width, height, TileType::Wall};
-    std::vector<Rect> rooms;
-    std::vector<SpawnRegion> spawnRegions;
-    std::vector<MapSnapshot> snapshots;
-    rooms.reserve(maxRooms);
+    MapBuildResult result{Map{width, height, TileType::Wall}, {}, {}};
+    result.builderName = "simple";
+    result.rooms.reserve(maxRooms);
+    addBuildStep(result, "base: mixed rooms");
 
     for (int attempt = 0; attempt < maxRooms; ++attempt) {
         const int roomWidth = rng.rangeInclusive(minRoomSize, maxRoomSize);
@@ -223,39 +71,66 @@ MapBuildResult SimpleMapBuilder::build(int width,
         const int y = rng.rangeInclusive(1, height - roomHeight - 1);
         const Rect room{x, y, x + roomWidth, y + roomHeight};
 
-        if (intersectsAnyRoom(room, rooms)) {
+        if (intersectsAnyRoom(room, result.rooms)) {
             continue;
         }
 
-        carveRoom(map, room);
-        if (!rooms.empty()) {
-            connectRooms(map, rooms.back().center(), room.center(), rng);
-            recordSnapshot(snapshots,
-                           map,
-                           "connected room " + std::to_string(rooms.size() + 1),
+        const RoomShape shape =
+            chooseRoomShape(room, rng.rangeInclusive(0, 99));
+        auto carvedTiles = carveRoomShape(result.map, room, shape);
+        if (!result.rooms.empty()) {
+            const CorridorStrategy strategy =
+                chooseCorridorStrategy(rng.rangeInclusive(0, 99));
+            auto path = carveCorridor(result.map,
+                                      result.rooms.back().center(),
+                                      room.center(),
+                                      rng,
+                                      strategy);
+            result.spawnRegions.push_back(corridorSpawnRegion(path));
+            result.corridorPaths.push_back(std::move(path));
+            recordSnapshot(result.snapshots,
+                           result.map,
+                           "connected room " +
+                               std::to_string(result.rooms.size() + 1),
                            options.recordSnapshots);
         }
-        spawnRegions.push_back(roomSpawnRegion(room));
-        rooms.push_back(room);
-        recordSnapshot(snapshots,
-                       map,
-                       "carved room " + std::to_string(rooms.size()),
+
+        result.spawnRegions.push_back(roomSpawnRegion(std::move(carvedTiles)));
+        result.rooms.push_back(room);
+        recordSnapshot(result.snapshots,
+                       result.map,
+                       "carved room " + std::to_string(result.rooms.size()),
                        options.recordSnapshots);
     }
 
-    const Point playerStart = rooms.empty() ? Point{} : rooms.front().center();
-    validateGeneratedMap(map, playerStart, rooms);
-    const Point stairsPosition =
-        rooms.empty() ? Point{} : rooms.back().center();
-    map.setTile(stairsPosition.x, stairsPosition.y, TileType::DownStairs);
-    recordSnapshot(snapshots, map, "placed stairs", options.recordSnapshots);
-    return MapBuildResult{std::move(map),
-                          playerStart,
-                          stairsPosition,
-                          std::move(rooms),
-                          std::move(spawnRegions),
-                          std::move(snapshots),
-                          "simple"};
+    if (static_cast<int>(result.rooms.size()) < minAcceptedRooms) {
+        throw std::runtime_error("Map generation failed to place enough rooms");
+    }
+
+    result.playerStart = result.rooms.front().center();
+    if (!result.map.isWalkable(result.playerStart.x, result.playerStart.y)) {
+        const auto closest =
+            closestReachableFloorTo(result.map, result.playerStart);
+        if (!closest.has_value()) {
+            throw std::runtime_error(
+                "Map generation placed the player start in a wall");
+        }
+        result.playerStart = *closest;
+    }
+
+
+    setDistantStairs(result.map, result.playerStart, result.stairsPosition);
+    recordSnapshot(
+        result.snapshots, result.map, "placed stairs", options.recordSnapshots);
+    addBuildStep(result, "modifier: distant exit");
+
+    const auto validation =
+        validateMapBuild(result.map, result.playerStart, result.stairsPosition);
+    if (!validation.valid) {
+        throw std::runtime_error("Simple generation produced an invalid map");
+    }
+
+    return result;
 }
 
 } // namespace rl
