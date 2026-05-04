@@ -68,11 +68,6 @@ using EntityId = std::uint32_t;
     return EquipmentSlot::Weapon;
 }
 
-[[nodiscard]] Json colorToJson(Color color)
-{
-    return Json{{"r", color.r}, {"g", color.g}, {"b", color.b}, {"a", color.a}};
-}
-
 [[nodiscard]] std::string hungerStateToString(HungerState state)
 {
     switch (state) {
@@ -100,6 +95,11 @@ using EntityId = std::uint32_t;
         return HungerState::Starving;
     }
     return HungerState::Normal;
+}
+
+[[nodiscard]] Json colorToJson(Color color)
+{
+    return Json{{"r", color.r}, {"g", color.g}, {"b", color.b}, {"a", color.a}};
 }
 
 [[nodiscard]] Color colorFromJson(const Json& json)

@@ -8,6 +8,8 @@ void runDescentAndSpawnTests(TestRunner& runner);
 void runEquipmentTests(TestRunner& runner);
 void runInputTests(TestRunner& runner);
 void runInventoryTests(TestRunner& runner);
+void runMapgenTests(TestRunner& runner);
+void runPolishPressureTests(TestRunner& runner);
 void runSaveLoadTests(TestRunner& runner);
 void runTargetingTests(TestRunner& runner);
 
