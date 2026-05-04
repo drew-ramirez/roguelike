@@ -15,28 +15,38 @@ find_package(nlohmann_json CONFIG REQUIRED)
 set(ROGUELIKE_CORE_SOURCES
     src/core/GameLog.cpp
     src/core/Rng.cpp
+    src/debug/MapgenViewer.cpp
     src/fov/ShadowcastingFov.cpp
     src/map/Map.cpp
+    src/map/MapValidation.cpp
+    src/map/generators/BspDungeonBuilder.cpp
+    src/map/generators/BspInteriorBuilder.cpp
     src/map/generators/SimpleMapBuilder.cpp
     src/render/ConsoleBuffer.cpp
+    src/render/WallGlyph.cpp
     src/save/SaveGame.cpp
     src/spawn/ItemSpawner.cpp
     src/spawn/MonsterSpawner.cpp
     src/spawn/SpawnTable.cpp
     src/spawn/Spawner.cpp
+    src/spawn/TrapSpawner.cpp
     src/systems/DamageSystem.cpp
     src/systems/EquipmentSystem.cpp
+    src/systems/HungerSystem.cpp
     src/systems/InputSystem.cpp
     src/systems/ItemSystem.cpp
     src/systems/MapRenderSystem.cpp
     src/systems/MapTransitionSystem.cpp
     src/systems/MeleeCombatSystem.cpp
     src/systems/MonsterAI.cpp
+    src/systems/ParticleSystem.cpp
     src/systems/RenderSystem.cpp
     src/systems/SpatialIndexSystem.cpp
+    src/systems/TrapSystem.cpp
     src/systems/VisibilitySystem.cpp
     src/ui/Hud.cpp
     src/ui/InventoryMenu.cpp
+    src/ui/MainMenu.cpp
     src/ui/Targeting.cpp
     src/ui/Widgets.cpp
 )
@@ -53,6 +63,8 @@ set(ROGUELIKE_TEST_SOURCES
     tests/equipment_tests.cpp
     tests/input_tests.cpp
     tests/inventory_tests.cpp
+    tests/mapgen_tests.cpp
+    tests/polish_pressure_tests.cpp
     tests/save_load_tests.cpp
     tests/targeting_tests.cpp
 )
@@ -69,37 +81,48 @@ set(ROGUELIKE_HEADERS
     src/core/Point.hpp
     src/core/Rng.hpp
     src/core/RunState.hpp
+    src/debug/MapgenViewer.hpp
     src/ecs/Components.hpp
     src/fov/IFovProvider.hpp
     src/fov/ShadowcastingFov.hpp
     src/input/InputEvent.hpp
+    src/map/generators/BspDungeonBuilder.hpp
+    src/map/generators/BspInteriorBuilder.hpp
     src/map/generators/SimpleMapBuilder.hpp
     src/map/Map.hpp
+    src/map/MapBuilder.hpp
     src/map/MapBuilderTypes.hpp
+    src/map/MapValidation.hpp
     src/map/Rect.hpp
     src/map/TileType.hpp
     src/render/Color.hpp
     src/render/ConsoleBuffer.hpp
     src/render/IRenderer.hpp
     src/render/SdlRenderer.hpp
+    src/render/WallGlyph.hpp
     src/save/SaveGame.hpp
     src/spawn/ItemSpawner.hpp
     src/spawn/MonsterSpawner.hpp
     src/spawn/SpawnTable.hpp
     src/spawn/Spawner.hpp
+    src/spawn/TrapSpawner.hpp
     src/systems/DamageSystem.hpp
     src/systems/EquipmentSystem.hpp
+    src/systems/HungerSystem.hpp
     src/systems/InputSystem.hpp
     src/systems/ItemSystem.hpp
     src/systems/MapRenderSystem.hpp
     src/systems/MapTransitionSystem.hpp
     src/systems/MeleeCombatSystem.hpp
     src/systems/MonsterAI.hpp
+    src/systems/ParticleSystem.hpp
     src/systems/RenderSystem.hpp
     src/systems/SpatialIndexSystem.hpp
+    src/systems/TrapSystem.hpp
     src/systems/VisibilitySystem.hpp
     src/ui/Hud.hpp
     src/ui/InventoryMenu.hpp
+    src/ui/MainMenu.hpp
     src/ui/MenuResult.hpp
     src/ui/Targeting.hpp
     src/ui/Widgets.hpp

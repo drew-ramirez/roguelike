@@ -17,7 +17,8 @@ Map::Map(int width, int height, TileType fill)
       tiles_(width > 0 && height > 0 ? static_cast<std::size_t>(width * height)
                                      : 0U,
              fill),
-      visibleTiles_(tiles_.size(), false), revealedTiles_(tiles_.size(), false)
+      bloodstains_(tiles_.size(), false), visibleTiles_(tiles_.size(), false),
+      revealedTiles_(tiles_.size(), false)
 {
     if (width <= 0 || height <= 0) {
         throw std::invalid_argument("Map dimensions must be positive");
@@ -120,14 +121,37 @@ bool Map::isRevealed(int x, int y) const
     return revealedTiles_[static_cast<std::size_t>(xyIdx(x, y))];
 }
 
+bool Map::hasBloodstain(int x, int y) const
+{
+    if (!inBounds(x, y)) {
+        return false;
+    }
+
+    return bloodstains_[static_cast<std::size_t>(xyIdx(x, y))];
+}
+
 void Map::setTile(int x, int y, TileType tile)
 {
     tiles_[static_cast<std::size_t>(xyIdx(x, y))] = tile;
 }
 
+void Map::setBloodstain(int x, int y, bool bloodstained)
+{
+    if (!inBounds(x, y)) {
+        return;
+    }
+
+    bloodstains_[static_cast<std::size_t>(xyIdx(x, y))] = bloodstained;
+}
+
 void Map::clearVisible()
 {
     std::fill(visibleTiles_.begin(), visibleTiles_.end(), false);
+}
+
+void Map::revealAll()
+{
+    std::fill(revealedTiles_.begin(), revealedTiles_.end(), true);
 }
 
 void Map::setVisible(int x, int y, bool visible)

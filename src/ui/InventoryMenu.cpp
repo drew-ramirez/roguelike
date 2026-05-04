@@ -49,7 +49,7 @@ void drawBox(ConsoleBuffer& console)
 
 InventoryInputResult handleInventoryInput(entt::registry& registry,
                                           GameResources& resources,
-                                          const Map& map,
+                                          Map& map,
                                           const std::vector<InputEvent>& events)
 {
     auto items = inventoryItems(registry, resources.player);

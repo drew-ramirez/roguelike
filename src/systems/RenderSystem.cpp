@@ -33,6 +33,10 @@ void renderEntityView(const entt::registry& registry,
 
     const auto view = registry.view<const Position, const Renderable>();
     for (const auto entity : view) {
+        if (registry.all_of<Hidden>(entity)) {
+            continue;
+        }
+
         const auto& position = view.get<const Position>(entity);
         if (map != nullptr && !map->isVisible(position.x, position.y)) {
             continue;

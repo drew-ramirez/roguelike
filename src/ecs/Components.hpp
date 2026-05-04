@@ -57,6 +57,12 @@ struct SufferDamage {
     int amount = 0;
 };
 
+struct Particle {};
+
+struct ParticleLifetime {
+    int remainingFrames = 0;
+};
+
 struct SaveEntityId {
     std::uint32_t value = 0;
 };
@@ -66,6 +72,19 @@ struct Consumable {};
 struct ProvidesHealing {
     int amount = 0;
 };
+
+enum class HungerState { WellFed, Normal, Hungry, Starving };
+
+struct HungerClock {
+    HungerState state = HungerState::Normal;
+    int duration = 600;
+};
+
+struct ProvidesNutrition {
+    int amount = 300;
+};
+
+struct MagicMapper {};
 
 struct Ranged {
     int range = 0;
@@ -114,5 +133,12 @@ struct WantsToUseItem {
 struct WantsToDropItem {
     entt::entity item = entt::null;
 };
+
+struct Trap {
+    int damage = 3;
+    bool triggered = false;
+};
+
+struct Hidden {};
 
 } // namespace rl

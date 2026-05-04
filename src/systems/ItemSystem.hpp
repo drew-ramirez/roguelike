@@ -37,13 +37,12 @@ void processPickupItems(entt::registry& registry, GameResources& resources);
 
 [[nodiscard]] bool useInventoryItem(entt::registry& registry,
                                     GameResources& resources,
-                                    const Map& map,
+                                    Map& map,
                                     entt::entity owner,
                                     entt::entity item);
 
-[[nodiscard]] bool processItemUses(entt::registry& registry,
-                                   GameResources& resources,
-                                   const Map& map);
+[[nodiscard]] bool
+processItemUses(entt::registry& registry, GameResources& resources, Map& map);
 
 [[nodiscard]] bool isValidTarget(const entt::registry& registry,
                                  const GameResources& resources,

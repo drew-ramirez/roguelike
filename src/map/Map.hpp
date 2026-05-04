@@ -30,9 +30,12 @@ class Map {
     [[nodiscard]] bool isWalkable(int x, int y) const;
     [[nodiscard]] bool isVisible(int x, int y) const;
     [[nodiscard]] bool isRevealed(int x, int y) const;
+    [[nodiscard]] bool hasBloodstain(int x, int y) const;
 
     void setTile(int x, int y, TileType tile);
+    void setBloodstain(int x, int y, bool bloodstained = true);
     void clearVisible();
+    void revealAll();
     void setVisible(int x, int y, bool visible = true);
     void setRevealed(int x, int y, bool revealed = true);
 
@@ -40,6 +43,7 @@ class Map {
     int width_ = 0;
     int height_ = 0;
     std::vector<TileType> tiles_;
+    std::vector<bool> bloodstains_;
     std::vector<bool> visibleTiles_;
     std::vector<bool> revealedTiles_;
 };

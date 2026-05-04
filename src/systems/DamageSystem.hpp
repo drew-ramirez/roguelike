@@ -14,11 +14,13 @@
 namespace rl {
 
 struct GameResources;
+class Map;
 
 void queueDamage(entt::registry& registry, entt::entity target, int amount);
 
 void applyDamageAndCleanup(entt::registry& registry,
                            GameResources& resources,
-                           RunState& state);
+                           RunState& state,
+                           Map* map = nullptr);
 
 } // namespace rl

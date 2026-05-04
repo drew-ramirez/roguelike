@@ -13,6 +13,8 @@
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
+#include "map/Map.hpp"
+#include "systems/ParticleSystem.hpp"
 
 namespace rl {
 namespace {
@@ -23,6 +25,31 @@ std::string entityName(const entt::registry& registry, entt::entity entity)
         return registry.get<Name>(entity).value;
     }
     return "Something";
+}
+
+void markBlood(Map* map, const entt::registry& registry, entt::entity entity)
+{
+    if (map == nullptr || !registry.valid(entity) ||
+        !registry.all_of<Position>(entity)) {
+        return;
+    }
+
+    const auto& position = registry.get<Position>(entity);
+    if (map->isWalkable(position.x, position.y)) {
+        map->setBloodstain(position.x, position.y);
+    }
+}
+
+void requestDamageAt(GameResources& resources,
+                     const entt::registry& registry,
+                     entt::entity entity)
+{
+    if (!registry.valid(entity) || !registry.all_of<Position>(entity)) {
+        return;
+    }
+
+    const auto& position = registry.get<Position>(entity);
+    requestDamageParticle(resources, Point{position.x, position.y});
 }
 
 } // namespace
@@ -45,13 +72,16 @@ void queueDamage(entt::registry& registry, entt::entity target, int amount)
 
 void applyDamageAndCleanup(entt::registry& registry,
                            GameResources& resources,
-                           RunState& state)
+                           RunState& state,
+                           Map* map)
 {
     std::vector<entt::entity> dead;
     const auto view = registry.view<CombatStats, const SufferDamage>();
     for (const auto entity : view) {
         auto& stats = view.get<CombatStats>(entity);
         const auto& damage = view.get<const SufferDamage>(entity);
+        markBlood(map, registry, entity);
+        requestDamageAt(resources, registry, entity);
         stats.hp = std::max(0, stats.hp - damage.amount);
 
         if (stats.hp <= 0) {
@@ -73,6 +103,7 @@ void applyDamageAndCleanup(entt::registry& registry,
             continue;
         }
 
+        markBlood(map, registry, entity);
         resources.log.add(entityName(registry, entity) + " dies.");
         registry.destroy(entity);
     }

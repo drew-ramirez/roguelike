@@ -68,6 +68,35 @@ using EntityId = std::uint32_t;
     return EquipmentSlot::Weapon;
 }
 
+[[nodiscard]] std::string hungerStateToString(HungerState state)
+{
+    switch (state) {
+    case HungerState::WellFed:
+        return "well_fed";
+    case HungerState::Normal:
+        return "normal";
+    case HungerState::Hungry:
+        return "hungry";
+    case HungerState::Starving:
+        return "starving";
+    }
+    return "normal";
+}
+
+[[nodiscard]] HungerState hungerStateFromString(const std::string& value)
+{
+    if (value == "well_fed") {
+        return HungerState::WellFed;
+    }
+    if (value == "hungry") {
+        return HungerState::Hungry;
+    }
+    if (value == "starving") {
+        return HungerState::Starving;
+    }
+    return HungerState::Normal;
+}
+
 [[nodiscard]] Json colorToJson(Color color)
 {
     return Json{{"r", color.r}, {"g", color.g}, {"b", color.b}, {"a", color.a}};
@@ -113,16 +142,19 @@ void ensureSaveIds(entt::registry& registry)
 {
     Json tiles = Json::array();
     Json revealed = Json::array();
+    Json blood = Json::array();
     for (int y = 0; y < map.height(); ++y) {
         for (int x = 0; x < map.width(); ++x) {
             tiles.push_back(tileToString(map.tileAt(x, y)));
             revealed.push_back(map.isRevealed(x, y));
+            blood.push_back(map.hasBloodstain(x, y));
         }
     }
 
     return Json{{"width", map.width()},
                 {"height", map.height()},
                 {"tiles", std::move(tiles)},
+                {"blood", std::move(blood)},
                 {"revealed", std::move(revealed)}};
 }
 
@@ -137,10 +169,14 @@ void ensureSaveIds(entt::registry& registry)
 
     const auto& tiles = json.at("tiles");
     const auto& revealed = json.at("revealed");
+    const auto blood = json.value("blood", Json::array());
     const auto expected = static_cast<std::size_t>(width * height);
     if (!tiles.is_array() || tiles.size() != expected || !revealed.is_array() ||
         revealed.size() != expected) {
         throw std::runtime_error("Invalid saved map tile data");
+    }
+    if (!blood.empty() && (!blood.is_array() || blood.size() != expected)) {
+        throw std::runtime_error("Invalid saved map blood data");
     }
 
     Map map{width, height, TileType::Wall};
@@ -150,6 +186,9 @@ void ensureSaveIds(entt::registry& registry)
             map.setTile(
                 x, y, tileFromString(tiles.at(index).get<std::string>()));
             map.setRevealed(x, y, revealed.at(index).get<bool>());
+            if (!blood.empty()) {
+                map.setBloodstain(x, y, blood.at(index).get<bool>());
+            }
         }
     }
     return map;
@@ -247,6 +286,19 @@ void loadResources(const Json& json,
         components["provides_healing"] =
             registry.get<ProvidesHealing>(entity).amount;
     }
+    if (registry.all_of<HungerClock>(entity)) {
+        const auto& component = registry.get<HungerClock>(entity);
+        components["hunger_clock"] =
+            Json{{"state", hungerStateToString(component.state)},
+                 {"duration", component.duration}};
+    }
+    if (registry.all_of<ProvidesNutrition>(entity)) {
+        components["provides_nutrition"] =
+            registry.get<ProvidesNutrition>(entity).amount;
+    }
+    if (registry.all_of<MagicMapper>(entity)) {
+        components["magic_mapper"] = true;
+    }
     if (registry.all_of<Ranged>(entity)) {
         components["ranged"] = registry.get<Ranged>(entity).range;
     }
@@ -278,6 +330,14 @@ void loadResources(const Json& json,
         components["equipped"] =
             Json{{"owner", entityId(registry, component.owner)},
                  {"slot", slotToString(component.slot)}};
+    }
+    if (registry.all_of<Trap>(entity)) {
+        const auto& component = registry.get<Trap>(entity);
+        components["trap"] = Json{{"damage", component.damage},
+                                  {"triggered", component.triggered}};
+    }
+    if (registry.all_of<Hidden>(entity)) {
+        components["hidden"] = true;
     }
 
     return Json{{"id", entityId(registry, entity)},
@@ -342,6 +402,22 @@ void loadEntityImmediateComponents(entt::registry& registry,
             entity,
             ProvidesHealing{components.at("provides_healing").get<int>()});
     }
+    if (components.contains("hunger_clock")) {
+        const auto& json = components.at("hunger_clock");
+        registry.emplace<HungerClock>(
+            entity,
+            HungerClock{
+                hungerStateFromString(json.at("state").get<std::string>()),
+                json.at("duration").get<int>()});
+    }
+    if (components.contains("provides_nutrition")) {
+        registry.emplace<ProvidesNutrition>(
+            entity,
+            ProvidesNutrition{components.at("provides_nutrition").get<int>()});
+    }
+    if (components.contains("magic_mapper")) {
+        registry.emplace<MagicMapper>(entity);
+    }
     if (components.contains("ranged")) {
         registry.emplace<Ranged>(entity,
                                  Ranged{components.at("ranged").get<int>()});
@@ -369,6 +445,15 @@ void loadEntityImmediateComponents(entt::registry& registry,
     if (components.contains("defense_bonus")) {
         registry.emplace<DefenseBonus>(
             entity, DefenseBonus{components.at("defense_bonus").get<int>()});
+    }
+    if (components.contains("trap")) {
+        const auto& json = components.at("trap");
+        registry.emplace<Trap>(entity,
+                               Trap{json.at("damage").get<int>(),
+                                    json.at("triggered").get<bool>()});
+    }
+    if (components.contains("hidden")) {
+        registry.emplace<Hidden>(entity);
     }
 }
 

@@ -37,7 +37,9 @@ class Game {
     void resolvePlayerTurn(bool runMonsters = true);
     void render();
 
-    RunState state_ = RunState::AwaitingInput;
+    std::optional<Rng::Seed> initialSeed_;
+    RunState state_ = RunState::MainMenu;
+    int menuSelection_ = 0;
     ConsoleBuffer console_{80, 50};
     Map map_{80, 43, TileType::Wall};
     entt::registry registry_;
