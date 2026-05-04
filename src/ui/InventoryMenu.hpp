@@ -24,7 +24,7 @@ enum class InventoryInputResult { None, Close, TookTurn, StartedTargeting };
 [[nodiscard]] InventoryInputResult
 handleInventoryInput(entt::registry& registry,
                      GameResources& resources,
-                     const Map& map,
+                     Map& map,
                      const std::vector<InputEvent>& events);
 
 void drawInventoryMenu(ConsoleBuffer& console,

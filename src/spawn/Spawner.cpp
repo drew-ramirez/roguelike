@@ -15,6 +15,7 @@ entt::entity spawnPlayer(entt::registry& registry, Point position)
     registry.emplace<BlocksTile>(entity);
     registry.emplace<Viewshed>(entity);
     registry.emplace<CombatStats>(entity, CombatStats{30, 30, 2, 5});
+    registry.emplace<HungerClock>(entity);
     return entity;
 }
 

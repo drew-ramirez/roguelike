@@ -10,6 +10,7 @@
 #include "map/Map.hpp"
 #include "systems/DamageSystem.hpp"
 #include "systems/EquipmentSystem.hpp"
+#include "systems/HungerSystem.hpp"
 #include "systems/ParticleSystem.hpp"
 
 namespace rl {
@@ -93,6 +94,26 @@ void consumeIfNeeded(entt::registry& registry, entt::entity item)
     return true;
 }
 
+[[nodiscard]] bool feedOwner(entt::registry& registry,
+                             GameResources& resources,
+                             entt::entity owner,
+                             entt::entity item)
+{
+    if (!registry.all_of<ProvidesNutrition>(item) ||
+        !registry.all_of<HungerClock>(owner)) {
+        return false;
+    }
+
+    constexpr int maximumHunger = 1000;
+    auto& clock = registry.get<HungerClock>(owner);
+    const int amount = registry.get<ProvidesNutrition>(item).amount;
+    clock.duration = std::min(maximumHunger, clock.duration + amount);
+    clock.state = hungerStateForDuration(clock.duration);
+    resources.log.add("You eat " + entityName(registry, item) + ".");
+    consumeIfNeeded(registry, item);
+    return true;
+}
+
 [[nodiscard]] bool itemOwnedBy(const entt::registry& registry,
                                entt::entity owner,
                                entt::entity item)
@@ -126,7 +147,7 @@ void damageEntity(entt::registry& registry,
 
 [[nodiscard]] bool applyTargetedEffect(entt::registry& registry,
                                        GameResources& resources,
-                                       const Map& map,
+                                       Map& map,
                                        entt::entity owner,
                                        entt::entity item,
                                        Point target)
@@ -166,6 +187,26 @@ void damageEntity(entt::registry& registry,
 
     if (affected == 0) {
         resources.log.add("The magic fizzles.");
+    }
+    consumeIfNeeded(registry, item);
+    return true;
+}
+
+[[nodiscard]] bool applyMagicMapping(entt::registry& registry,
+                                     GameResources& resources,
+                                     Map& map,
+                                     entt::entity owner,
+                                     entt::entity item)
+{
+    if (!registry.all_of<MagicMapper>(item)) {
+        return false;
+    }
+
+    map.revealAll();
+    resources.log.add("The scroll reveals the dungeon layout.");
+    if (const auto ownerPosition = entityPosition(registry, owner);
+        ownerPosition.has_value()) {
+        requestMappingParticle(resources, *ownerPosition);
     }
     consumeIfNeeded(registry, item);
     return true;
@@ -269,7 +310,7 @@ bool dropItemAtOwner(entt::registry& registry,
 
 bool useInventoryItem(entt::registry& registry,
                       GameResources& resources,
-                      const Map& map,
+                      Map& map,
                       entt::entity owner,
                       entt::entity item)
 {
@@ -298,14 +339,21 @@ bool useInventoryItem(entt::registry& registry,
         return healOwner(registry, resources, owner, item);
     }
 
+    if (registry.all_of<ProvidesNutrition>(item)) {
+        return feedOwner(registry, resources, owner, item);
+    }
+
+    if (registry.all_of<MagicMapper>(item)) {
+        return applyMagicMapping(registry, resources, map, owner, item);
+    }
+
     resources.log.add("Nothing happens.");
-    (void)map;
     return false;
 }
 
 bool processItemUses(entt::registry& registry,
                      GameResources& resources,
-                     const Map& map)
+                     Map& map)
 {
     bool used = false;
     const auto view = registry.view<const WantsToUseItem>();

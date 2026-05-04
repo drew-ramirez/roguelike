@@ -35,6 +35,7 @@ class Map {
     void setTile(int x, int y, TileType tile);
     void setBloodstain(int x, int y, bool bloodstained = true);
     void clearVisible();
+    void revealAll();
     void setVisible(int x, int y, bool visible = true);
     void setRevealed(int x, int y, bool revealed = true);
 

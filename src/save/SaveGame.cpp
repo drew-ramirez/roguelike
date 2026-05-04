@@ -73,6 +73,35 @@ using EntityId = std::uint32_t;
     return Json{{"r", color.r}, {"g", color.g}, {"b", color.b}, {"a", color.a}};
 }
 
+[[nodiscard]] std::string hungerStateToString(HungerState state)
+{
+    switch (state) {
+    case HungerState::WellFed:
+        return "well_fed";
+    case HungerState::Normal:
+        return "normal";
+    case HungerState::Hungry:
+        return "hungry";
+    case HungerState::Starving:
+        return "starving";
+    }
+    return "normal";
+}
+
+[[nodiscard]] HungerState hungerStateFromString(const std::string& value)
+{
+    if (value == "well_fed") {
+        return HungerState::WellFed;
+    }
+    if (value == "hungry") {
+        return HungerState::Hungry;
+    }
+    if (value == "starving") {
+        return HungerState::Starving;
+    }
+    return HungerState::Normal;
+}
+
 [[nodiscard]] Color colorFromJson(const Json& json)
 {
     return Color{static_cast<std::uint8_t>(json.at("r").get<int>()),
@@ -257,6 +286,19 @@ void loadResources(const Json& json,
         components["provides_healing"] =
             registry.get<ProvidesHealing>(entity).amount;
     }
+    if (registry.all_of<HungerClock>(entity)) {
+        const auto& component = registry.get<HungerClock>(entity);
+        components["hunger_clock"] =
+            Json{{"state", hungerStateToString(component.state)},
+                 {"duration", component.duration}};
+    }
+    if (registry.all_of<ProvidesNutrition>(entity)) {
+        components["provides_nutrition"] =
+            registry.get<ProvidesNutrition>(entity).amount;
+    }
+    if (registry.all_of<MagicMapper>(entity)) {
+        components["magic_mapper"] = true;
+    }
     if (registry.all_of<Ranged>(entity)) {
         components["ranged"] = registry.get<Ranged>(entity).range;
     }
@@ -351,6 +393,22 @@ void loadEntityImmediateComponents(entt::registry& registry,
         registry.emplace<ProvidesHealing>(
             entity,
             ProvidesHealing{components.at("provides_healing").get<int>()});
+    }
+    if (components.contains("hunger_clock")) {
+        const auto& json = components.at("hunger_clock");
+        registry.emplace<HungerClock>(
+            entity,
+            HungerClock{
+                hungerStateFromString(json.at("state").get<std::string>()),
+                json.at("duration").get<int>()});
+    }
+    if (components.contains("provides_nutrition")) {
+        registry.emplace<ProvidesNutrition>(
+            entity,
+            ProvidesNutrition{components.at("provides_nutrition").get<int>()});
+    }
+    if (components.contains("magic_mapper")) {
+        registry.emplace<MagicMapper>(entity);
     }
     if (components.contains("ranged")) {
         registry.emplace<Ranged>(entity,

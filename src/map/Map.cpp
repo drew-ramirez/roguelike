@@ -149,6 +149,11 @@ void Map::clearVisible()
     std::fill(visibleTiles_.begin(), visibleTiles_.end(), false);
 }
 
+void Map::revealAll()
+{
+    std::fill(revealedTiles_.begin(), revealedTiles_.end(), true);
+}
+
 void Map::setVisible(int x, int y, bool visible)
 {
     if (!inBounds(x, y)) {

@@ -14,7 +14,9 @@ const std::vector<SpawnEntry> monsters{
 
 const std::vector<SpawnEntry> items{
     SpawnEntry{"healing_potion", 70, 1},
+    SpawnEntry{"food_ration", 45, 1},
     SpawnEntry{"fireball_scroll", 20, 1},
+    SpawnEntry{"magic_mapping_scroll", 12, 1},
     SpawnEntry{"dagger", 20, 1},
     SpawnEntry{"sword", 18, 2},
     SpawnEntry{"chain_mail", 12, 2},

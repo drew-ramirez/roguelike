@@ -27,6 +27,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/spawn/Spawner.cpp
     src/systems/DamageSystem.cpp
     src/systems/EquipmentSystem.cpp
+    src/systems/HungerSystem.cpp
     src/systems/InputSystem.cpp
     src/systems/ItemSystem.cpp
     src/systems/MapRenderSystem.cpp
@@ -92,6 +93,7 @@ set(ROGUELIKE_HEADERS
     src/spawn/Spawner.hpp
     src/systems/DamageSystem.hpp
     src/systems/EquipmentSystem.hpp
+    src/systems/HungerSystem.hpp
     src/systems/InputSystem.hpp
     src/systems/ItemSystem.hpp
     src/systems/MapRenderSystem.hpp

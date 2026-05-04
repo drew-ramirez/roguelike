@@ -73,6 +73,19 @@ struct ProvidesHealing {
     int amount = 0;
 };
 
+enum class HungerState { WellFed, Normal, Hungry, Starving };
+
+struct HungerClock {
+    HungerState state = HungerState::Normal;
+    int duration = 600;
+};
+
+struct ProvidesNutrition {
+    int amount = 300;
+};
+
+struct MagicMapper {};
+
 struct Ranged {
     int range = 0;
 };

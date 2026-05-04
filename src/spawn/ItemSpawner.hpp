@@ -20,8 +20,12 @@ namespace rl {
 
 [[nodiscard]] entt::entity
 spawnHealingPotion(entt::registry& registry, Point position, int amount = 8);
+[[nodiscard]] entt::entity spawnFoodRation(entt::registry& registry,
+                                           Point position);
 [[nodiscard]] entt::entity spawnFireballScroll(entt::registry& registry,
                                                Point position);
+[[nodiscard]] entt::entity spawnMagicMappingScroll(entt::registry& registry,
+                                                   Point position);
 [[nodiscard]] entt::entity spawnDagger(entt::registry& registry,
                                        Point position);
 [[nodiscard]] entt::entity spawnSword(entt::registry& registry, Point position);

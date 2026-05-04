@@ -39,6 +39,12 @@ spawnItemById(entt::registry& registry, std::string_view id, Point position)
     if (id == "fireball_scroll") {
         return spawnFireballScroll(registry, position);
     }
+    if (id == "magic_mapping_scroll") {
+        return spawnMagicMappingScroll(registry, position);
+    }
+    if (id == "food_ration") {
+        return spawnFoodRation(registry, position);
+    }
     if (id == "dagger") {
         return spawnDagger(registry, position);
     }
@@ -67,6 +73,19 @@ spawnHealingPotion(entt::registry& registry, Point position, int amount)
     return entity;
 }
 
+entt::entity spawnFoodRation(entt::registry& registry, Point position)
+{
+    const auto entity = registry.create();
+    registry.emplace<Position>(entity, Position{position.x, position.y});
+    registry.emplace<Renderable>(
+        entity, Renderable{U'%', Color{190, 150, 70, 255}, Color::black(), 2});
+    registry.emplace<Name>(entity, Name{"Food Ration"});
+    registry.emplace<Item>(entity);
+    registry.emplace<Consumable>(entity);
+    registry.emplace<ProvidesNutrition>(entity, ProvidesNutrition{350});
+    return entity;
+}
+
 entt::entity spawnFireballScroll(entt::registry& registry, Point position)
 {
     const auto entity = registry.create();
@@ -79,6 +98,19 @@ entt::entity spawnFireballScroll(entt::registry& registry, Point position)
     registry.emplace<Ranged>(entity, Ranged{6});
     registry.emplace<AreaOfEffect>(entity, AreaOfEffect{2});
     registry.emplace<InflictsDamage>(entity, InflictsDamage{12});
+    return entity;
+}
+
+entt::entity spawnMagicMappingScroll(entt::registry& registry, Point position)
+{
+    const auto entity = registry.create();
+    registry.emplace<Position>(entity, Position{position.x, position.y});
+    registry.emplace<Renderable>(
+        entity, Renderable{U'?', Color{90, 180, 255, 255}, Color::black(), 2});
+    registry.emplace<Name>(entity, Name{"Magic Mapping Scroll"});
+    registry.emplace<Item>(entity);
+    registry.emplace<Consumable>(entity);
+    registry.emplace<MagicMapper>(entity);
     return entity;
 }
 

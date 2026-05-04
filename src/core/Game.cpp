@@ -21,6 +21,7 @@
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/DamageSystem.hpp"
+#include "systems/HungerSystem.hpp"
 #include "systems/InputSystem.hpp"
 #include "systems/ItemSystem.hpp"
 #include "systems/MapRenderSystem.hpp"
@@ -150,6 +151,7 @@ void Game::resolvePlayerTurn(bool runMonsters)
     [[maybe_unused]] const bool usedItem =
         processItemUses(registry_, resources_, map_);
     processMeleeCombat(registry_, resources_.log);
+    processHunger(registry_, resources_);
     applyDamageAndCleanup(registry_, resources_, state_, &map_);
     updateVisibility(registry_, map_, resources_.player, fovProvider_);
 
