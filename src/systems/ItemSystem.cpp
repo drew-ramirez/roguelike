@@ -10,6 +10,7 @@
 #include "map/Map.hpp"
 #include "systems/DamageSystem.hpp"
 #include "systems/EquipmentSystem.hpp"
+#include "systems/ParticleSystem.hpp"
 
 namespace rl {
 namespace {
@@ -84,6 +85,10 @@ void consumeIfNeeded(entt::registry& registry, entt::entity item)
     const int amount = registry.get<ProvidesHealing>(item).amount;
     stats.hp = std::min(stats.maxHp, stats.hp + amount);
     resources.log.add("You drink " + entityName(registry, item) + ".");
+    if (const auto ownerPosition = entityPosition(registry, owner);
+        ownerPosition.has_value()) {
+        requestHealingParticle(resources, *ownerPosition);
+    }
     consumeIfNeeded(registry, item);
     return true;
 }

@@ -27,6 +27,7 @@
 #include "systems/MapTransitionSystem.hpp"
 #include "systems/MeleeCombatSystem.hpp"
 #include "systems/MonsterAI.hpp"
+#include "systems/ParticleSystem.hpp"
 #include "systems/RenderSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
 #include "ui/Hud.hpp"
@@ -87,6 +88,8 @@ void Game::run()
 
 void Game::tick(const std::vector<InputEvent>& events)
 {
+    updateParticleLifetimes(registry_);
+
     for (const auto& event : events) {
         if (event.type == InputEventType::Quit) {
             running_ = false;
@@ -147,15 +150,17 @@ void Game::resolvePlayerTurn(bool runMonsters)
     [[maybe_unused]] const bool usedItem =
         processItemUses(registry_, resources_, map_);
     processMeleeCombat(registry_, resources_.log);
-    applyDamageAndCleanup(registry_, resources_, state_);
+    applyDamageAndCleanup(registry_, resources_, state_, &map_);
     updateVisibility(registry_, map_, resources_.player, fovProvider_);
 
     if (state_ != RunState::GameOver && runMonsters) {
         state_ = RunState::MonsterTurn;
         runMonsterAi(registry_, resources_, map_);
         processMeleeCombat(registry_, resources_.log);
-        applyDamageAndCleanup(registry_, resources_, state_);
+        applyDamageAndCleanup(registry_, resources_, state_, &map_);
     }
+
+    flushParticleRequests(registry_, resources_);
 
     if (state_ != RunState::GameOver) {
         state_ = RunState::AwaitingInput;

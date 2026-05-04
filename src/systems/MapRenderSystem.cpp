@@ -10,6 +10,7 @@
 #include "map/Map.hpp"
 #include "map/TileType.hpp"
 #include "render/ConsoleBuffer.hpp"
+#include "render/WallGlyph.hpp"
 
 namespace rl {
 
@@ -26,7 +27,7 @@ void renderMap(const Map& map, ConsoleBuffer& console)
             if (tile == TileType::Wall) {
                 console.set(x,
                             y,
-                            U'#',
+                            wallGlyph(map, x, y),
                             visible ? Color::white() : Color{80, 80, 80, 255},
                             Color::black());
             } else if (tile == TileType::DownStairs) {
@@ -37,11 +38,14 @@ void renderMap(const Map& map, ConsoleBuffer& console)
                                     : Color{90, 90, 50, 255},
                             Color::black());
             } else {
+                const bool blood = map.hasBloodstain(x, y);
                 console.set(x,
                             y,
-                            U'.',
-                            visible ? Color{120, 120, 120, 255}
-                                    : Color{45, 45, 45, 255},
+                            blood ? U',' : U'.',
+                            blood ? (visible ? Color{150, 20, 20, 255}
+                                             : Color{65, 10, 10, 255})
+                                  : (visible ? Color{120, 120, 120, 255}
+                                             : Color{45, 45, 45, 255}),
                             Color::black());
             }
         }

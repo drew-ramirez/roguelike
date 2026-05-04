@@ -19,6 +19,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/Map.cpp
     src/map/generators/SimpleMapBuilder.cpp
     src/render/ConsoleBuffer.cpp
+    src/render/WallGlyph.cpp
     src/save/SaveGame.cpp
     src/spawn/ItemSpawner.cpp
     src/spawn/MonsterSpawner.cpp
@@ -32,6 +33,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/systems/MapTransitionSystem.cpp
     src/systems/MeleeCombatSystem.cpp
     src/systems/MonsterAI.cpp
+    src/systems/ParticleSystem.cpp
     src/systems/RenderSystem.cpp
     src/systems/SpatialIndexSystem.cpp
     src/systems/VisibilitySystem.cpp
@@ -82,6 +84,7 @@ set(ROGUELIKE_HEADERS
     src/render/ConsoleBuffer.hpp
     src/render/IRenderer.hpp
     src/render/SdlRenderer.hpp
+    src/render/WallGlyph.hpp
     src/save/SaveGame.hpp
     src/spawn/ItemSpawner.hpp
     src/spawn/MonsterSpawner.hpp
@@ -95,6 +98,7 @@ set(ROGUELIKE_HEADERS
     src/systems/MapTransitionSystem.hpp
     src/systems/MeleeCombatSystem.hpp
     src/systems/MonsterAI.hpp
+    src/systems/ParticleSystem.hpp
     src/systems/RenderSystem.hpp
     src/systems/SpatialIndexSystem.hpp
     src/systems/VisibilitySystem.hpp

@@ -57,6 +57,12 @@ struct SufferDamage {
     int amount = 0;
 };
 
+struct Particle {};
+
+struct ParticleLifetime {
+    int remainingFrames = 0;
+};
+
 struct SaveEntityId {
     std::uint32_t value = 0;
 };
