@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -147,6 +148,28 @@ bool intersectsAnyRoom(const Rect& candidate, const std::vector<Rect>& rooms)
         });
 }
 
+[[nodiscard]] SpawnRegion roomSpawnRegion(const Rect& room)
+{
+    SpawnRegion region;
+    region.kind = SpawnRegionKind::Room;
+    for (int y = room.y1; y < room.y2; ++y) {
+        for (int x = room.x1; x < room.x2; ++x) {
+            region.tiles.push_back(Point{x, y});
+        }
+    }
+    return region;
+}
+
+void recordSnapshot(std::vector<MapSnapshot>& snapshots,
+                    const Map& map,
+                    std::string label,
+                    bool enabled)
+{
+    if (enabled) {
+        snapshots.push_back(MapSnapshot{std::move(label), map});
+    }
+}
+
 void validateGeneratedMap(const Map& map,
                           Point playerStart,
                           const std::vector<Rect>& rooms)
@@ -177,7 +200,10 @@ void validateGeneratedMap(const Map& map,
  * **************************************************************************
  */
 
-MapBuildResult SimpleMapBuilder::build(int width, int height, Rng& rng)
+MapBuildResult SimpleMapBuilder::build(int width,
+                                       int height,
+                                       Rng& rng,
+                                       MapBuildOptions options)
 {
     if (width < minMapWidth || height < minMapHeight) {
         throw std::invalid_argument(
@@ -186,6 +212,8 @@ MapBuildResult SimpleMapBuilder::build(int width, int height, Rng& rng)
 
     Map map{width, height, TileType::Wall};
     std::vector<Rect> rooms;
+    std::vector<SpawnRegion> spawnRegions;
+    std::vector<MapSnapshot> snapshots;
     rooms.reserve(maxRooms);
 
     for (int attempt = 0; attempt < maxRooms; ++attempt) {
@@ -202,8 +230,17 @@ MapBuildResult SimpleMapBuilder::build(int width, int height, Rng& rng)
         carveRoom(map, room);
         if (!rooms.empty()) {
             connectRooms(map, rooms.back().center(), room.center(), rng);
+            recordSnapshot(snapshots,
+                           map,
+                           "connected room " + std::to_string(rooms.size() + 1),
+                           options.recordSnapshots);
         }
+        spawnRegions.push_back(roomSpawnRegion(room));
         rooms.push_back(room);
+        recordSnapshot(snapshots,
+                       map,
+                       "carved room " + std::to_string(rooms.size()),
+                       options.recordSnapshots);
     }
 
     const Point playerStart = rooms.empty() ? Point{} : rooms.front().center();
@@ -211,8 +248,14 @@ MapBuildResult SimpleMapBuilder::build(int width, int height, Rng& rng)
     const Point stairsPosition =
         rooms.empty() ? Point{} : rooms.back().center();
     map.setTile(stairsPosition.x, stairsPosition.y, TileType::DownStairs);
-    return MapBuildResult{
-        std::move(map), playerStart, stairsPosition, std::move(rooms)};
+    recordSnapshot(snapshots, map, "placed stairs", options.recordSnapshots);
+    return MapBuildResult{std::move(map),
+                          playerStart,
+                          stairsPosition,
+                          std::move(rooms),
+                          std::move(spawnRegions),
+                          std::move(snapshots),
+                          "simple"};
 }
 
 } // namespace rl

@@ -22,7 +22,11 @@ class SimpleMapBuilder {
      * @param rng Central project RNG used to keep generation deterministic
      * @return Generated map data, player start, and accepted room list
      */
-    [[nodiscard]] static MapBuildResult build(int width, int height, Rng& rng);
+    [[nodiscard]] static MapBuildResult
+    build(int width,
+          int height,
+          Rng& rng,
+          MapBuildOptions options = MapBuildOptions{});
 };
 
 } // namespace rl
