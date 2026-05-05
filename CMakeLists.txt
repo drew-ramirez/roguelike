@@ -11,8 +11,10 @@ find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_ttf CONFIG REQUIRED)
 find_package(EnTT CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(ZLIB REQUIRED)
 
 set(ROGUELIKE_CORE_SOURCES
+    src/assets/RexPaintLoader.cpp
     src/core/GameLog.cpp
     src/core/Rng.cpp
     src/debug/MapgenViewer.cpp
@@ -70,6 +72,7 @@ set(ROGUELIKE_APP_SOURCES
 )
 
 set(ROGUELIKE_TEST_SOURCES
+    tests/asset_tests.cpp
     tests/core_tests.cpp
     tests/descent_spawn_tests.cpp
     tests/equipment_tests.cpp
@@ -87,6 +90,7 @@ set(ROGUELIKE_TEST_HEADERS
 )
 
 set(ROGUELIKE_HEADERS
+    src/assets/RexPaintLoader.hpp
     src/core/Game.hpp
     src/core/GameLog.hpp
     src/core/GameResources.hpp
@@ -173,6 +177,7 @@ target_include_directories(roguelike_core PUBLIC src)
 target_link_libraries(roguelike_core PUBLIC
     EnTT::EnTT
     nlohmann_json::nlohmann_json
+    ZLIB::ZLIB
 )
 
 add_executable(roguelike ${ROGUELIKE_APP_SOURCES})
@@ -193,6 +198,14 @@ add_executable(roguelike_core_tests
 target_compile_features(roguelike_core_tests PRIVATE cxx_std_20)
 set_target_properties(roguelike_core_tests PROPERTIES CXX_EXTENSIONS OFF)
 target_link_libraries(roguelike_core_tests PRIVATE roguelike_core)
+
+add_custom_target(copy_assets ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
+    COMMENT "Copying runtime assets"
+)
+add_dependencies(roguelike copy_assets)
+add_dependencies(roguelike_core_tests copy_assets)
 
 foreach(target_name roguelike_core roguelike roguelike_core_tests)
     if(MSVC)
