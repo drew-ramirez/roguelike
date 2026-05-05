@@ -11,8 +11,8 @@
 #include <string>
 #include <utility>
 
-#include "map/MapAlgorithms.hpp"
-#include "map/MapValidation.hpp"
+#include "map/MapBuilderCommon.hpp"
+#include "map/MapConnectivity.hpp"
 #include "map/TileType.hpp"
 
 namespace rl {
@@ -60,10 +60,7 @@ MapBuildResult CellularAutomataBuilder::build(int width,
                                               Rng& rng,
                                               MapBuildOptions options)
 {
-    if (width < minMapWidth || height < minMapHeight) {
-        throw std::invalid_argument(
-            "CellularAutomataBuilder requires at least a 20x15 map");
-    }
+    validateBuilderDimensions("CellularAutomataBuilder", width, height);
 
     MapBuildResult result{Map{width, height, TileType::Wall}, {}, {}};
     result.builderName = "cellular";

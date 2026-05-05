@@ -13,15 +13,12 @@
 #include <string>
 #include <vector>
 
-#include "map/MapAlgorithms.hpp"
-#include "map/MapValidation.hpp"
+#include "map/MapBuilderCommon.hpp"
+#include "map/MapConnectivity.hpp"
 #include "map/TileType.hpp"
 
 namespace rl {
 namespace {
-
-constexpr int minMapWidth = 20;
-constexpr int minMapHeight = 15;
 
 [[nodiscard]] Point twoStep(Point point, Point delta)
 {
@@ -50,10 +47,7 @@ void shuffleDirections(std::array<Point, 4>& directions, Rng& rng)
 MapBuildResult
 MazeBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
 {
-    if (width < minMapWidth || height < minMapHeight) {
-        throw std::invalid_argument(
-            "MazeBuilder requires at least a 20x15 map");
-    }
+    validateBuilderDimensions("MazeBuilder", width, height);
 
     MapBuildResult result{Map{width, height, TileType::Wall}, {}, {}};
     result.builderName = "maze";

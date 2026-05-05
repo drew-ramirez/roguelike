@@ -11,8 +11,8 @@
 #include <stdexcept>
 #include <vector>
 
-#include "map/MapAlgorithms.hpp"
-#include "map/MapValidation.hpp"
+#include "map/MapBuilderCommon.hpp"
+#include "map/MapConnectivity.hpp"
 #include "map/TileType.hpp"
 
 namespace rl {
@@ -50,10 +50,7 @@ constexpr int seedCount = 18;
 MapBuildResult
 VoronoiBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
 {
-    if (width < minMapWidth || height < minMapHeight) {
-        throw std::invalid_argument(
-            "VoronoiBuilder requires at least a 20x15 map");
-    }
+    validateBuilderDimensions("VoronoiBuilder", width, height);
 
     std::vector<Point> seeds;
     seeds.reserve(seedCount);

@@ -11,16 +11,13 @@
 #include <stdexcept>
 #include <string>
 
-#include "map/MapAlgorithms.hpp"
+#include "map/MapBuilderCommon.hpp"
 #include "map/MapBrush.hpp"
-#include "map/MapValidation.hpp"
+#include "map/MapConnectivity.hpp"
 #include "map/TileType.hpp"
 
 namespace rl {
 namespace {
-
-constexpr int minMapWidth = 20;
-constexpr int minMapHeight = 15;
 
 [[nodiscard]] int countFloors(const Map& map)
 {
@@ -48,10 +45,7 @@ MapBuildResult DrunkardsWalkBuilder::build(int width,
                                            Rng& rng,
                                            MapBuildOptions options)
 {
-    if (width < minMapWidth || height < minMapHeight) {
-        throw std::invalid_argument(
-            "DrunkardsWalkBuilder requires at least a 20x15 map");
-    }
+    validateBuilderDimensions("DrunkardsWalkBuilder", width, height);
 
     MapBuildResult result{Map{width, height, TileType::Wall}, {}, {}};
     result.builderName = "drunkard";

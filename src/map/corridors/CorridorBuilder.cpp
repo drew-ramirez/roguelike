@@ -8,10 +8,10 @@
 #include "map/corridors/CorridorBuilder.hpp"
 
 #include <algorithm>
-#include <cstdlib>
 #include <string>
 
 #include "map/Map.hpp"
+#include "map/MapGeometry.hpp"
 #include "map/TileType.hpp"
 
 namespace rl {
@@ -68,29 +68,9 @@ void carveWideVertical(Map& map, CorridorPath& path, int y1, int y2, int x)
 
 void carveStraightLine(Map& map, CorridorPath& path, Point from, Point to)
 {
-    int x = from.x;
-    int y = from.y;
-    const int dx = std::abs(to.x - from.x);
-    const int dy = -std::abs(to.y - from.y);
-    const int stepX = from.x < to.x ? 1 : -1;
-    const int stepY = from.y < to.y ? 1 : -1;
-    int error = dx + dy;
-
-    while (true) {
-        carvePoint(map, path, Point{x, y});
-        if (x == to.x && y == to.y) {
-            break;
-        }
-
-        const int twiceError = 2 * error;
-        if (twiceError >= dy) {
-            error += dy;
-            x += stepX;
-        }
-        if (twiceError <= dx) {
-            error += dx;
-            y += stepY;
-        }
+    for (const Point point :
+         bresenhamLine(from, to, LineStartPolicy::IncludeStart)) {
+        carvePoint(map, path, point);
     }
 }
 

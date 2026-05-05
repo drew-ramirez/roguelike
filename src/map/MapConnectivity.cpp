@@ -1,17 +1,15 @@
 /**
  * **************************************************************************
- * @file     MapAlgorithms.cpp
- * @brief    Implements reusable map generation and connectivity helpers
+ * @file     MapConnectivity.cpp
+ * @brief    Implements map passability, reachability, and repair helpers
  * **************************************************************************
  */
 
-#include "map/MapAlgorithms.hpp"
+#include "map/MapConnectivity.hpp"
 
 #include <algorithm>
-#include <array>
 #include <limits>
 #include <queue>
-#include <stdexcept>
 #include <utility>
 
 #include "map/Map.hpp"
@@ -32,6 +30,7 @@ constexpr int unreachable = -1;
         return {};
     }
 
+    // The arithmetic mean is a stable representative point for repair tunnels.
     int xSum = 0;
     int ySum = 0;
     for (const Point point : region.tiles) {
@@ -58,6 +57,36 @@ regionsSortedBySize(std::vector<ConnectedRegion> regions)
                   return left.tiles.size() > right.tiles.size();
               });
     return regions;
+}
+
+void carveLine(Map& map, Point from, Point to, Rng& rng)
+{
+    const bool horizontalFirst = rng.coinFlip();
+    const auto carveHorizontal = [&map](int x1, int x2, int y) {
+        const auto [first, last] = std::minmax(x1, x2);
+        for (int x = first; x <= last; ++x) {
+            if (map.inBounds(x, y)) {
+                map.setTile(x, y, TileType::Floor);
+            }
+        }
+    };
+    const auto carveVertical = [&map](int y1, int y2, int x) {
+        const auto [first, last] = std::minmax(y1, y2);
+        for (int y = first; y <= last; ++y) {
+            if (map.inBounds(x, y)) {
+                map.setTile(x, y, TileType::Floor);
+            }
+        }
+    };
+
+    if (horizontalFirst) {
+        carveHorizontal(from.x, to.x, from.y);
+        carveVertical(from.y, to.y, to.x);
+        return;
+    }
+
+    carveVertical(from.y, to.y, from.x);
+    carveHorizontal(from.x, to.x, to.y);
 }
 
 } // namespace
@@ -102,6 +131,24 @@ std::vector<Point> floorTiles(const Map& map)
         }
     }
     return tiles;
+}
+
+int countFloorTiles(const Map& map)
+{
+    return static_cast<int>(floorTiles(map).size());
+}
+
+int countConnectivityPassableTiles(const Map& map)
+{
+    int count = 0;
+    for (int y = 0; y < map.height(); ++y) {
+        for (int x = 0; x < map.width(); ++x) {
+            if (isConnectivityPassable(map, Point{x, y})) {
+                ++count;
+            }
+        }
+    }
+    return count;
 }
 
 std::vector<ConnectedRegion> findConnectedRegions(const Map& map)
@@ -182,6 +229,15 @@ DistanceMap buildDistanceMap(const Map& map, Point start)
     return result;
 }
 
+int countReachableTiles(const Map& map, Point start)
+{
+    const auto distances = buildDistanceMap(map, start);
+    return static_cast<int>(
+        std::count_if(distances.distances.begin(),
+                      distances.distances.end(),
+                      [](int distance) { return distance != unreachable; }));
+}
+
 std::optional<Point> closestReachableFloorTo(const Map& map, Point target)
 {
     std::optional<Point> best;
@@ -258,100 +314,6 @@ int repairConnectivity(Map& map, Point anchor, Rng& rng)
     }
 
     return repaired;
-}
-
-void sealMapEdges(Map& map)
-{
-    for (int x = 0; x < map.width(); ++x) {
-        map.setTile(x, 0, TileType::Wall);
-        map.setTile(x, map.height() - 1, TileType::Wall);
-    }
-    for (int y = 0; y < map.height(); ++y) {
-        map.setTile(0, y, TileType::Wall);
-        map.setTile(map.width() - 1, y, TileType::Wall);
-    }
-}
-
-void carveLine(Map& map, Point from, Point to, Rng& rng)
-{
-    const bool horizontalFirst = rng.coinFlip();
-    const auto carveHorizontal = [&map](int x1, int x2, int y) {
-        const auto [first, last] = std::minmax(x1, x2);
-        for (int x = first; x <= last; ++x) {
-            if (map.inBounds(x, y)) {
-                map.setTile(x, y, TileType::Floor);
-            }
-        }
-    };
-    const auto carveVertical = [&map](int y1, int y2, int x) {
-        const auto [first, last] = std::minmax(y1, y2);
-        for (int y = first; y <= last; ++y) {
-            if (map.inBounds(x, y)) {
-                map.setTile(x, y, TileType::Floor);
-            }
-        }
-    };
-
-    if (horizontalFirst) {
-        carveHorizontal(from.x, to.x, from.y);
-        carveVertical(from.y, to.y, to.x);
-        return;
-    }
-
-    carveVertical(from.y, to.y, from.x);
-    carveHorizontal(from.x, to.x, to.y);
-}
-
-void setDistantStairs(Map& map, Point start, Point& stairsPosition)
-{
-    const auto farthest = farthestReachableFloor(map, start);
-    if (!farthest.has_value()) {
-        throw std::runtime_error("Unable to find a reachable stairs position");
-    }
-
-    stairsPosition = *farthest;
-    map.setTile(stairsPosition.x, stairsPosition.y, TileType::DownStairs);
-}
-
-void recordSnapshot(std::vector<MapSnapshot>& snapshots,
-                    const Map& map,
-                    std::string label,
-                    bool enabled)
-{
-    if (enabled) {
-        snapshots.push_back(MapSnapshot{std::move(label), map});
-    }
-}
-
-void addBuildStep(MapBuildResult& result, std::string step)
-{
-    result.buildSteps.push_back(std::move(step));
-}
-
-std::vector<SpawnRegion> spawnRegionsFromConnectedFloors(const Map& map,
-                                                         SpawnRegionKind kind)
-{
-    std::vector<SpawnRegion> regions;
-    for (auto& region : findConnectedRegions(map)) {
-        std::vector<Point> floors;
-        for (const Point point : region.tiles) {
-            if (map.isWalkable(point.x, point.y)) {
-                floors.push_back(point);
-            }
-        }
-        if (!floors.empty()) {
-            regions.push_back(spawnRegionFromTiles(std::move(floors), kind));
-        }
-    }
-    return regions;
-}
-
-SpawnRegion spawnRegionFromTiles(std::vector<Point> tiles, SpawnRegionKind kind)
-{
-    SpawnRegion region;
-    region.kind = kind;
-    region.tiles = std::move(tiles);
-    return region;
 }
 
 } // namespace rl

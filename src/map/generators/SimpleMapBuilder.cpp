@@ -13,8 +13,8 @@
 #include <utility>
 #include <vector>
 
-#include "map/MapAlgorithms.hpp"
-#include "map/MapValidation.hpp"
+#include "map/MapBuilderCommon.hpp"
+#include "map/MapConnectivity.hpp"
 #include "map/TileType.hpp"
 #include "map/corridors/CorridorBuilder.hpp"
 #include "map/rooms/RoomCarver.hpp"
@@ -54,10 +54,7 @@ MapBuildResult SimpleMapBuilder::build(int width,
                                        Rng& rng,
                                        MapBuildOptions options)
 {
-    if (width < minMapWidth || height < minMapHeight) {
-        throw std::invalid_argument(
-            "SimpleMapBuilder requires at least a 20x15 map");
-    }
+    validateBuilderDimensions("SimpleMapBuilder", width, height);
 
     MapBuildResult result{Map{width, height, TileType::Wall}, {}, {}};
     result.builderName = "simple";

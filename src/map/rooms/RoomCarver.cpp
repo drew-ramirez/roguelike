@@ -26,16 +26,23 @@ void carvePoint(Map& map, std::vector<Point>& carved, Point point)
     }
 }
 
-void carveRectInto(Map& map, std::vector<Point>& carved, const Rect& rect)
+void carveRectInto(Map& map, std::vector<Point>& carved, const Rect& room)
 {
-    for (int y = rect.y1; y < rect.y2; ++y) {
-        for (int x = rect.x1; x < rect.x2; ++x) {
+    for (int y = room.y1; y < room.y2; ++y) {
+        for (int x = room.x1; x < room.x2; ++x) {
             carvePoint(map, carved, Point{x, y});
         }
     }
 }
 
 } // namespace
+
+std::vector<Point> carveRectRoom(Map& map, const Rect& room)
+{
+    std::vector<Point> carved;
+    carveRectInto(map, carved, room);
+    return carved;
+}
 
 std::vector<Point> carveRoomShape(Map& map, const Rect& room, RoomShape shape)
 {
@@ -56,6 +63,8 @@ std::vector<Point> carveRoomShape(Map& map, const Rect& room, RoomShape shape)
             for (int x = room.x1; x < room.x2; ++x) {
                 const int dx = x - center.x;
                 const int dy = y - center.y;
+                // use the smaller room half-axis so the circle fits inside
+                // the rectangle, then compare squared distance to avoid sqrt
                 if ((dx * dx) + (dy * dy) <= radiusSquared * radiusSquared) {
                     carvePoint(map, carved, Point{x, y});
                 }
@@ -92,6 +101,34 @@ std::vector<Point> carveRoomShape(Map& map, const Rect& room, RoomShape shape)
         }
     }
     return carved;
+}
+
+std::vector<Point> roomTiles(const Rect& room)
+{
+    std::vector<Point> tiles;
+    for (int y = room.y1; y < room.y2; ++y) {
+        for (int x = room.x1; x < room.x2; ++x) {
+            tiles.push_back(Point{x, y});
+        }
+    }
+    return tiles;
+}
+
+std::vector<Point> walkableRoomTiles(const Map& map, const Rect& room)
+{
+    std::vector<Point> tiles;
+    for (const Point point : roomTiles(room)) {
+        if (map.isWalkable(point.x, point.y)) {
+            tiles.push_back(point);
+        }
+    }
+    return tiles;
+}
+
+Point randomInteriorPointInRoom(const Rect& room, Rng& rng)
+{
+    return Point{rng.rangeInclusive(room.x1 + 1, room.x2 - 2),
+                 rng.rangeInclusive(room.y1 + 1, room.y2 - 2)};
 }
 
 RoomShape chooseRoomShape(const Rect& room, int roll) noexcept

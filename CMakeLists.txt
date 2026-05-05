@@ -18,8 +18,10 @@ set(ROGUELIKE_CORE_SOURCES
     src/debug/MapgenViewer.cpp
     src/fov/ShadowcastingFov.cpp
     src/map/Map.cpp
-    src/map/MapAlgorithms.cpp
+    src/map/MapBuilderCommon.cpp
     src/map/MapBrush.cpp
+    src/map/MapConnectivity.cpp
+    src/map/MapGeometry.cpp
     src/map/MapValidation.cpp
     src/map/generators/BspDungeonBuilder.cpp
     src/map/generators/BspInteriorBuilder.cpp
@@ -27,6 +29,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/generators/DlaBuilder.cpp
     src/map/generators/DrunkardsWalkBuilder.cpp
     src/map/generators/MazeBuilder.cpp
+    src/map/generators/RandomWalk.cpp
     src/map/generators/VoronoiBuilder.cpp
     src/map/generators/SimpleMapBuilder.cpp
     src/map/corridors/CorridorBuilder.cpp
@@ -101,14 +104,17 @@ set(ROGUELIKE_HEADERS
     src/map/generators/DlaBuilder.hpp
     src/map/generators/DrunkardsWalkBuilder.hpp
     src/map/generators/MazeBuilder.hpp
+    src/map/generators/RandomWalk.hpp
     src/map/generators/VoronoiBuilder.hpp
     src/map/generators/SimpleMapBuilder.hpp
     src/map/corridors/CorridorBuilder.hpp
     src/map/rooms/RoomCarver.hpp
     src/map/Map.hpp
     src/map/MapBuilder.hpp
-    src/map/MapAlgorithms.hpp
+    src/map/MapBuilderCommon.hpp
     src/map/MapBrush.hpp
+    src/map/MapConnectivity.hpp
+    src/map/MapGeometry.hpp
     src/map/MapBuilderTypes.hpp
     src/map/MapValidation.hpp
     src/map/Rect.hpp

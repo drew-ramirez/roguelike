@@ -7,76 +7,15 @@
 
 #include "map/MapValidation.hpp"
 
-#include <array>
-#include <vector>
-
 #include "map/Map.hpp"
-#include "map/MapAlgorithms.hpp"
+#include "map/MapConnectivity.hpp"
 
 namespace rl {
-namespace {
-
-[[nodiscard]] int countWalkableTiles(const Map& map)
-{
-    int count = 0;
-    for (int y = 0; y < map.height(); ++y) {
-        for (int x = 0; x < map.width(); ++x) {
-            if (isConnectivityPassable(map, Point{x, y})) {
-                ++count;
-            }
-        }
-    }
-    return count;
-}
-
-[[nodiscard]] int countReachableTiles(const Map& map, Point start)
-{
-    if (!isConnectivityPassable(map, start)) {
-        return 0;
-    }
-
-    int reached = 0;
-    std::vector<bool> visited(
-        static_cast<std::size_t>(map.width() * map.height()), false);
-    std::vector<Point> frontier{start};
-    visited[static_cast<std::size_t>(map.xyIdx(start.x, start.y))] = true;
-
-    constexpr std::array<Point, 4> neighbors{
-        Point{1, 0},
-        Point{-1, 0},
-        Point{0, 1},
-        Point{0, -1},
-    };
-
-    while (!frontier.empty()) {
-        const Point current = frontier.back();
-        frontier.pop_back();
-        ++reached;
-
-        for (const Point delta : neighbors) {
-            const Point next{current.x + delta.x, current.y + delta.y};
-            if (!isConnectivityPassable(map, next)) {
-                continue;
-            }
-
-            const auto index =
-                static_cast<std::size_t>(map.xyIdx(next.x, next.y));
-            if (!visited[index]) {
-                visited[index] = true;
-                frontier.push_back(next);
-            }
-        }
-    }
-
-    return reached;
-}
-
-} // namespace
 
 MapValidationResult validateMapBuild(const Map& map, Point start, Point stairs)
 {
     MapValidationResult result;
-    result.walkableTiles = countWalkableTiles(map);
+    result.walkableTiles = countConnectivityPassableTiles(map);
 
     if (!map.inBounds(start.x, start.y) ||
         !isConnectivityPassable(map, start)) {
