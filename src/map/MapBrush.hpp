@@ -32,4 +32,10 @@ std::vector<Point> paintBrush(Map& map,
                               int radius,
                               Symmetry symmetry = Symmetry::None);
 
+std::vector<Point> paintBrushSize(Map& map,
+                                  Point center,
+                                  TileType tile,
+                                  int brushSize,
+                                  Symmetry symmetry = Symmetry::None);
+
 } // namespace rl

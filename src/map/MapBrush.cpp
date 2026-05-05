@@ -8,6 +8,7 @@
 #include "map/MapBrush.hpp"
 
 #include <algorithm>
+#include <cstdlib>
 
 #include "map/Map.hpp"
 
@@ -39,6 +40,8 @@ std::vector<Point> brushPoints(Point center, BrushShape shape, int radius)
             if (shape == BrushShape::Circle) {
                 const int dx = x - center.x;
                 const int dy = y - center.y;
+                // Circle uses squared radius: points inside so
+                // dx^2 + dy^2 <= r^2 are painted, avoiding sqrt per tile
                 if ((dx * dx) + (dy * dy) > clampedRadius * clampedRadius) {
                     continue;
                 }
@@ -54,22 +57,46 @@ std::vector<Point>
 symmetricalPoints(const Map& map, Point point, Symmetry symmetry)
 {
     std::vector<Point> points;
-    addUnique(points, point);
 
-    const Point horizontal{map.width() - 1 - point.x, point.y};
-    const Point vertical{point.x, map.height() - 1 - point.y};
-    const Point both{map.width() - 1 - point.x, map.height() - 1 - point.y};
+    const int centerX = map.width() / 2;
+    const int centerY = map.height() / 2;
+    const int distX = std::abs(centerX - point.x);
+    const int distY = std::abs(centerY - point.y);
+    // Mirror by preserving the absolute offset from the map center. This keeps
+    // paired diggers visually symmetric even on maps with odd dimensions.
+    const Point horizontalLeft{centerX - distX, point.y};
+    const Point horizontalRight{centerX + distX, point.y};
+    const Point verticalTop{point.x, centerY - distY};
+    const Point verticalBottom{point.x, centerY + distY};
 
-    if (symmetry == Symmetry::Horizontal || symmetry == Symmetry::Both ||
-        symmetry == Symmetry::Quad) {
-        addUnique(points, horizontal);
-    }
-    if (symmetry == Symmetry::Vertical || symmetry == Symmetry::Both ||
-        symmetry == Symmetry::Quad) {
-        addUnique(points, vertical);
-    }
-    if (symmetry == Symmetry::Both || symmetry == Symmetry::Quad) {
-        addUnique(points, both);
+    switch (symmetry) {
+    case Symmetry::None:
+        addUnique(points, point);
+        break;
+    case Symmetry::Horizontal:
+        addUnique(points, horizontalLeft);
+        addUnique(points, horizontalRight);
+        break;
+    case Symmetry::Vertical:
+        addUnique(points, verticalTop);
+        addUnique(points, verticalBottom);
+        break;
+    case Symmetry::Both:
+        addUnique(points, horizontalLeft);
+        addUnique(points, horizontalRight);
+        addUnique(points, verticalTop);
+        addUnique(points, verticalBottom);
+        break;
+    case Symmetry::Quad:
+        addUnique(points, horizontalLeft);
+        addUnique(points, horizontalRight);
+        addUnique(points, verticalTop);
+        addUnique(points, verticalBottom);
+        addUnique(points, Point{centerX - distX, centerY - distY});
+        addUnique(points, Point{centerX + distX, centerY - distY});
+        addUnique(points, Point{centerX - distX, centerY + distY});
+        addUnique(points, Point{centerX + distX, centerY + distY});
+        break;
     }
 
     return points;
@@ -92,6 +119,42 @@ std::vector<Point> paintBrush(Map& map,
             addUnique(painted, point);
         }
     }
+    return painted;
+}
+
+std::vector<Point> paintBrushSize(
+    Map& map, Point center, TileType tile, int brushSize, Symmetry symmetry)
+{
+    std::vector<Point> painted;
+    const int clampedSize = std::max(1, brushSize);
+
+    for (const Point origin : symmetricalPoints(map, center, symmetry)) {
+        if (clampedSize == 1) {
+            if (map.inBounds(origin.x, origin.y)) {
+                map.setTile(origin.x, origin.y, tile);
+                addUnique(painted, origin);
+            }
+            continue;
+        }
+
+        const int halfBrushSize = clampedSize / 2;
+        // The brush-size variant paints a square stamp for the chunkier
+        // tunnel look used by fat Drunkard and DLA.
+        for (int y = origin.y - halfBrushSize; y < origin.y + halfBrushSize;
+             ++y) {
+            for (int x = origin.x - halfBrushSize; x < origin.x + halfBrushSize;
+                 ++x) {
+                if (x <= 1 || y <= 1 || x >= map.width() - 1 ||
+                    y >= map.height() - 1) {
+                    continue;
+                }
+                const Point paintedPoint{x, y};
+                map.setTile(x, y, tile);
+                addUnique(painted, paintedPoint);
+            }
+        }
+    }
+
     return painted;
 }
 

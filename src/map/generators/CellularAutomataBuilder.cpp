@@ -18,10 +18,8 @@
 namespace rl {
 namespace {
 
-constexpr int minMapWidth = 20;
-constexpr int minMapHeight = 15;
-constexpr int initialWallChance = 45;
-constexpr int smoothPasses = 5;
+constexpr int initialWallChance = 55;
+constexpr int smoothPasses = 15;
 
 [[nodiscard]] int wallNeighborCount(const Map& map, int x, int y)
 {
@@ -44,10 +42,13 @@ void smooth(Map& map)
     Map next{map.width(), map.height(), TileType::Wall};
     for (int y = 1; y < map.height() - 1; ++y) {
         for (int x = 1; x < map.width() - 1; ++x) {
+            const int neighbors = wallNeighborCount(map, x, y);
+            // dense wall neighborhoods stay walls, while a zero-wall
+            // neighborhood becomes a wall island to break huge empty blobs
             next.setTile(x,
                          y,
-                         wallNeighborCount(map, x, y) > 4 ? TileType::Wall
-                                                          : TileType::Floor);
+                         neighbors > 4 || neighbors == 0 ? TileType::Wall
+                                                         : TileType::Floor);
         }
     }
     map = std::move(next);
@@ -106,11 +107,7 @@ MapBuildResult CellularAutomataBuilder::build(int width,
                    "validated cave",
                    options.recordSnapshots);
 
-    const auto validation =
-        validateMapBuild(result.map, result.playerStart, result.stairsPosition);
-    if (!validation.valid) {
-        throw std::runtime_error("Cellular generation produced an invalid map");
-    }
+    validateBuildOrThrow(result, "Cellular generation produced an invalid map");
 
     return result;
 }
