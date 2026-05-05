@@ -8,6 +8,7 @@
 #include "map/generators/VoronoiBuilder.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdlib>
 #include <limits>
 #include <stdexcept>
@@ -20,6 +21,8 @@
 
 namespace rl {
 namespace {
+
+constexpr std::size_t maxFloatingWallFragmentSize = 8;
 
 [[nodiscard]] int
 distanceFor(Point left, Point right, VoronoiDistance algorithm) noexcept
@@ -73,6 +76,75 @@ distanceFor(Point left, Point right, VoronoiDistance algorithm) noexcept
         }
     }
     return false;
+}
+
+[[nodiscard]] bool touchesMapEdge(const Map& map, Point point) noexcept
+{
+    return point.x == 0 || point.y == 0 || point.x == map.width() - 1 ||
+           point.y == map.height() - 1;
+}
+
+[[nodiscard]] bool isWall(const Map& map, Point point)
+{
+    return map.inBounds(point.x, point.y) &&
+           map.tileAt(point.x, point.y) == TileType::Wall;
+}
+
+int removeFloatingWallFragments(Map& map)
+{
+    std::vector<bool> visited(static_cast<std::size_t>(map.tileCount()), false);
+    int removed = 0;
+
+    // Voronoi boundaries can leave tiny enclosed wall islands. Keep large or
+    // edge-connected walls, but flatten small interior components so they do
+    // not interfere with spawn regions and distant-stairs selection.
+    for (int y = 0; y < map.height(); ++y) {
+        for (int x = 0; x < map.width(); ++x) {
+            const Point start{x, y};
+            const auto startIndex =
+                static_cast<std::size_t>(map.xyIdx(start.x, start.y));
+            if (visited[startIndex] || !isWall(map, start)) {
+                continue;
+            }
+
+            bool touchesEdge = false;
+            std::vector<Point> component;
+            std::vector<Point> frontier{start};
+            visited[startIndex] = true;
+
+            while (!frontier.empty()) {
+                const Point current = frontier.back();
+                frontier.pop_back();
+                component.push_back(current);
+                touchesEdge = touchesEdge || touchesMapEdge(map, current);
+
+                for (const Point next : cardinalNeighbors(current)) {
+                    if (!isWall(map, next)) {
+                        continue;
+                    }
+
+                    const auto nextIndex =
+                        static_cast<std::size_t>(map.xyIdx(next.x, next.y));
+                    if (visited[nextIndex]) {
+                        continue;
+                    }
+
+                    visited[nextIndex] = true;
+                    frontier.push_back(next);
+                }
+            }
+
+            if (!touchesEdge &&
+                component.size() <= maxFloatingWallFragmentSize) {
+                for (const Point point : component) {
+                    map.setTile(point.x, point.y, TileType::Floor);
+                    ++removed;
+                }
+            }
+        }
+    }
+
+    return removed;
 }
 
 [[nodiscard]] std::string settingLabel(const VoronoiSettings& settings)
@@ -147,6 +219,9 @@ VoronoiBuilder::buildWithSettings(int width,
     result.playerStart = *start;
     repairConnectivity(result.map, result.playerStart, rng);
     sealMapEdges(result.map);
+    if (removeFloatingWallFragments(result.map) > 0) {
+        addBuildStep(result, "modifier: floating wall cleanup");
+    }
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);

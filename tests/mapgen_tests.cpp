@@ -1,13 +1,16 @@
 #include "TestSuites.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "core/Rng.hpp"
 #include "debug/MapgenViewer.hpp"
 #include "map/MapBrush.hpp"
+#include "map/MapConnectivity.hpp"
 #include "map/MapValidation.hpp"
 #include "map/generators/CellularAutomataBuilder.hpp"
 #include "map/generators/DrunkardsWalkBuilder.hpp"
@@ -44,10 +47,83 @@ namespace {
     }
     return true;
 }
+[[nodiscard]] bool touchesMapEdge(const Map& map, Point point) noexcept
+{
+    return point.x == 0 || point.y == 0 || point.x == map.width() - 1 ||
+           point.y == map.height() - 1;
+}
+
+[[nodiscard]] bool isWallTile(const Map& map, Point point)
+{
+    return map.inBounds(point.x, point.y) &&
+           map.tileAt(point.x, point.y) == TileType::Wall;
+}
+
+[[nodiscard]] int countSmallInteriorWallComponents(const Map& map,
+                                                   std::size_t maxSize)
+{
+    std::vector<bool> visited(static_cast<std::size_t>(map.tileCount()), false);
+    int count = 0;
+
+    for (int y = 0; y < map.height(); ++y) {
+        for (int x = 0; x < map.width(); ++x) {
+            const Point start{x, y};
+            const auto startIndex =
+                static_cast<std::size_t>(map.xyIdx(start.x, start.y));
+            if (visited[startIndex] || !isWallTile(map, start)) {
+                continue;
+            }
+
+            bool touchesEdge = false;
+            std::vector<Point> component;
+            std::vector<Point> frontier{start};
+            visited[startIndex] = true;
+
+            while (!frontier.empty()) {
+                const Point current = frontier.back();
+                frontier.pop_back();
+                component.push_back(current);
+                touchesEdge = touchesEdge || touchesMapEdge(map, current);
+
+                for (const Point next : cardinalNeighbors(current)) {
+                    if (!isWallTile(map, next)) {
+                        continue;
+                    }
+
+                    const auto nextIndex =
+                        static_cast<std::size_t>(map.xyIdx(next.x, next.y));
+                    if (visited[nextIndex]) {
+                        continue;
+                    }
+
+                    visited[nextIndex] = true;
+                    frontier.push_back(next);
+                }
+            }
+
+            if (!touchesEdge && component.size() <= maxSize) {
+                ++count;
+            }
+        }
+    }
+
+    return count;
+}
 } // namespace
 
 void runMapgenTests(TestRunner& runner)
 {
+    {
+        Rng cleanupRng{4242U};
+        const auto cleaned = VoronoiBuilder::buildWithSettings(
+            80,
+            43,
+            cleanupRng,
+            VoronoiSettings{64, VoronoiDistance::Pythagoras},
+            MapBuildOptions{true});
+        runner.expect(countSmallInteriorWallComponents(cleaned.map, 8U) == 0,
+                      "Voronoi output removes tiny floating wall fragments");
+    }
     {
         Rng inwardsRng{91U};
         const auto inwards = DlaBuilder::buildWithSettings(
