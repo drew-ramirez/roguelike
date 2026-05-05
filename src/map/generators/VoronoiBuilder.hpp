@@ -12,6 +12,13 @@
 
 namespace rl {
 
+enum class VoronoiDistance { Pythagoras, Manhattan, Chebyshev };
+
+struct VoronoiSettings {
+    int seedCount = 64;
+    VoronoiDistance distance = VoronoiDistance::Pythagoras;
+};
+
 class VoronoiBuilder {
   public:
     [[nodiscard]] static MapBuildResult
@@ -19,6 +26,13 @@ class VoronoiBuilder {
           int height,
           Rng& rng,
           MapBuildOptions options = MapBuildOptions{});
+
+    [[nodiscard]] static MapBuildResult
+    buildWithSettings(int width,
+                      int height,
+                      Rng& rng,
+                      const VoronoiSettings& settings,
+                      MapBuildOptions options = MapBuildOptions{});
 };
 
 } // namespace rl

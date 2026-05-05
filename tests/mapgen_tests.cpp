@@ -11,6 +11,8 @@
 #include "map/MapValidation.hpp"
 #include "map/generators/CellularAutomataBuilder.hpp"
 #include "map/generators/DrunkardsWalkBuilder.hpp"
+#include "map/generators/DlaBuilder.hpp"
+#include "map/generators/VoronoiBuilder.hpp"
 #include "map/generators/BspDungeonBuilder.hpp"
 #include "map/generators/BspInteriorBuilder.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
@@ -28,10 +30,88 @@ namespace {
                        });
 }
 
+[[nodiscard]] bool sameMapTiles(const Map& left, const Map& right)
+{
+    if (left.width() != right.width() || left.height() != right.height()) {
+        return false;
+    }
+    for (int y = 0; y < left.height(); ++y) {
+        for (int x = 0; x < left.width(); ++x) {
+            if (left.tileAt(x, y) != right.tileAt(x, y)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
 } // namespace
 
 void runMapgenTests(TestRunner& runner)
 {
+    {
+        Rng inwardsRng{91U};
+        const auto inwards = DlaBuilder::buildWithSettings(
+            40,
+            25,
+            inwardsRng,
+            DlaBuilder::walkInwardsSettings(),
+            MapBuildOptions{true});
+        const auto inwardsValidation = validateMapBuild(
+            inwards.map, inwards.playerStart, inwards.stairsPosition);
+        runner.expect(inwardsValidation.valid,
+                      "DLA walk-inwards settings validate");
+        runner.expect(hasBuildStepContaining(inwards, "walk-inwards"),
+                      "DLA records walk-inwards settings");
+
+        Rng attractorRng{92U};
+        const auto attractor = DlaBuilder::buildWithSettings(
+            40,
+            25,
+            attractorRng,
+            DlaBuilder::centralAttractorSettings(),
+            MapBuildOptions{true});
+        const auto attractorValidation = validateMapBuild(
+            attractor.map, attractor.playerStart, attractor.stairsPosition);
+        runner.expect(attractorValidation.valid,
+                      "DLA central-attractor settings validate");
+        runner.expect(hasBuildStepContaining(attractor, "central-attractor"),
+                      "DLA records central-attractor settings");
+
+        runner.expect(DlaBuilder::walkOutwardsSettings().algorithm ==
+                          DlaAlgorithm::WalkOutwards,
+                      "DLA exposes walk-outwards settings");
+        runner.expect(DlaBuilder::insectoidSettings().symmetry ==
+                          Symmetry::Horizontal,
+                      "DLA exposes insectoid symmetry settings");
+    }
+
+    {
+        Rng pythagorasRng{101U};
+        Rng manhattanRng{101U};
+        const auto pythagoras = VoronoiBuilder::buildWithSettings(
+            40,
+            25,
+            pythagorasRng,
+            VoronoiSettings{64, VoronoiDistance::Pythagoras},
+            MapBuildOptions{true});
+        const auto manhattan = VoronoiBuilder::buildWithSettings(
+            40,
+            25,
+            manhattanRng,
+            VoronoiSettings{64, VoronoiDistance::Manhattan},
+            MapBuildOptions{true});
+        const auto pythagorasValidation = validateMapBuild(
+            pythagoras.map, pythagoras.playerStart, pythagoras.stairsPosition);
+        const auto manhattanValidation = validateMapBuild(
+            manhattan.map, manhattan.playerStart, manhattan.stairsPosition);
+        runner.expect(pythagorasValidation.valid && manhattanValidation.valid,
+                      "Voronoi distance settings validate");
+        runner.expect(hasBuildStepContaining(pythagoras, "pythagoras") &&
+                          hasBuildStepContaining(manhattan, "manhattan"),
+                      "Voronoi records selected distance settings");
+        runner.expect(!sameMapTiles(pythagoras.map, manhattan.map),
+                      "Voronoi distance settings produce distinct maps");
+    }
     {
         Map map{8, 8, TileType::Wall};
         const auto painted = paintBrushSize(map,

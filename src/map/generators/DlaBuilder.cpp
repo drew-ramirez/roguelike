@@ -1,7 +1,7 @@
 /**
  * **************************************************************************
  * @file     DlaBuilder.cpp
- * @brief    Builds organic caves with diffusion-limited aggregation
+ * @brief    Builds organic caves with diffusion-limited aggregation variants
  * **************************************************************************
  */
 
@@ -10,121 +10,216 @@
 #include <algorithm>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "map/MapBuilderCommon.hpp"
-#include "map/MapBrush.hpp"
 #include "map/MapConnectivity.hpp"
+#include "map/MapGeometry.hpp"
 #include "map/TileType.hpp"
+#include "map/generators/RandomWalk.hpp"
 
 namespace rl {
 namespace {
 
-[[nodiscard]] bool touchesFloor(const Map& map, Point point)
+void paint(Map& map, Point point, const DlaSettings& settings)
 {
-    for (const Point neighbor : cardinalNeighbors(point)) {
-        if (map.inBounds(neighbor.x, neighbor.y) &&
-            map.isWalkable(neighbor.x, neighbor.y)) {
-            return true;
-        }
-    }
-    return false;
+    paintBrushSize(
+        map, point, TileType::Floor, settings.brushSize, settings.symmetry);
 }
 
-[[nodiscard]] Point randomMapEdge(int width, int height, Rng& rng)
+void carveSeed(Map& map, Point center)
 {
-    switch (rng.rangeInclusive(0, 3)) {
-    case 0:
-        return Point{rng.rangeInclusive(1, width - 2), 1};
-    case 1:
-        return Point{rng.rangeInclusive(1, width - 2), height - 2};
-    case 2:
-        return Point{1, rng.rangeInclusive(1, height - 2)};
-    default:
-        return Point{width - 2, rng.rangeInclusive(1, height - 2)};
-    }
+    map.setTile(center.x, center.y, TileType::Floor);
+    map.setTile(center.x - 1, center.y, TileType::Floor);
+    map.setTile(center.x + 1, center.y, TileType::Floor);
+    map.setTile(center.x, center.y - 1, TileType::Floor);
+    map.setTile(center.x, center.y + 1, TileType::Floor);
 }
 
-[[nodiscard]] Point stepTowardCenter(Point point, Point center, Rng& rng)
+bool walkInwards(Map& map, const DlaSettings& settings, Rng& rng)
 {
-    if (rng.rangeInclusive(0, 4) == 0) {
-        switch (rng.rangeInclusive(0, 3)) {
-        case 0:
-            return Point{point.x + 1, point.y};
-        case 1:
-            return Point{point.x - 1, point.y};
-        case 2:
-            return Point{point.x, point.y + 1};
-        default:
-            return Point{point.x, point.y - 1};
-        }
+    Point digger = randomInteriorPoint(map.width(), map.height(), rng);
+    Point previous = digger;
+    int guard = map.width() * map.height() * 40;
+    // Walk through solid rock until we hit the existing cave mass, then paint
+    // the previous wall. That grows the boundary from the outside inward.
+    while (map.tileAt(digger.x, digger.y) == TileType::Wall && guard > 0) {
+        previous = digger;
+        staggerCardinal(digger, map.width(), map.height(), rng);
+        --guard;
     }
+    if (guard <= 0) {
+        return false;
+    }
+    paint(map, previous, settings);
+    return true;
+}
 
-    if (rng.coinFlip() && point.x != center.x) {
-        point.x += point.x < center.x ? 1 : -1;
-    } else if (point.y != center.y) {
-        point.y += point.y < center.y ? 1 : -1;
+void walkOutwards(Map& map, Point start, const DlaSettings& settings, Rng& rng)
+{
+    Point digger = start;
+    int guard = map.width() * map.height();
+    // Inverse of walk-inwards: start inside the cave and random-walk until the
+    // first wall, painting that wall expands the frontier outward
+    while (map.tileAt(digger.x, digger.y) == TileType::Floor && guard > 0) {
+        staggerCardinal(digger, map.width(), map.height(), rng);
+        --guard;
     }
-    return point;
+    paint(map, digger, settings);
+}
+
+void centralAttractor(Map& map,
+                      Point start,
+                      const DlaSettings& settings,
+                      Rng& rng)
+{
+    Point digger = randomInteriorPoint(map.width(), map.height(), rng);
+    Point previous = digger;
+    // Pull random points toward the seed along a straight integer line. The
+    // last wall before existing floor becomes the new aggregate cell.
+    for (const Point next :
+         bresenhamLine(digger, start, LineStartPolicy::ExcludeStart)) {
+        if (map.tileAt(digger.x, digger.y) != TileType::Wall) {
+            break;
+        }
+        previous = digger;
+        digger = next;
+    }
+    paint(map, previous, settings);
+}
+
+[[nodiscard]] std::string settingLabel(const DlaSettings& settings)
+{
+    std::string label;
+    switch (settings.algorithm) {
+    case DlaAlgorithm::WalkInwards:
+        label = "walk-inwards";
+        break;
+    case DlaAlgorithm::WalkOutwards:
+        label = "walk-outwards";
+        break;
+    case DlaAlgorithm::CentralAttractor:
+        label = "central-attractor";
+        break;
+    }
+    label += " brush " + std::to_string(settings.brushSize);
+    label += " floor " + std::to_string(settings.floorPercent);
+    return label;
 }
 
 } // namespace
 
+DlaSettings DlaBuilder::walkInwardsSettings() noexcept
+{
+    return DlaSettings{
+        DlaAlgorithm::WalkInwards,
+        1,
+        Symmetry::None,
+        0.25,
+    };
+}
+
+DlaSettings DlaBuilder::walkOutwardsSettings() noexcept
+{
+    return DlaSettings{
+        DlaAlgorithm::WalkOutwards,
+        2,
+        Symmetry::None,
+        0.25,
+    };
+}
+
+DlaSettings DlaBuilder::centralAttractorSettings() noexcept
+{
+    return DlaSettings{
+        DlaAlgorithm::CentralAttractor,
+        2,
+        Symmetry::None,
+        0.25,
+    };
+}
+
+DlaSettings DlaBuilder::insectoidSettings() noexcept
+{
+    return DlaSettings{
+        DlaAlgorithm::CentralAttractor,
+        2,
+        Symmetry::Horizontal,
+        0.25,
+    };
+}
+
 MapBuildResult
 DlaBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
 {
-    if (width < minMapWidth || height < minMapHeight) {
-        throw std::invalid_argument("DlaBuilder requires at least a 20x15 map");
+    return buildWithSettings(
+        width, height, rng, walkInwardsSettings(), options);
+}
+
+MapBuildResult DlaBuilder::buildWithSettings(int width,
+                                             int height,
+                                             Rng& rng,
+                                             const DlaSettings& settings,
+                                             MapBuildOptions options)
+{
+    validateBuilderDimensions("DlaBuilder", width, height);
+    if (settings.brushSize <= 0 || settings.floorPercent <= 0.0 ||
+        settings.floorPercent >= 1.0) {
+        throw std::invalid_argument("Invalid DLA settings");
     }
 
     MapBuildResult result{Map{width, height, TileType::Wall}, {}, {}};
     result.builderName = "dla";
     result.playerStart = Point{width / 2, height / 2};
-    paintBrush(result.map,
-               result.playerStart,
-               TileType::Floor,
-               BrushShape::Circle,
-               2,
-               Symmetry::None);
+    carveSeed(result.map, result.playerStart);
     addBuildStep(result, "base: diffusion-limited aggregation");
+    addBuildStep(result, "settings: " + settingLabel(settings));
+    recordSnapshot(
+        result.snapshots, result.map, "seed dla", options.recordSnapshots);
 
-    const int targetFloors = (width * height) / 4;
-    int accepted = 0;
-    while (static_cast<int>(floorTiles(result.map).size()) < targetFloors &&
-           accepted < targetFloors * 3) {
-        Point walker = randomMapEdge(width, height, rng);
-        constexpr int maxWalkerSteps = 120;
-        for (int step = 0; step < maxWalkerSteps; ++step) {
-            walker.x = std::clamp(walker.x, 1, width - 2);
-            walker.y = std::clamp(walker.y, 1, height - 2);
-            if (touchesFloor(result.map, walker)) {
-                paintBrush(result.map,
-                           walker,
-                           TileType::Floor,
-                           BrushShape::Circle,
-                           1,
-                           rng.coinFlip() ? Symmetry::None : Symmetry::Quad);
-                ++accepted;
-                break;
-            }
-            walker = stepTowardCenter(walker, result.playerStart, rng);
+    const int targetFloors = static_cast<int>(
+        static_cast<double>(width * height) * settings.floorPercent);
+    const int maxIterations = width * height * 20;
+    int iterations = 0;
+    while (countFloorTiles(result.map) < targetFloors &&
+           iterations < maxIterations) {
+        switch (settings.algorithm) {
+        case DlaAlgorithm::WalkInwards: {
+            [[maybe_unused]] const bool grew =
+                walkInwards(result.map, settings, rng);
+            break;
+        }
+        case DlaAlgorithm::WalkOutwards:
+            walkOutwards(result.map, result.playerStart, settings, rng);
+            break;
+        case DlaAlgorithm::CentralAttractor:
+            centralAttractor(result.map, result.playerStart, settings, rng);
+            break;
+        }
+        ++iterations;
+
+        if (options.recordSnapshots && iterations % 25 == 0) {
+            recordSnapshot(result.snapshots,
+                           result.map,
+                           "dla iteration " + std::to_string(iterations),
+                           true);
         }
     }
 
     recordSnapshot(
         result.snapshots, result.map, "grown dla", options.recordSnapshots);
-    repairConnectivity(result.map, result.playerStart, rng);
+    cullUnreachable(result.map, result.playerStart);
     sealMapEdges(result.map);
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);
-    addBuildStep(result, "modifier: connectivity repair");
+    addBuildStep(result,
+                 "iterations: " + std::to_string(iterations) + " of " +
+                     std::to_string(maxIterations));
+    addBuildStep(result, "modifier: unreachable cull");
     addBuildStep(result, "modifier: distant exit");
 
-    const auto validation =
-        validateMapBuild(result.map, result.playerStart, result.stairsPosition);
-    if (!validation.valid) {
-        throw std::runtime_error("DLA generation produced an invalid map");
-    }
+    validateBuildOrThrow(result, "DLA generation produced an invalid map");
 
     return result;
 }
