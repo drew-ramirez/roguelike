@@ -1,7 +1,9 @@
 #include "TestSuites.hpp"
 
+#include <algorithm>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 #include "core/Rng.hpp"
 #include "debug/MapgenViewer.hpp"
@@ -11,6 +13,19 @@
 #include "map/generators/SimpleMapBuilder.hpp"
 
 namespace rl::test {
+namespace {
+
+[[nodiscard]] bool hasBuildStepContaining(const MapBuildResult& result,
+                                          std::string_view text)
+{
+    return std::any_of(result.buildSteps.begin(),
+                       result.buildSteps.end(),
+                       [text](const auto& step) {
+                           return step.find(text) != std::string::npos;
+                       });
+}
+
+} // namespace
 
 void runMapgenTests(TestRunner& runner)
 {
@@ -41,6 +56,10 @@ void runMapgenTests(TestRunner& runner)
         runner.expect(validation.valid, "bsp builder produces reachable maps");
         runner.expect(!result.snapshots.empty(),
                       "bsp builder records snapshots when requested");
+        runner.expect(!result.corridorPaths.empty(),
+                      "bsp builder records corridor paths for modifiers");
+        runner.expect(hasBuildStepContaining(result, "random subrects"),
+                      "bsp builder records subrect algorithm");
     }
 
     {
@@ -53,6 +72,10 @@ void runMapgenTests(TestRunner& runner)
                       "bsp interior builder reports its id");
         runner.expect(validation.valid,
                       "bsp interior builder keeps maps reachable");
+        runner.expect(!result.corridorPaths.empty(),
+                      "bsp interior builder records corridor paths");
+        runner.expect(hasBuildStepContaining(result, "leaf rooms"),
+                      "bsp interior builder records leaf-room algorithm");
     }
 
     {
