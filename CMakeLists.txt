@@ -24,8 +24,10 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/generators/BspDungeonBuilder.cpp
     src/map/generators/BspInteriorBuilder.cpp
     src/map/generators/CellularAutomataBuilder.cpp
+    src/map/generators/DlaBuilder.cpp
     src/map/generators/DrunkardsWalkBuilder.cpp
     src/map/generators/MazeBuilder.cpp
+    src/map/generators/VoronoiBuilder.cpp
     src/map/generators/SimpleMapBuilder.cpp
     src/map/corridors/CorridorBuilder.cpp
     src/map/rooms/RoomCarver.cpp
@@ -96,8 +98,10 @@ set(ROGUELIKE_HEADERS
     src/map/generators/BspDungeonBuilder.hpp
     src/map/generators/BspInteriorBuilder.hpp
     src/map/generators/CellularAutomataBuilder.hpp
+    src/map/generators/DlaBuilder.hpp
     src/map/generators/DrunkardsWalkBuilder.hpp
     src/map/generators/MazeBuilder.hpp
+    src/map/generators/VoronoiBuilder.hpp
     src/map/generators/SimpleMapBuilder.hpp
     src/map/corridors/CorridorBuilder.hpp
     src/map/rooms/RoomCarver.hpp
