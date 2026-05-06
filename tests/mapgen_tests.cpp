@@ -144,6 +144,15 @@ void setChunkTile(wfc::ChunkPattern& pattern, int x, int y, TileType tile)
     source.tiles.assign(pattern.begin(), pattern.end());
     return source;
 }
+[[nodiscard]] bool compatibleListContains(const wfc::MapChunk& chunk,
+                                          wfc::Direction direction,
+                                          int expected)
+{
+    const auto& compatible = chunk.compatibleWith[static_cast<std::size_t>(
+        wfc::directionIndex(direction))];
+    return std::find(compatible.begin(), compatible.end(), expected) !=
+           compatible.end();
+}
 } // namespace
 
 void runMapgenTests(TestRunner& runner)
@@ -176,6 +185,30 @@ void runMapgenTests(TestRunner& runner)
         runner.expect(!chunk.exits[static_cast<std::size_t>(
                           wfc::directionIndex(wfc::Direction::West))][3],
                       "wfc chunks leave closed edges closed");
+    }
+    {
+        auto east = wallChunkPattern();
+        auto west = wallChunkPattern();
+        auto closed = wallChunkPattern();
+        setChunkTile(east, 7, 3, TileType::Floor);
+        setChunkTile(west, 0, 3, TileType::Floor);
+
+        std::vector<wfc::MapChunk> chunks{
+            wfc::makeChunk(east),
+            wfc::makeChunk(west),
+            wfc::makeChunk(closed),
+        };
+        wfc::buildCompatibility(chunks);
+
+        runner.expect(
+            compatibleListContains(chunks[0], wfc::Direction::East, 1),
+            "wfc compatibility matches open edge exits");
+        runner.expect(
+            !compatibleListContains(chunks[0], wfc::Direction::East, 2),
+            "wfc compatibility rejects open-to-closed edges");
+        runner.expect(
+            compatibleListContains(chunks[0], wfc::Direction::North, 2),
+            "wfc compatibility allows closed-to-closed edges");
     }
     {
         Rng cleanupRng{4242U};

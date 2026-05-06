@@ -35,6 +35,7 @@ struct MapChunk {
     ChunkPattern pattern{};
     std::array<ExitMask, 4> exits{};
     bool hasExits = false;
+    std::array<std::vector<int>, 4> compatibleWith{};
 };
 
 [[nodiscard]] int directionIndex(Direction direction) noexcept;
@@ -46,6 +47,7 @@ struct MapChunk {
 [[nodiscard]] ChunkPattern flipVertical(const ChunkPattern& pattern);
 [[nodiscard]] std::vector<MapChunk>
 extractChunks(const std::vector<SourceMap>& sources);
+void buildCompatibility(std::vector<MapChunk>& chunks);
 
 } // namespace wfc
 

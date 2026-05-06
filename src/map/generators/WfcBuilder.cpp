@@ -8,6 +8,7 @@
 #include "map/generators/WfcBuilder.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <stdexcept>
 
@@ -164,6 +165,25 @@ void addUniqueChunk(std::vector<MapChunk>& chunks, const ChunkPattern& pattern)
     }
 }
 
+constexpr std::array<Direction, 4> directions{
+    Direction::North,
+    Direction::East,
+    Direction::South,
+    Direction::West,
+};
+
+[[nodiscard]] bool compatibleEdges(const MapChunk& source,
+                                   const MapChunk& neighbor,
+                                   Direction direction)
+{
+    const auto sourceIndex =
+        static_cast<std::size_t>(directionIndex(direction));
+    const auto neighborIndex =
+        static_cast<std::size_t>(directionIndex(opposite(direction)));
+    // Exact mask equality prevents half-open chunk joins: every passable edge
+    // cell on one chunk must meet a passable edge cell on the neighbor.
+    return source.exits[sourceIndex] == neighbor.exits[neighborIndex];
+}
 } // namespace
 
 std::vector<MapChunk> extractChunks(const std::vector<SourceMap>& sources)
@@ -185,6 +205,30 @@ std::vector<MapChunk> extractChunks(const std::vector<SourceMap>& sources)
     return chunks;
 }
 
+void buildCompatibility(std::vector<MapChunk>& chunks)
+{
+    for (auto& chunk : chunks) {
+        for (auto& compatible : chunk.compatibleWith) {
+            compatible.clear();
+        }
+    }
+
+    for (int source = 0; source < static_cast<int>(chunks.size()); ++source) {
+        for (int neighbor = 0; neighbor < static_cast<int>(chunks.size());
+             ++neighbor) {
+            for (const auto direction : directions) {
+                if (compatibleEdges(chunks[static_cast<std::size_t>(source)],
+                                    chunks[static_cast<std::size_t>(neighbor)],
+                                    direction)) {
+                    chunks[static_cast<std::size_t>(source)]
+                        .compatibleWith[static_cast<std::size_t>(
+                            directionIndex(direction))]
+                        .push_back(neighbor);
+                }
+            }
+        }
+    }
+}
 } // namespace wfc
 
 } // namespace rl
