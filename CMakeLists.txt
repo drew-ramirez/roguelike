@@ -34,6 +34,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/generators/RandomWalk.cpp
     src/map/generators/VoronoiBuilder.cpp
     src/map/generators/SimpleMapBuilder.cpp
+    src/map/generators/WfcBuilder.cpp
     src/map/corridors/CorridorBuilder.cpp
     src/map/rooms/RoomCarver.cpp
     src/render/ConsoleBuffer.cpp
@@ -111,6 +112,7 @@ set(ROGUELIKE_HEADERS
     src/map/generators/RandomWalk.hpp
     src/map/generators/VoronoiBuilder.hpp
     src/map/generators/SimpleMapBuilder.hpp
+    src/map/generators/WfcBuilder.hpp
     src/map/corridors/CorridorBuilder.hpp
     src/map/rooms/RoomCarver.hpp
     src/map/Map.hpp

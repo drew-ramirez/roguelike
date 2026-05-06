@@ -16,6 +16,7 @@
 #include "map/generators/DrunkardsWalkBuilder.hpp"
 #include "map/generators/DlaBuilder.hpp"
 #include "map/generators/VoronoiBuilder.hpp"
+#include "map/generators/WfcBuilder.hpp"
 #include "map/generators/BspDungeonBuilder.hpp"
 #include "map/generators/BspInteriorBuilder.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
@@ -109,10 +110,73 @@ namespace {
 
     return count;
 }
+[[nodiscard]] wfc::ChunkPattern wallChunkPattern()
+{
+    wfc::ChunkPattern pattern{};
+    pattern.fill(TileType::Wall);
+    return pattern;
+}
+
+void setChunkTile(wfc::ChunkPattern& pattern, int x, int y, TileType tile)
+{
+    pattern[static_cast<std::size_t>(y * wfc::chunkSize + x)] = tile;
+}
+
+[[nodiscard]] bool chunkHasFloorAt(const wfc::MapChunk& chunk, int x, int y)
+{
+    return chunk.pattern[static_cast<std::size_t>(y * wfc::chunkSize + x)] ==
+           TileType::Floor;
+}
+
+[[nodiscard]] bool chunkCollectionHasFloorAt(
+    const std::vector<wfc::MapChunk>& chunks, int x, int y)
+{
+    return std::any_of(chunks.begin(), chunks.end(), [x, y](const auto& chunk) {
+        return chunkHasFloorAt(chunk, x, y);
+    });
+}
+
+[[nodiscard]] wfc::SourceMap sourceFromPattern(const wfc::ChunkPattern& pattern)
+{
+    wfc::SourceMap source;
+    source.width = wfc::chunkSize;
+    source.height = wfc::chunkSize;
+    source.tiles.assign(pattern.begin(), pattern.end());
+    return source;
+}
 } // namespace
 
 void runMapgenTests(TestRunner& runner)
 {
+    {
+        auto pattern = wallChunkPattern();
+        setChunkTile(pattern, 1, 2, TileType::Floor);
+
+        const auto chunks = wfc::extractChunks({sourceFromPattern(pattern)});
+        runner.expect(chunks.size() == 4U,
+                      "wfc chunk extraction adds flips and dedupes patterns");
+        runner.expect(!chunkCollectionHasFloorAt(chunks, 5, 1),
+                      "wfc chunk extraction does not rotate chunks");
+    }
+
+    {
+        auto pattern = wallChunkPattern();
+        setChunkTile(pattern, 3, 0, TileType::Floor);
+        setChunkTile(pattern, 7, 4, TileType::Floor);
+        setChunkTile(pattern, 4, 7, TileType::Floor);
+
+        const auto chunk = wfc::makeChunk(pattern);
+        runner.expect(chunk.hasExits, "wfc chunks detect any edge exit");
+        runner.expect(chunk.exits[static_cast<std::size_t>(
+                          wfc::directionIndex(wfc::Direction::North))][3],
+                      "wfc chunks detect north exits");
+        runner.expect(chunk.exits[static_cast<std::size_t>(
+                          wfc::directionIndex(wfc::Direction::East))][4],
+                      "wfc chunks detect east exits");
+        runner.expect(!chunk.exits[static_cast<std::size_t>(
+                          wfc::directionIndex(wfc::Direction::West))][3],
+                      "wfc chunks leave closed edges closed");
+    }
     {
         Rng cleanupRng{4242U};
         const auto cleaned = VoronoiBuilder::buildWithSettings(
