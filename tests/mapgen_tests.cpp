@@ -19,6 +19,7 @@
 #include "map/generators/WfcBuilder.hpp"
 #include "map/generators/BspDungeonBuilder.hpp"
 #include "map/generators/BspInteriorBuilder.hpp"
+#include "map/generators/BuilderChain.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "map/prefabs/Prefab.hpp"
 
@@ -131,6 +132,12 @@ namespace {
     }
 
     return count;
+}
+void carveVerticalDoorCandidate(Map& map, int x, int y)
+{
+    map.setTile(x, y - 1, TileType::Floor);
+    map.setTile(x, y, TileType::Floor);
+    map.setTile(x, y + 1, TileType::Floor);
 }
 [[nodiscard]] wfc::ChunkPattern wallChunkPattern()
 {
@@ -525,6 +532,12 @@ void runMapgenTests(TestRunner& runner)
                       "prefab section converts markers to spawn requests");
         runner.expect(sectionResult.spawnRegions.size() == 1U,
                       "prefab section replaces overlapping spawn regions");
+
+        const auto earlyVaults = vaultsForDepth(1);
+        const auto laterVaults = vaultsForDepth(3);
+        runner.expect(!earlyVaults.empty() &&
+                          laterVaults.size() > earlyVaults.size(),
+                      "prefab vault library filters by dungeon depth");
     }
     {
         runner.expect(isKnownMapBuilder("simple") && isKnownMapBuilder("bsp") &&
@@ -539,6 +552,44 @@ void runMapgenTests(TestRunner& runner)
                       "mapgen viewer prints builder id");
         runner.expect(text.find("Validation: ok") != std::string::npos,
                       "mapgen viewer prints validation result");
+    }
+    {
+        MapBuildResult result{Map{11, 7, TileType::Wall}, {}, {}};
+        result.playerStart = Point{1, 1};
+        result.stairsPosition = Point{9, 5};
+        carveVerticalDoorCandidate(result.map, 3, 3);
+        carveVerticalDoorCandidate(result.map, 7, 3);
+        result.corridorPaths.push_back(
+            CorridorPath{"test", {Point{3, 3}, Point{3, 2}, Point{3, 4}}});
+
+        Rng rng{7U};
+        placeDoors(result, rng, MapBuildOptions{false});
+        runner.expect(result.map.tileAt(3, 3) == TileType::ClosedDoor,
+                      "door placement uses corridor candidates first");
+        runner.expect(result.map.tileAt(7, 3) == TileType::Floor,
+                      "corridor door placement avoids whole-map scanning");
+    }
+
+    {
+        MapBuildResult result{Map{17, 7, TileType::Wall}, {}, {}};
+        result.playerStart = Point{1, 1};
+        result.stairsPosition = Point{15, 5};
+        std::vector<Point> candidates;
+        for (int x = 3; x <= 13; x += 2) {
+            const Point candidate{x, 3};
+            candidates.push_back(candidate);
+            carveVerticalDoorCandidate(result.map, candidate.x, candidate.y);
+        }
+        result.spawnRequests.push_back(SpawnRequest{"goblin", candidates[0]});
+
+        Rng rng{11U};
+        placeDoors(result, rng, MapBuildOptions{false});
+        runner.expect(result.map.tileAt(candidates[0].x, candidates[0].y) ==
+                          TileType::Floor,
+                      "door placement skips occupied spawn-request tiles");
+        runner.expect(countTiles(result.map, TileType::ClosedDoor) <
+                          static_cast<int>(candidates.size()) - 1,
+                      "fallback door scan is sparse instead of exhaustive");
     }
 }
 

@@ -7,9 +7,11 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
+#include "core/Point.hpp"
 #include "core/Rng.hpp"
 #include "map/MapBuilderTypes.hpp"
 
@@ -39,6 +41,12 @@ struct PrefabSection {
     PrefabVerticalPlacement vertical = PrefabVerticalPlacement::Center;
 };
 
+struct PrefabVault {
+    PrefabTemplate prefab;
+    int minimumDepth = 1;
+    int maximumDepth = 999;
+};
+
 struct PrefabPlacementResult {
     bool placed = false;
     Point origin{};
@@ -49,6 +57,10 @@ struct PrefabPlacementResult {
 [[nodiscard]] const PrefabTemplate& armoryVaultPrefab();
 [[nodiscard]] PrefabTemplate prefabFromAscii(std::string name,
                                              std::vector<std::string> rows);
+[[nodiscard]] PrefabTemplate
+loadPrefabFromRexPaint(const std::filesystem::path& path, std::string name);
+[[nodiscard]] std::vector<PrefabVault> roomVaultLibrary();
+[[nodiscard]] std::vector<PrefabVault> vaultsForDepth(int depth);
 [[nodiscard]] int prefabWidth(const PrefabTemplate& prefab);
 [[nodiscard]] int prefabHeight(const PrefabTemplate& prefab);
 

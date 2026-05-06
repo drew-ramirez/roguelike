@@ -8,9 +8,11 @@
 #include "map/prefabs/Prefab.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <stdexcept>
 #include <utility>
 
+#include "assets/RexPaintLoader.hpp"
 #include "map/MapBuilderCommon.hpp"
 #include "map/TileType.hpp"
 
@@ -67,7 +69,7 @@ void removeSpawnTilesInArea(MapBuildResult& result,
 {
     // Prefabs own every tile in their footprint, remove generic spawn points
     // there first so marker-driven spawn requests do not stack with random
-    // room population.
+    // room population
     for (auto& region : result.spawnRegions) {
         region.tiles.erase(std::remove_if(region.tiles.begin(),
                                           region.tiles.end(),
@@ -91,6 +93,17 @@ void removeSpawnTilesInArea(MapBuildResult& result,
                                request.position, origin, width, height);
                        }),
         result.spawnRequests.end());
+}
+
+[[nodiscard]] char markerFromRexGlyph(char32_t glyph)
+{
+    if (glyph == U'\0') {
+        return ' ';
+    }
+    if (glyph > static_cast<char32_t>(0x7f)) {
+        return '.';
+    }
+    return static_cast<char>(glyph);
 }
 
 void addSpawnRequestForMarker(MapBuildResult& result, char marker, Point point)
@@ -127,8 +140,8 @@ void applyPrefab(MapBuildResult& result,
             }
 
             const Point point{origin.x + x, origin.y + y};
-            // Terrain markers are consumed here; entity markers become floor
-            // plus SpawnRequest entries.
+            // terrain markers are consumed here, entity markers become floor
+            // plus SpawnRequest entries
             if (marker == '#') {
                 result.map.setTile(point.x, point.y, TileType::Wall);
             } else if (marker == '+') {
@@ -234,11 +247,84 @@ const PrefabTemplate& armoryVaultPrefab()
     return piece;
 }
 
+namespace {
+
+const PrefabTemplate& goblinDenPrefab()
+{
+    static const PrefabTemplate piece{"goblin den",
+                                      {
+                                          "######",
+                                          "#M..M#",
+                                          "#.##.#",
+                                          "#.!..#",
+                                          "##+###",
+                                      }};
+    return piece;
+}
+
+const PrefabTemplate& trapVaultPrefab()
+{
+    static const PrefabTemplate piece{"trap vault",
+                                      {
+                                          "#######",
+                                          "#^...^#",
+                                          "#.###.#",
+                                          "#.!O!.#",
+                                          "###+###",
+                                      }};
+    return piece;
+}
+
+} // namespace
+
 PrefabTemplate prefabFromAscii(std::string name, std::vector<std::string> rows)
 {
     PrefabTemplate prefab{std::move(name), std::move(rows)};
     validatePrefab(prefab);
     return prefab;
+}
+
+PrefabTemplate loadPrefabFromRexPaint(const std::filesystem::path& path,
+                                      std::string name)
+{
+    const auto image = loadRexPaintImage(path);
+    std::vector<std::string> rows(
+        static_cast<std::size_t>(image.height),
+        std::string(static_cast<std::size_t>(image.width), ' '));
+    for (const auto& layer : image.layers) {
+        for (int y = 0; y < layer.height; ++y) {
+            for (int x = 0; x < layer.width; ++x) {
+                const auto& cell = layer.cellAt(x, y);
+                if (cell.transparentBackground) {
+                    continue;
+                }
+                rows[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] =
+                    markerFromRexGlyph(cell.glyph);
+            }
+        }
+    }
+    return prefabFromAscii(std::move(name), std::move(rows));
+}
+
+std::vector<PrefabVault> roomVaultLibrary()
+{
+    return {
+        PrefabVault{shrinePrefab(), 1, 3},
+        PrefabVault{goblinDenPrefab(), 1, 5},
+        PrefabVault{armoryVaultPrefab(), 2, 999},
+        PrefabVault{trapVaultPrefab(), 3, 999},
+    };
+}
+
+std::vector<PrefabVault> vaultsForDepth(int depth)
+{
+    std::vector<PrefabVault> vaults;
+    for (const auto& vault : roomVaultLibrary()) {
+        if (depth >= vault.minimumDepth && depth <= vault.maximumDepth) {
+            vaults.push_back(vault);
+        }
+    }
+    return vaults;
 }
 
 int prefabWidth(const PrefabTemplate& prefab)

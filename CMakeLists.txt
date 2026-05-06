@@ -27,6 +27,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/MapValidation.cpp
     src/map/generators/BspDungeonBuilder.cpp
     src/map/generators/BspInteriorBuilder.cpp
+    src/map/generators/BuilderChain.cpp
     src/map/generators/CellularAutomataBuilder.cpp
     src/map/generators/DlaBuilder.cpp
     src/map/generators/DrunkardsWalkBuilder.cpp
@@ -106,6 +107,7 @@ set(ROGUELIKE_HEADERS
     src/input/InputEvent.hpp
     src/map/generators/BspDungeonBuilder.hpp
     src/map/generators/BspInteriorBuilder.hpp
+    src/map/generators/BuilderChain.hpp
     src/map/generators/CellularAutomataBuilder.hpp
     src/map/generators/DlaBuilder.hpp
     src/map/generators/DrunkardsWalkBuilder.hpp
