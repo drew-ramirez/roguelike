@@ -48,6 +48,15 @@ namespace {
     }
     return true;
 }
+[[nodiscard]] bool hasSnapshotContaining(const MapBuildResult& result,
+                                         std::string_view text)
+{
+    return std::any_of(result.snapshots.begin(),
+                       result.snapshots.end(),
+                       [text](const auto& s) {
+                           return s.label.find(text) != std::string::npos;
+                       });
+}
 [[nodiscard]] bool touchesMapEdge(const Map& map, Point point) noexcept
 {
     return point.x == 0 || point.y == 0 || point.x == map.width() - 1 ||
@@ -209,6 +218,31 @@ void runMapgenTests(TestRunner& runner)
         runner.expect(
             compatibleListContains(chunks[0], wfc::Direction::North, 2),
             "wfc compatibility allows closed-to-closed edges");
+    }
+    {
+        Rng firstRng{123U};
+        Rng secondRng{123U};
+        const auto first =
+            WfcBuilder::build(40, 25, firstRng, MapBuildOptions{true});
+        const auto second =
+            WfcBuilder::build(40, 25, secondRng, MapBuildOptions{true});
+        const auto validation = validateMapBuild(
+            first.map, first.playerStart, first.stairsPosition);
+
+        runner.expect(first.builderName == "wfc", "wfc builder reports its id");
+        runner.expect(sameMapTiles(first.map, second.map) &&
+                          first.playerStart == second.playerStart &&
+                          first.stairsPosition == second.stairsPosition,
+                      "wfc builder is deterministic for fixed seeds");
+        runner.expect(validation.valid,
+                      "wfc builder produces reachable start and stairs");
+        runner.expect(
+            hasSnapshotContaining(first, "wfc source") &&
+                hasSnapshotContaining(first, "chunk gallery") &&
+                hasSnapshotContaining(first, "placement"),
+            "wfc builder records source chunk and placement snapshots");
+        runner.expect(hasBuildStepContaining(first, "neighbor-count"),
+                      "wfc builder records solver mode");
     }
     {
         Rng cleanupRng{4242U};

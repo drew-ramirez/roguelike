@@ -1,7 +1,7 @@
 /**
  * **************************************************************************
  * @file     WfcBuilder.hpp
- * @brief    Declares chunk source helpers for WFC map generation
+ * @brief    Declares chunk wave-function-collapse generation
  * **************************************************************************
  */
 
@@ -11,6 +11,8 @@
 #include <filesystem>
 #include <vector>
 
+#include "core/Rng.hpp"
+#include "map/MapBuilderTypes.hpp"
 #include "map/TileType.hpp"
 
 namespace rl {
@@ -50,5 +52,14 @@ extractChunks(const std::vector<SourceMap>& sources);
 void buildCompatibility(std::vector<MapChunk>& chunks);
 
 } // namespace wfc
+
+class WfcBuilder {
+  public:
+    [[nodiscard]] static MapBuildResult
+    build(int width,
+          int height,
+          Rng& rng,
+          MapBuildOptions options = MapBuildOptions{});
+};
 
 } // namespace rl
