@@ -36,6 +36,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/generators/SimpleMapBuilder.cpp
     src/map/generators/WfcBuilder.cpp
     src/map/corridors/CorridorBuilder.cpp
+    src/map/prefabs/Prefab.cpp
     src/map/rooms/RoomCarver.cpp
     src/render/ConsoleBuffer.cpp
     src/render/WallGlyph.cpp
@@ -114,6 +115,7 @@ set(ROGUELIKE_HEADERS
     src/map/generators/SimpleMapBuilder.hpp
     src/map/generators/WfcBuilder.hpp
     src/map/corridors/CorridorBuilder.hpp
+    src/map/prefabs/Prefab.hpp
     src/map/rooms/RoomCarver.hpp
     src/map/Map.hpp
     src/map/MapBuilder.hpp

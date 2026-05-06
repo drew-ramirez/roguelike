@@ -2,6 +2,6 @@
 
 namespace rl {
 
-enum class TileType { Wall, Floor, DownStairs };
+enum class TileType { Wall, Floor, DownStairs, ClosedDoor };
 
 } // namespace rl

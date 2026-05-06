@@ -20,6 +20,7 @@
 #include "map/generators/BspDungeonBuilder.hpp"
 #include "map/generators/BspInteriorBuilder.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
+#include "map/prefabs/Prefab.hpp"
 
 namespace rl::test {
 namespace {
@@ -47,6 +48,18 @@ namespace {
         }
     }
     return true;
+}
+[[nodiscard]] int countTiles(const Map& map, TileType tile)
+{
+    int count = 0;
+    for (int y = 0; y < map.height(); ++y) {
+        for (int x = 0; x < map.width(); ++x) {
+            if (map.tileAt(x, y) == tile) {
+                ++count;
+            }
+        }
+    }
+    return count;
 }
 [[nodiscard]] bool hasSnapshotContaining(const MapBuildResult& result,
                                          std::string_view text)
@@ -462,6 +475,57 @@ void runMapgenTests(TestRunner& runner)
                       "bsp interior builder records leaf-room algorithm");
     }
 
+    {
+        MapBuildResult result{Map{12, 12, TileType::Floor}, {}, {}};
+        result.playerStart = Point{1, 1};
+        result.stairsPosition = Point{10, 10};
+        Rng rng{5U};
+
+        const auto placed = placePrefab(result,
+                                        shrinePrefab(),
+                                        rng,
+                                        MapBuildOptions{true},
+                                        PrefabPlacementMode::Center);
+        runner.expect(placed.placed, "prefab center placement succeeds");
+        runner.expect(countTiles(result.map, TileType::ClosedDoor) == 1,
+                      "prefab placement applies door markers");
+        runner.expect(result.spawnRequests.size() == 2U,
+                      "prefab placement converts spawn markers to requests");
+        runner.expect(hasBuildStepContaining(result, "placed prefab shrine"),
+                      "prefab placement records a build step");
+
+        MapBuildResult tiny{Map{5, 5, TileType::Floor}, {}, {}};
+        tiny.playerStart = Point{1, 1};
+        tiny.stairsPosition = Point{3, 3};
+        const auto failed =
+            placePrefab(tiny, armoryVaultPrefab(), rng, MapBuildOptions{});
+        runner.expect(!failed.placed &&
+                          hasBuildStepContaining(tiny, "skipped prefab"),
+                      "prefab placement reports failed placement diagnostics");
+
+        MapBuildResult sectionResult{Map{12, 12, TileType::Floor}, {}, {}};
+        sectionResult.playerStart = Point{1, 1};
+        sectionResult.stairsPosition = Point{10, 10};
+        sectionResult.spawnRegions.push_back(spawnRegionFromTiles(
+            {Point{5, 5}, Point{6, 6}}, SpawnRegionKind::Room));
+        const auto section =
+            placeSection(sectionResult,
+                         PrefabSection{prefabFromAscii("section",
+                                                       {
+                                                           "###",
+                                                           "#M#",
+                                                           "#+#",
+                                                       }),
+                                       PrefabHorizontalPlacement::Center,
+                                       PrefabVerticalPlacement::Center},
+                         MapBuildOptions{true});
+        runner.expect(section.placed,
+                      "prefab section placement succeeds at fixed anchors");
+        runner.expect(sectionResult.spawnRequests.size() == 1U,
+                      "prefab section converts markers to spawn requests");
+        runner.expect(sectionResult.spawnRegions.size() == 1U,
+                      "prefab section replaces overlapping spawn regions");
+    }
     {
         runner.expect(isKnownMapBuilder("simple") && isKnownMapBuilder("bsp") &&
                           isKnownMapBuilder("bsp-interior"),
