@@ -70,19 +70,28 @@ void Game::startNewGame(std::optional<Rng::Seed> seed)
         SimpleMapBuilder::build(map_.width(), map_.height(), resources_.rng);
     map_ = std::move(build.map);
     resources_.player = spawnPlayer(registry_, build.playerStart);
+    [[maybe_unused]] const auto requested =
+        spawnRequestedEntities(registry_,
+                               build.spawnRequests,
+                               map_,
+                               build.playerStart,
+                               build.stairsPosition);
     resources_.log.add("Entered the dungeon.");
     const auto spawned = spawnMonsters(registry_,
-                                       build.rooms,
+                                       build.spawnRegions,
+                                       map_,
                                        resources_.rng,
                                        build.playerStart,
                                        resources_.depth);
     [[maybe_unused]] const auto spawnedItems = spawnItems(registry_,
-                                                          build.rooms,
+                                                          build.spawnRegions,
+                                                          map_,
                                                           resources_.rng,
                                                           build.playerStart,
                                                           resources_.depth);
     [[maybe_unused]] const auto spawnedTraps = spawnTraps(registry_,
-                                                          build.rooms,
+                                                          build.spawnRegions,
+                                                          map_,
                                                           resources_.rng,
                                                           build.playerStart,
                                                           build.stairsPosition,

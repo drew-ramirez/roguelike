@@ -402,8 +402,8 @@ bool smokeMonsterSpawning()
     entt::registry registry;
     [[maybe_unused]] const auto player =
         rl::spawnPlayer(registry, build.playerStart);
-    const auto spawned =
-        rl::spawnMonsters(registry, build.rooms, rng, build.playerStart);
+    const auto spawned = rl::spawnMonsters(
+        registry, build.spawnRegions, build.map, rng, build.playerStart);
     if (spawned < 2) {
         return false;
     }

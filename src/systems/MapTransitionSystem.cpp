@@ -12,6 +12,7 @@
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
+#include "spawn/Spawner.hpp"
 #include "spawn/TrapSpawner.hpp"
 #include "systems/VisibilitySystem.hpp"
 
@@ -92,18 +93,27 @@ bool tryDescendToNextLevel(entt::registry& registry,
         });
     }
 
+    [[maybe_unused]] const auto requested =
+        spawnRequestedEntities(registry,
+                               build.spawnRequests,
+                               map,
+                               build.playerStart,
+                               build.stairsPosition);
     [[maybe_unused]] const auto monsters = spawnMonsters(registry,
-                                                         build.rooms,
+                                                         build.spawnRegions,
+                                                         map,
                                                          resources.rng,
                                                          build.playerStart,
                                                          resources.depth);
     [[maybe_unused]] const auto items = spawnItems(registry,
-                                                   build.rooms,
+                                                   build.spawnRegions,
+                                                   map,
                                                    resources.rng,
                                                    build.playerStart,
                                                    resources.depth);
     [[maybe_unused]] const auto traps = spawnTraps(registry,
-                                                   build.rooms,
+                                                   build.spawnRegions,
+                                                   map,
                                                    resources.rng,
                                                    build.playerStart,
                                                    build.stairsPosition,

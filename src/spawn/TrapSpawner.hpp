@@ -14,6 +14,7 @@
 
 #include "core/Point.hpp"
 #include "core/Rng.hpp"
+#include "map/MapBuilderTypes.hpp"
 #include "map/Rect.hpp"
 
 namespace rl {
@@ -25,6 +26,13 @@ namespace rl {
 
 [[nodiscard]] std::size_t spawnTraps(entt::registry& registry,
                                      const std::vector<Rect>& rooms,
+                                     Rng& rng,
+                                     Point playerStart,
+                                     Point stairsPosition,
+                                     int depth);
+[[nodiscard]] std::size_t spawnTraps(entt::registry& registry,
+                                     const std::vector<SpawnRegion>& regions,
+                                     const Map& map,
                                      Rng& rng,
                                      Point playerStart,
                                      Point stairsPosition,
