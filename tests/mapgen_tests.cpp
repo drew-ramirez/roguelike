@@ -10,6 +10,7 @@
 #include "core/Rng.hpp"
 #include "debug/MapgenViewer.hpp"
 #include "map/MapBrush.hpp"
+#include "map/MapBuilderRegistry.hpp"
 #include "map/MapConnectivity.hpp"
 #include "map/MapValidation.hpp"
 #include "map/generators/CellularAutomataBuilder.hpp"
@@ -541,11 +542,31 @@ void runMapgenTests(TestRunner& runner)
     }
     {
         runner.expect(isKnownMapBuilder("simple") && isKnownMapBuilder("bsp") &&
-                          isKnownMapBuilder("bsp-interior"),
+                          isKnownMapBuilder("bsp-interior") &&
+                          isKnownMapBuilder("cellular") &&
+                          isKnownMapBuilder("drunkard") &&
+                          isKnownMapBuilder("drunkard-open-area") &&
+                          isKnownMapBuilder("drunkard-open-halls") &&
+                          isKnownMapBuilder("drunkard-winding-passages") &&
+                          isKnownMapBuilder("drunkard-fat-passages") &&
+                          isKnownMapBuilder("drunkard-symmetry") &&
+                          isKnownMapBuilder("maze") &&
+                          isKnownMapBuilder("dla") &&
+                          isKnownMapBuilder("dla-walk-inwards") &&
+                          isKnownMapBuilder("dla-walk-outwards") &&
+                          isKnownMapBuilder("dla-central-attractor") &&
+                          isKnownMapBuilder("dla-insectoid") &&
+                          isKnownMapBuilder("voronoi") &&
+                          isKnownMapBuilder("voronoi-pythagoras") &&
+                          isKnownMapBuilder("voronoi-manhattan") &&
+                          isKnownMapBuilder("voronoi-chebyshev") &&
+                          isKnownMapBuilder("wfc") &&
+                          isKnownMapBuilder("cavern-vaults") &&
+                          isKnownMapBuilder("ruined-rooms"),
                       "mapgen viewer exposes all implemented builders");
         std::ostringstream output;
         const int result = runMapgenViewer(
-            MapgenViewerOptions{"bsp", Rng::Seed{777U}, false}, output);
+            MapgenViewerOptions{"bsp", Rng::Seed{777U}, false, 40, 25}, output);
         const std::string text = output.str();
         runner.expect(result == 0, "mapgen viewer runs selected builder");
         runner.expect(text.find("Builder: bsp") != std::string::npos,

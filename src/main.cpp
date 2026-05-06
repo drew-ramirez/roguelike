@@ -111,6 +111,33 @@ std::optional<std::string_view> parseBuilderArgument(int argc, char* argv[])
     return parseStringArgument(argc, argv, "--builder");
 }
 
+int parsePositiveIntValue(std::string_view value, std::string_view name)
+{
+    if (value.empty()) {
+        throw std::invalid_argument(std::string{name} + " cannot be empty");
+    }
+
+    int parsed = 0;
+    const auto* const begin = value.data();
+    const auto* const end = value.data() + value.size();
+    const auto [next, error] = std::from_chars(begin, end, parsed);
+    if (error != std::errc{} || next != end || parsed <= 0) {
+        throw std::invalid_argument(std::string{name} +
+                                    " must be a positive integer");
+    }
+    return parsed;
+}
+
+int parsePositiveIntArgument(int argc,
+                             char* argv[],
+                             std::string_view name,
+                             int fallback)
+{
+    if (const auto value = parseStringArgument(argc, argv, name)) {
+        return parsePositiveIntValue(*value, name);
+    }
+    return fallback;
+}
 bool sameMapTiles(const rl::Map& left, const rl::Map& right)
 {
     if (left.width() != right.width() || left.height() != right.height()) {
@@ -536,6 +563,9 @@ int main(int argc, char* argv[])
             }
             options.seed = parseSeedArgument(argc, argv);
             options.showSnapshots = hasArgument(argc, argv, "--snapshots");
+            options.width = parsePositiveIntArgument(argc, argv, "--width", 40);
+            options.height =
+                parsePositiveIntArgument(argc, argv, "--height", 25);
             return rl::runMapgenViewer(options, std::cout);
         }
 

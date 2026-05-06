@@ -22,6 +22,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/Map.cpp
     src/map/MapBuilderCommon.cpp
     src/map/MapBrush.cpp
+    src/map/MapBuilderRegistry.cpp
     src/map/MapConnectivity.cpp
     src/map/MapGeometry.cpp
     src/map/MapValidation.cpp
@@ -122,6 +123,7 @@ set(ROGUELIKE_HEADERS
     src/map/Map.hpp
     src/map/MapBuilder.hpp
     src/map/MapBuilderCommon.hpp
+    src/map/MapBuilderRegistry.hpp
     src/map/MapBrush.hpp
     src/map/MapConnectivity.hpp
     src/map/MapGeometry.hpp
