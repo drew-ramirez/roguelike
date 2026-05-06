@@ -15,6 +15,7 @@
 
 namespace rl {
 
+class Camera;
 class ConsoleBuffer;
 class Map;
 struct GameResources;
@@ -31,5 +32,10 @@ void drawTargetingOverlay(ConsoleBuffer& console,
                           const entt::registry& registry,
                           const GameResources& resources,
                           const Map& map);
+void drawTargetingOverlay(ConsoleBuffer& console,
+                          const entt::registry& registry,
+                          const GameResources& resources,
+                          const Map& map,
+                          const Camera& camera);
 
 } // namespace rl

@@ -9,9 +9,11 @@
 
 namespace rl {
 
+class Camera;
 class ConsoleBuffer;
 class Map;
 
 void renderMap(const Map& map, ConsoleBuffer& console);
+void renderMap(const Map& map, ConsoleBuffer& console, const Camera& camera);
 
 } // namespace rl

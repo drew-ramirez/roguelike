@@ -5,6 +5,7 @@
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
+#include "render/Camera.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "systems/InputSystem.hpp"
 #include "systems/ItemSystem.hpp"
@@ -74,6 +75,16 @@ void drawTargetingOverlay(ConsoleBuffer& console,
                           const GameResources& resources,
                           const Map& map)
 {
+    const Camera camera{map.width(), map.height()};
+    drawTargetingOverlay(console, registry, resources, map, camera);
+}
+
+void drawTargetingOverlay(ConsoleBuffer& console,
+                          const entt::registry& registry,
+                          const GameResources& resources,
+                          const Map& map,
+                          const Camera& camera)
+{
     if (!resources.pendingTargeting.has_value()) {
         return;
     }
@@ -88,18 +99,28 @@ void drawTargetingOverlay(ConsoleBuffer& console,
                 distanceSquared(origin, point) > rangeSquared) {
                 continue;
             }
-            console.set(x, y, U'*', Color{80, 120, 220, 255}, Color::black());
+            const auto screen = camera.worldToScreen(point);
+            if (screen.has_value()) {
+                console.set(screen->x,
+                            screen->y,
+                            U'*',
+                            Color{80, 120, 220, 255},
+                            Color::black());
+            }
         }
     }
 
     const auto cursor = resources.pendingTargeting->cursor;
-    console.set(cursor.x,
-                cursor.y,
-                U'X',
-                isValidTarget(registry, resources, map, cursor)
-                    ? Color::yellow()
-                    : Color{255, 80, 80, 255},
-                Color::black());
+    const auto screenCursor = camera.worldToScreen(cursor);
+    if (screenCursor.has_value()) {
+        console.set(screenCursor->x,
+                    screenCursor->y,
+                    U'X',
+                    isValidTarget(registry, resources, map, cursor)
+                        ? Color::yellow()
+                        : Color{255, 80, 80, 255},
+                    Color::black());
+    }
 }
 
 } // namespace rl

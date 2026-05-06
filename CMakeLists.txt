@@ -40,6 +40,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/corridors/CorridorBuilder.cpp
     src/map/prefabs/Prefab.cpp
     src/map/rooms/RoomCarver.cpp
+    src/render/Camera.cpp
     src/render/ConsoleBuffer.cpp
     src/render/WallGlyph.cpp
     src/save/SaveGame.cpp
@@ -131,6 +132,7 @@ set(ROGUELIKE_HEADERS
     src/map/MapValidation.hpp
     src/map/Rect.hpp
     src/map/TileType.hpp
+    src/render/Camera.hpp
     src/render/Color.hpp
     src/render/ConsoleBuffer.hpp
     src/render/IRenderer.hpp

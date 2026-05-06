@@ -4,10 +4,14 @@
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
+#include "render/Camera.hpp"
+#include "render/ConsoleBuffer.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/ItemSystem.hpp"
+#include "systems/RenderSystem.hpp"
+#include "ui/Targeting.hpp"
 
 namespace rl::test {
 
@@ -56,6 +60,28 @@ void runTargetingTests(TestRunner& runner)
                   "AOE damages monsters inside radius");
     runner.expect(!registry.all_of<SufferDamage>(outside),
                   "AOE does not damage monsters outside radius");
+
+    Camera camera{5, 4};
+    camera.centerOn(Point{8, 5}, map);
+    const auto screen = camera.worldToScreen(Point{8, 5});
+    runner.expect(screen.has_value() &&
+                      camera.screenToWorld(*screen) == Point{8, 5},
+                  "camera round-trips world and screen coordinates");
+    runner.expect(!camera.worldToScreen(Point{1, 1}).has_value(),
+                  "camera culls world points outside the viewport");
+
+    Map largeMap = openMap(20, 12);
+    largeMap.setVisible(8, 5);
+    entt::registry renderRegistry;
+    [[maybe_unused]] const auto visible =
+        spawnGoblin(renderRegistry, Point{8, 5});
+    [[maybe_unused]] const auto outsideView =
+        spawnGoblin(renderRegistry, Point{1, 1});
+    ConsoleBuffer console{10, 6};
+    console.clear();
+    renderEntities(renderRegistry, largeMap, console, camera);
+    runner.expect(console.cellAt(screen->x, screen->y).glyph == U'g',
+                  "camera-aware entity rendering uses screen coordinates");
 }
 
 } // namespace rl::test

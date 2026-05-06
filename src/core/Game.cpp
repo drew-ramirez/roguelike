@@ -15,6 +15,7 @@
 #include <thread>
 #include <utility>
 
+#include "ecs/Components.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "render/SdlRenderer.hpp"
 #include "save/SaveGame.hpp"
@@ -227,10 +228,16 @@ void Game::render()
         return;
     }
 
-    renderMap(map_, console_);
-    renderEntities(registry_, map_, console_);
+    if (resources_.player != entt::null && registry_.valid(resources_.player) &&
+        registry_.all_of<Position>(resources_.player)) {
+        const auto& position = registry_.get<Position>(resources_.player);
+        camera_.centerOn(Point{position.x, position.y}, map_);
+    }
+
+    renderMap(map_, console_, camera_);
+    renderEntities(registry_, map_, console_, camera_);
     if (state_ == RunState::ShowTargeting) {
-        drawTargetingOverlay(console_, registry_, resources_, map_);
+        drawTargetingOverlay(console_, registry_, resources_, map_, camera_);
     }
     drawHud(console_, resources_, registry_, state_);
     if (state_ == RunState::ShowInventory) {

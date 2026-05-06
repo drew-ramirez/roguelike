@@ -19,6 +19,7 @@
 #include "fov/ShadowcastingFov.hpp"
 #include "input/InputEvent.hpp"
 #include "map/Map.hpp"
+#include "render/Camera.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "render/IRenderer.hpp"
 
@@ -41,6 +42,7 @@ class Game {
     RunState state_ = RunState::MainMenu;
     int menuSelection_ = 0;
     ConsoleBuffer console_{80, 50};
+    Camera camera_{80, 43};
     Map map_{80, 43, TileType::Wall};
     entt::registry registry_;
     GameResources resources_;

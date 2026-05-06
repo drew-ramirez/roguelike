@@ -12,6 +12,7 @@
 
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
+#include "render/Camera.hpp"
 #include "render/ConsoleBuffer.hpp"
 
 namespace rl {
@@ -27,7 +28,8 @@ struct EntityDraw {
 
 void renderEntityView(const entt::registry& registry,
                       const Map* map,
-                      ConsoleBuffer& console)
+                      ConsoleBuffer& console,
+                      const Camera* camera)
 {
     std::vector<EntityDraw> draws;
 
@@ -39,6 +41,10 @@ void renderEntityView(const entt::registry& registry,
 
         const auto& position = view.get<const Position>(entity);
         if (map != nullptr && !map->isVisible(position.x, position.y)) {
+            continue;
+        }
+        if (camera != nullptr &&
+            !camera->containsWorld(Point{position.x, position.y})) {
             continue;
         }
 
@@ -53,8 +59,17 @@ void renderEntityView(const entt::registry& registry,
               });
 
     for (const auto& draw : draws) {
-        console.set(draw.position.x,
-                    draw.position.y,
+        Point screen{draw.position.x, draw.position.y};
+        if (camera != nullptr) {
+            const auto converted =
+                camera->worldToScreen(Point{draw.position.x, draw.position.y});
+            if (!converted.has_value()) {
+                continue;
+            }
+            screen = *converted;
+        }
+        console.set(screen.x,
+                    screen.y,
                     draw.renderable.glyph,
                     draw.renderable.foreground,
                     draw.renderable.background);
@@ -63,14 +78,22 @@ void renderEntityView(const entt::registry& registry,
 
 void renderEntities(const entt::registry& registry, ConsoleBuffer& console)
 {
-    renderEntityView(registry, nullptr, console);
+    renderEntityView(registry, nullptr, console, nullptr);
 }
 
 void renderEntities(const entt::registry& registry,
                     const Map& map,
                     ConsoleBuffer& console)
 {
-    renderEntityView(registry, &map, console);
+    renderEntityView(registry, &map, console, nullptr);
+}
+
+void renderEntities(const entt::registry& registry,
+                    const Map& map,
+                    ConsoleBuffer& console,
+                    const Camera& camera)
+{
+    renderEntityView(registry, &map, console, &camera);
 }
 
 } // namespace rl
