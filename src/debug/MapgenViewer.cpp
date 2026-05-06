@@ -28,6 +28,8 @@ namespace {
         return '>';
     case TileType::ClosedDoor:
         return '+';
+    case TileType::OpenDoor:
+        return '/';
     }
     return '#';
 }

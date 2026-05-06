@@ -37,6 +37,20 @@ void renderMap(const Map& map, ConsoleBuffer& console)
                             visible ? Color{220, 220, 120, 255}
                                     : Color{90, 90, 50, 255},
                             Color::black());
+            } else if (tile == TileType::ClosedDoor) {
+                console.set(x,
+                            y,
+                            U'+',
+                            visible ? Color{185, 130, 70, 255}
+                                    : Color{85, 55, 30, 255},
+                            Color::black());
+            } else if (tile == TileType::OpenDoor) {
+                console.set(x,
+                            y,
+                            U'/',
+                            visible ? Color{170, 120, 65, 255}
+                                    : Color{75, 50, 30, 255},
+                            Color::black());
             } else {
                 const bool blood = map.hasBloodstain(x, y);
                 console.set(x,

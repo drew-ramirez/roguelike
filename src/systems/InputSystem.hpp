@@ -45,7 +45,7 @@ enum class PlayerInputResult { None, TookTurn, OpenInventory, Descend, Save };
 [[nodiscard]] PlayerInputResult
 handleMapInput(entt::registry& registry,
                GameResources& resources,
-               const Map& map,
+               Map& map,
                const std::vector<InputEvent>& events);
 
 /**
