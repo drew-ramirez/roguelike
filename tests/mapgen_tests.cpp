@@ -453,6 +453,28 @@ void runMapgenTests(TestRunner& runner)
     }
 
     {
+        Rng rng{606U};
+        const auto result =
+            buildMapById("town", 40, 25, rng, MapBuildOptions{true});
+        const auto validation = validateMapBuild(
+            result.map, result.playerStart, result.stairsPosition);
+        const auto hasSpawn = [&](std::string_view id) {
+            return std::any_of(result.spawnRequests.begin(),
+                               result.spawnRequests.end(),
+                               [id](const auto& request) {
+                                   return request.id == id;
+                               });
+        };
+
+        runner.expect(result.builderName == "town",
+                      "town builder reports its id");
+        runner.expect(validation.valid,
+                      "town builder output validates through pipeline");
+        runner.expect(hasSpawn("blacksmith") && hasSpawn("alchemist") &&
+                          hasSpawn("townsfolk") && hasSpawn("chair"),
+                      "town builder requests vendor, bystander, and prop spawns");
+    }
+    {
         Rng rng{222U};
         const auto result =
             BspDungeonBuilder::build(40, 25, rng, MapBuildOptions{true});

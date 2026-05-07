@@ -1,6 +1,7 @@
 #include "TestSuites.hpp"
 
 #include <algorithm>
+#include <string_view>
 #include <vector>
 
 #include <entt/entt.hpp>
@@ -56,6 +57,57 @@ void runInputTests(TestRunner& runner)
     runner.expect(registry.get<Viewshed>(resources.player).dirty,
                   "opening a door marks FOV dirty");
 
+    {
+        auto neutralMap = openMap();
+        entt::registry neutralRegistry;
+        GameResources neutralResources;
+        neutralResources.player = spawnPlayer(neutralRegistry, Point{2, 2});
+
+        const auto vendor = neutralRegistry.create();
+        neutralRegistry.emplace<Position>(vendor, Position{3, 2});
+        neutralRegistry.emplace<Name>(vendor, Name{"Blacksmith"});
+        neutralRegistry.emplace<BlocksTile>(vendor);
+        neutralRegistry.emplace<Neutral>(vendor);
+        neutralRegistry.emplace<Vendor>(vendor, Vendor{"weapons", 250});
+
+        runner.expect(handleMapInput(neutralRegistry,
+                                     neutralResources,
+                                     neutralMap,
+                                     moveRight) == PlayerInputResult::TookTurn,
+                      "bumping a vendor consumes a turn");
+        runner.expect(!neutralRegistry.all_of<WantsToMelee>(
+                          neutralResources.player),
+                      "bumping a vendor does not queue melee");
+        runner.expect(neutralRegistry.get<Position>(neutralResources.player).x ==
+                          2,
+                      "bumping a vendor does not move the player");
+        const auto recent = neutralResources.log.recent(1);
+        runner.expect(!recent.empty() &&
+                          recent.front().find("Blacksmith") !=
+                              std::string_view::npos,
+                      "bumping a vendor logs a neutral response");
+    }
+
+    {
+        auto propMap = openMap();
+        entt::registry propRegistry;
+        GameResources propResources;
+        propResources.player = spawnPlayer(propRegistry, Point{2, 2});
+
+        const auto prop = propRegistry.create();
+        propRegistry.emplace<Position>(prop, Position{3, 2});
+        propRegistry.emplace<Name>(prop, Name{"Chair"});
+        propRegistry.emplace<BlocksTile>(prop);
+        propRegistry.emplace<Prop>(prop);
+
+        runner.expect(handleMapInput(propRegistry,
+                                     propResources,
+                                     propMap,
+                                     moveRight) == PlayerInputResult::None,
+                      "bumping a prop does not consume a turn");
+        runner.expect(!propRegistry.all_of<WantsToMelee>(propResources.player),
+                      "bumping a prop does not queue melee");
+    }
     Map sightMap{6, 3, TileType::Floor};
     sightMap.setTile(2, 1, TileType::ClosedDoor);
     ShadowcastingFov fov;

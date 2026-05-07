@@ -15,7 +15,7 @@ struct GameResources;
 class Map;
 
 void runMonsterAi(entt::registry& registry,
-                  const GameResources& resources,
+                  GameResources& resources,
                   const Map& map);
 
 } // namespace rl

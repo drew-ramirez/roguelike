@@ -91,6 +91,16 @@ MapBuildResult Section4Builders::buildTown(int width,
     sealMapEdges(result.map);
 
     result.playerStart = Point{midX, midY};
+    result.spawnRequests.push_back(SpawnRequest{"blacksmith", Point{7, 5}});
+    result.spawnRequests.push_back(
+        SpawnRequest{"alchemist", Point{width - 8, 5}});
+    result.spawnRequests.push_back(
+        SpawnRequest{"townsfolk", Point{6, height - 7}});
+    result.spawnRequests.push_back(
+        SpawnRequest{"townsfolk", Point{width - 8, height - 7}});
+    result.spawnRequests.push_back(
+        SpawnRequest{"chair", Point{midX - 2, midY - 1}});
+
     finalizeRegion(result, "town", options.recordSnapshots);
     return result;
 }
