@@ -21,31 +21,43 @@ DungeonRoute routeForDepth(int depth)
         return DungeonRoute{depth, DungeonRegion::Town, "town", "town"};
     }
     if (depth == 2) {
-        return DungeonRoute{depth, DungeonRegion::Woods, "woods", "woods"};
+        return DungeonRoute{
+            depth, DungeonRegion::Woods, "woods", "woods", true};
     }
     if (depth <= 4) {
-        return DungeonRoute{
-            depth, DungeonRegion::LimestoneCaverns, "limestone", "cellular"};
+        return DungeonRoute{depth,
+                            DungeonRegion::LimestoneCaverns,
+                            "limestone",
+                            "cellular",
+                            true};
     }
     if (depth <= 6) {
-        return DungeonRoute{
-            depth, DungeonRegion::DeepCaverns, "deep_caverns", "cavern-vaults"};
+        return DungeonRoute{depth,
+                            DungeonRegion::DeepCaverns,
+                            "deep_caverns",
+                            "cavern-vaults",
+                            true};
     }
     if (depth == 7) {
         return DungeonRoute{depth,
                             DungeonRegion::DwarfFortTransition,
                             "dwarf_transition",
-                            "ruined-rooms"};
+                            "ruined-rooms",
+                            true};
     }
     if (depth == 8) {
-        return DungeonRoute{
-            depth, DungeonRegion::DragonLair, "dragon_lair", "dragon-lair"};
+        return DungeonRoute{depth,
+                            DungeonRegion::DragonLair,
+                            "dragon_lair",
+                            "dragon-lair",
+                            true};
     }
     if (depth <= 10) {
         return DungeonRoute{depth,
                             DungeonRegion::MushroomForest,
                             "mushroom_forest",
-                            "mushroom-forest"};
+                            "mushroom-forest",
+                            true};
     }
     return DungeonRoute{depth,
                         DungeonRegion::DarkElfCity,
