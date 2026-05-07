@@ -70,6 +70,28 @@ void renderTile(const Map& map,
     }
 }
 
+void renderDebugTile(const Map& map,
+                     ConsoleBuffer& console,
+                     int worldX,
+                     int worldY,
+                     int screenX,
+                     int screenY)
+{
+    const auto tile = map.tileAt(worldX, worldY);
+    if (tile == TileType::Wall) {
+        console.set(
+            screenX, screenY, wallGlyph(map, worldX, worldY), Color::white());
+    } else if (tile == TileType::DownStairs) {
+        console.set(screenX, screenY, U'>', Color{220, 220, 120, 255});
+    } else if (tile == TileType::ClosedDoor) {
+        console.set(screenX, screenY, U'+', Color{185, 130, 70, 255});
+    } else if (tile == TileType::OpenDoor) {
+        console.set(screenX, screenY, U'/', Color{170, 120, 65, 255});
+    } else {
+        console.set(screenX, screenY, U'.', Color{120, 120, 120, 255});
+    }
+}
+
 } // namespace
 
 void renderMap(const Map& map, ConsoleBuffer& console)
@@ -90,6 +112,21 @@ void renderMap(const Map& map, ConsoleBuffer& console, const Camera& camera)
                 continue;
             }
             renderTile(map, console, world.x, world.y, screenX, screenY);
+        }
+    }
+}
+
+void renderMapDebug(const Map& map,
+                    ConsoleBuffer& console,
+                    const Camera& camera)
+{
+    for (int screenY = 0; screenY < camera.height(); ++screenY) {
+        for (int screenX = 0; screenX < camera.width(); ++screenX) {
+            const Point world = camera.screenToWorld(Point{screenX, screenY});
+            if (!map.inBounds(world.x, world.y)) {
+                continue;
+            }
+            renderDebugTile(map, console, world.x, world.y, screenX, screenY);
         }
     }
 }

@@ -17,6 +17,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/assets/RexPaintLoader.cpp
     src/core/GameLog.cpp
     src/core/Rng.cpp
+    src/debug/MapgenPlayback.cpp
     src/debug/MapgenViewer.cpp
     src/fov/ShadowcastingFov.cpp
     src/map/Map.cpp
@@ -102,6 +103,7 @@ set(ROGUELIKE_HEADERS
     src/core/Point.hpp
     src/core/Rng.hpp
     src/core/RunState.hpp
+    src/debug/MapgenPlayback.hpp
     src/debug/MapgenViewer.hpp
     src/ecs/Components.hpp
     src/fov/IFovProvider.hpp

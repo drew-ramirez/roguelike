@@ -158,6 +158,8 @@ rl::Key mapSdlKey(SDL_Keycode key)
     case SDLK_RETURN:
     case SDLK_KP_ENTER:
         return rl::Key::Enter;
+    case SDLK_SPACE:
+        return rl::Key::Space;
     case SDLK_F5:
         return rl::Key::F5;
     case SDLK_PERIOD:

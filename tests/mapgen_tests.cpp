@@ -5,9 +5,11 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "core/Rng.hpp"
+#include "debug/MapgenPlayback.hpp"
 #include "debug/MapgenViewer.hpp"
 #include "map/MapBrush.hpp"
 #include "map/MapBuilderRegistry.hpp"
@@ -23,6 +25,9 @@
 #include "map/generators/BuilderChain.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "map/prefabs/Prefab.hpp"
+#include "render/Camera.hpp"
+#include "render/ConsoleBuffer.hpp"
+#include "systems/MapRenderSystem.hpp"
 
 namespace rl::test {
 namespace {
@@ -364,6 +369,71 @@ void runMapgenTests(TestRunner& runner)
                       "horizontal symmetry paints mirrored brush points");
         runner.expect(map.isWalkable(2, 3) && map.isWalkable(4, 3),
                       "symmetry writes both mirrored tiles");
+    }
+
+    {
+        MapgenPlayback playback;
+        std::vector<MapSnapshot> frames{
+            MapSnapshot{"start", Map{5, 5, TileType::Wall}},
+            MapSnapshot{"middle", Map{5, 5, TileType::Floor}},
+            MapSnapshot{"end", Map{5, 5, TileType::Wall}},
+        };
+        resetMapgenPlayback(playback, std::move(frames));
+
+        runner.expect(currentMapgenFrame(playback)->label == "start",
+                      "visual mapgen playback starts on first frame");
+        runner.expect(advanceMapgenPlayback(playback, {}, 150, 100) ==
+                          MapgenPlaybackCommand::None,
+                      "visual mapgen playback auto-advances without input");
+        runner.expect(playback.frameIndex == 1U,
+                      "visual mapgen playback records advanced frame index");
+
+        const std::vector<InputEvent> pause{
+            {InputEventType::KeyDown, Key::Space}};
+        runner.expect(advanceMapgenPlayback(playback, pause, 150, 100) ==
+                          MapgenPlaybackCommand::None,
+                      "visual mapgen playback accepts pause input");
+        runner.expect(playback.paused && playback.frameIndex == 1U,
+                      "paused visual mapgen playback does not auto-advance");
+
+        const std::vector<InputEvent> right{
+            {InputEventType::KeyDown, Key::Right}};
+        runner.expect(advanceMapgenPlayback(playback, right, 0, 100) ==
+                          MapgenPlaybackCommand::None,
+                      "visual mapgen playback steps forward");
+        runner.expect(currentMapgenFrame(playback)->label == "end",
+                      "visual mapgen playback exposes stepped frame");
+
+        const std::vector<InputEvent> left{
+            {InputEventType::KeyDown, Key::Left}};
+        runner.expect(advanceMapgenPlayback(playback, left, 0, 100) ==
+                          MapgenPlaybackCommand::None,
+                      "visual mapgen playback steps backward");
+        runner.expect(currentMapgenFrame(playback)->label == "middle",
+                      "visual mapgen playback exposes previous frame");
+
+        const std::vector<InputEvent> enter{
+            {InputEventType::KeyDown, Key::Enter}};
+        runner.expect(advanceMapgenPlayback(playback, enter, 0, 100) ==
+                          MapgenPlaybackCommand::Commit,
+                      "visual mapgen playback commits on Enter");
+        const std::vector<InputEvent> escape{
+            {InputEventType::KeyDown, Key::Escape}};
+        runner.expect(advanceMapgenPlayback(playback, escape, 0, 100) ==
+                          MapgenPlaybackCommand::Cancel,
+                      "visual mapgen playback cancels on Escape");
+    }
+
+    {
+        Map map{5, 5, TileType::Wall};
+        map.setTile(2, 2, TileType::Floor);
+        ConsoleBuffer console{5, 5};
+        console.clear();
+        Camera camera{5, 5};
+        camera.centerOn(Point{2, 2}, map);
+        renderMapDebug(map, console, camera);
+        runner.expect(console.cellAt(2, 2).glyph == U'.',
+                      "visual mapgen debug renderer ignores reveal state");
     }
 
     {
