@@ -49,6 +49,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/save/SaveGame.cpp
     src/spawn/ItemSpawner.cpp
     src/spawn/MonsterSpawner.cpp
+    src/spawn/RawSpawner.cpp
     src/spawn/SpawnTable.cpp
     src/spawn/Spawner.cpp
     src/spawn/TrapSpawner.cpp
@@ -148,6 +149,7 @@ set(ROGUELIKE_HEADERS
     src/save/SaveGame.hpp
     src/spawn/ItemSpawner.hpp
     src/spawn/MonsterSpawner.hpp
+    src/spawn/RawSpawner.hpp
     src/spawn/SpawnTable.hpp
     src/spawn/Spawner.hpp
     src/spawn/TrapSpawner.hpp
