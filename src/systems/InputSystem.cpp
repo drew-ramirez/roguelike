@@ -63,6 +63,7 @@ std::optional<Point> movementDeltaForKey(Key key)
     case Key::Enter:
     case Key::F5:
     case Key::Descend:
+    case Key::Ascend:
     case Key::Unknown:
         return std::nullopt;
     }
@@ -120,6 +121,9 @@ PlayerInputResult handleMapInput(entt::registry& registry,
         }
         if (event.key == Key::Descend) {
             return PlayerInputResult::Descend;
+        }
+        if (event.key == Key::Ascend) {
+            return PlayerInputResult::Ascend;
         }
 
         const auto delta = movementDeltaForKey(event.key);

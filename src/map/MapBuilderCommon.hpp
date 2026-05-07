@@ -25,6 +25,7 @@ void validateBuilderDimensions(std::string_view builderName,
                                int minHeight = 15);
 void sealMapEdges(Map& map);
 void setDistantStairs(Map& map, Point start, Point& stairsPosition);
+void setUpStairsAtStart(Map& map, Point start, Point& upStairsPosition);
 void recordSnapshot(std::vector<MapSnapshot>& snapshots,
                     const Map& map,
                     std::string label,

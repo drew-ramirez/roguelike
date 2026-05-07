@@ -10,6 +10,7 @@
 #include <stdexcept>
 
 #include "map/DungeonRegionRouter.hpp"
+#include "map/MapBuilderCommon.hpp"
 #include "map/TileType.hpp"
 #include "map/generators/BspDungeonBuilder.hpp"
 #include "map/generators/BspInteriorBuilder.hpp"
@@ -242,12 +243,17 @@ MapBuildResult buildLevelForDepth(
 {
     const auto route = routeForDepth(depth);
     options.depth = depth;
+    options.placeUpStairs = route.hasUpStairs;
     auto result = buildMapById(route.builderId, width, height, rng, options);
     result.builderName = route.builderId;
     if (!route.hasDownStairs) {
         result.map.setTile(
             result.stairsPosition.x, result.stairsPosition.y, TileType::Floor);
         result.stairsPosition = result.playerStart;
+    }
+    if (route.hasUpStairs) {
+        setUpStairsAtStart(
+            result.map, result.playerStart, result.upStairsPosition);
     }
     result.buildSteps.push_back("region:" + route.regionId);
     return result;

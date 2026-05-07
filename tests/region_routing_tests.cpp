@@ -88,6 +88,11 @@ void runRegionRoutingTests(TestRunner& runner)
                   "deep final depths build the dark elf city");
     runner.expect(city.stairsPosition == city.playerStart,
                   "final city does not place a deeper exit");
+    runner.expect(city.upStairsPosition == city.playerStart &&
+                      city.map.tileAt(city.upStairsPosition.x,
+                                      city.upStairsPosition.y) ==
+                          TileType::UpStairs,
+                  "final city places an up exit at the arrival point");
     runner.expect(hasSpawnRequest(city, "dark_elf_archer"),
                   "dark elf city requests guard spawns");
 }

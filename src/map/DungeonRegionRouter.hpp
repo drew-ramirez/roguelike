@@ -28,6 +28,7 @@ struct DungeonRoute {
     DungeonRegion region = DungeonRegion::Town;
     std::string regionId = "town";
     std::string builderId = "town";
+    bool hasUpStairs = false;
     bool hasDownStairs = true;
 };
 

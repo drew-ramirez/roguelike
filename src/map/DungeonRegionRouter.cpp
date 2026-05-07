@@ -51,6 +51,7 @@ DungeonRoute routeForDepth(int depth)
                         DungeonRegion::DarkElfCity,
                         "dark_elf_city",
                         "dark-elf-city",
+                        true,
                         false};
 }
 

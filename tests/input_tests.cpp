@@ -35,6 +35,18 @@ void runInputTests(TestRunner& runner)
                       PlayerInputResult::OpenInventory,
                   "i opens inventory instead of taking a turn");
 
+    const std::vector<InputEvent> descend{
+        {InputEventType::KeyDown, Key::Descend}};
+    runner.expect(handleMapInput(registry, resources, map, descend) ==
+                      PlayerInputResult::Descend,
+                  "descend key requests down transition");
+
+    const std::vector<InputEvent> ascend{
+        {InputEventType::KeyDown, Key::Ascend}};
+    runner.expect(handleMapInput(registry, resources, map, ascend) ==
+                      PlayerInputResult::Ascend,
+                  "ascend key requests up transition");
+
     const std::vector<InputEvent> wallMove{{InputEventType::KeyDown, Key::W}};
     auto& position = registry.get<Position>(resources.player);
     position.x = 1;
@@ -108,6 +120,7 @@ void runInputTests(TestRunner& runner)
         runner.expect(!propRegistry.all_of<WantsToMelee>(propResources.player),
                       "bumping a prop does not queue melee");
     }
+
     Map sightMap{6, 3, TileType::Floor};
     sightMap.setTile(2, 1, TileType::ClosedDoor);
     ShadowcastingFov fov;

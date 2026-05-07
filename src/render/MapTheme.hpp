@@ -21,11 +21,12 @@ enum class MapThemeTile : std::size_t {
     Floor,
     Blood,
     DownStairs,
+    UpStairs,
     ClosedDoor,
     OpenDoor
 };
 
-inline constexpr std::size_t mapThemeTileCount = 6;
+inline constexpr std::size_t mapThemeTileCount = 7;
 
 struct MapTileStyle {
     char32_t glyph = U' ';
