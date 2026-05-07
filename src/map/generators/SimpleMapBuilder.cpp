@@ -22,8 +22,6 @@
 namespace rl {
 namespace {
 
-constexpr int minMapWidth = 20;
-constexpr int minMapHeight = 15;
 constexpr int maxRooms = 30;
 constexpr int minRoomSize = 6;
 constexpr int maxRoomSize = 10;
@@ -115,17 +113,22 @@ MapBuildResult SimpleMapBuilder::build(int width,
         result.playerStart = *closest;
     }
 
+    const int repaired =
+        repairConnectivity(result.map, result.playerStart, rng);
+    if (repaired > 0) {
+        addBuildStep(result, "modifier: connectivity repair");
+        recordSnapshot(result.snapshots,
+                       result.map,
+                       "repaired connectivity",
+                       options.recordSnapshots);
+    }
 
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     recordSnapshot(
         result.snapshots, result.map, "placed stairs", options.recordSnapshots);
     addBuildStep(result, "modifier: distant exit");
 
-    const auto validation =
-        validateMapBuild(result.map, result.playerStart, result.stairsPosition);
-    if (!validation.valid) {
-        throw std::runtime_error("Simple generation produced an invalid map");
-    }
+    validateBuildOrThrow(result, "Simple generation produced an invalid map");
 
     return result;
 }
