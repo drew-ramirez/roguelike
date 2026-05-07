@@ -35,8 +35,8 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/generators/DrunkardsWalkBuilder.cpp
     src/map/generators/MazeBuilder.cpp
     src/map/generators/RandomWalk.cpp
-    src/map/generators/VoronoiBuilder.cpp
     src/map/generators/SimpleMapBuilder.cpp
+    src/map/generators/VoronoiBuilder.cpp
     src/map/generators/WfcBuilder.cpp
     src/map/corridors/CorridorBuilder.cpp
     src/map/prefabs/Prefab.cpp
@@ -118,25 +118,25 @@ set(ROGUELIKE_HEADERS
     src/map/generators/DrunkardsWalkBuilder.hpp
     src/map/generators/MazeBuilder.hpp
     src/map/generators/RandomWalk.hpp
-    src/map/generators/VoronoiBuilder.hpp
     src/map/generators/SimpleMapBuilder.hpp
+    src/map/generators/VoronoiBuilder.hpp
     src/map/generators/WfcBuilder.hpp
     src/map/corridors/CorridorBuilder.hpp
     src/map/prefabs/Prefab.hpp
     src/map/rooms/RoomCarver.hpp
-    src/map/Map.hpp
-    src/map/MapBuilder.hpp
     src/map/MapBuilderCommon.hpp
-    src/map/MapBuilderRegistry.hpp
     src/map/MapBrush.hpp
     src/map/MapConnectivity.hpp
     src/map/MapGeometry.hpp
+    src/map/Map.hpp
+    src/map/MapBuilder.hpp
+    src/map/MapBuilderRegistry.hpp
     src/map/MapBuilderTypes.hpp
     src/map/MapValidation.hpp
     src/map/Rect.hpp
     src/map/TileType.hpp
-    src/render/Camera.hpp
     src/render/Color.hpp
+    src/render/Camera.hpp
     src/render/ConsoleBuffer.hpp
     src/render/IRenderer.hpp
     src/render/MapTheme.hpp

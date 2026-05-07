@@ -15,7 +15,6 @@
 #include "render/WallGlyph.hpp"
 
 namespace rl {
-
 namespace {
 
 void renderTile(const Map& map,

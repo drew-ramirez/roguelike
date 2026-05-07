@@ -140,6 +140,7 @@ int parsePositiveIntArgument(int argc,
     }
     return fallback;
 }
+
 bool sameMapTiles(const rl::Map& left, const rl::Map& right)
 {
     if (left.width() != right.width() || left.height() != right.height()) {

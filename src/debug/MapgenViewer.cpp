@@ -8,6 +8,7 @@
 #include "debug/MapgenViewer.hpp"
 
 #include <ostream>
+#include <stdexcept>
 
 #include "map/Map.hpp"
 #include "map/MapBuilderRegistry.hpp"

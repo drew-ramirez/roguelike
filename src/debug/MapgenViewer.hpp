@@ -10,8 +10,11 @@
 #include <iosfwd>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <vector>
 
 #include "core/Rng.hpp"
+#include "map/MapBuilderTypes.hpp"
 
 namespace rl {
 
