@@ -44,6 +44,7 @@ enum class Key {
     Z,
     Escape,
     Enter,
+    Space,
     F5,
     Descend
 };

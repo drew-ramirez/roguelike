@@ -86,7 +86,8 @@ bool Map::blocksMovement(int x, int y) const
         return true;
     }
 
-    return tileAt(x, y) == TileType::Wall;
+    const TileType tile = tileAt(x, y);
+    return tile == TileType::Wall || tile == TileType::ClosedDoor;
 }
 
 bool Map::blocksSight(int x, int y) const
@@ -95,7 +96,8 @@ bool Map::blocksSight(int x, int y) const
         return true;
     }
 
-    return tileAt(x, y) == TileType::Wall;
+    const TileType tile = tileAt(x, y);
+    return tile == TileType::Wall || tile == TileType::ClosedDoor;
 }
 
 bool Map::isWalkable(int x, int y) const

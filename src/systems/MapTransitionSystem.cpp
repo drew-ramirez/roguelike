@@ -8,10 +8,11 @@
 #include "ecs/Components.hpp"
 #include "fov/IFovProvider.hpp"
 #include "map/Map.hpp"
+#include "map/MapBuilderRegistry.hpp"
 #include "map/TileType.hpp"
-#include "map/generators/SimpleMapBuilder.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
+#include "spawn/Spawner.hpp"
 #include "spawn/TrapSpawner.hpp"
 #include "systems/VisibilitySystem.hpp"
 
@@ -79,8 +80,11 @@ bool tryDescendToNextLevel(entt::registry& registry,
     ++resources.depth;
     destroyLevelLocalEntities(registry, resources);
 
-    auto build =
-        SimpleMapBuilder::build(map.width(), map.height(), resources.rng);
+    auto build = buildMapById(resources.mapBuilderId,
+                              map.width(),
+                              map.height(),
+                              resources.rng,
+                              MapBuildOptions{});
     map = std::move(build.map);
 
     auto& position = registry.get<Position>(resources.player);
@@ -92,18 +96,27 @@ bool tryDescendToNextLevel(entt::registry& registry,
         });
     }
 
+    [[maybe_unused]] const auto requested =
+        spawnRequestedEntities(registry,
+                               build.spawnRequests,
+                               map,
+                               build.playerStart,
+                               build.stairsPosition);
     [[maybe_unused]] const auto monsters = spawnMonsters(registry,
-                                                         build.rooms,
+                                                         build.spawnRegions,
+                                                         map,
                                                          resources.rng,
                                                          build.playerStart,
                                                          resources.depth);
     [[maybe_unused]] const auto items = spawnItems(registry,
-                                                   build.rooms,
+                                                   build.spawnRegions,
+                                                   map,
                                                    resources.rng,
                                                    build.playerStart,
                                                    resources.depth);
     [[maybe_unused]] const auto traps = spawnTraps(registry,
-                                                   build.rooms,
+                                                   build.spawnRegions,
+                                                   map,
                                                    resources.rng,
                                                    build.playerStart,
                                                    build.stairsPosition,

@@ -1,5 +1,6 @@
 #include "ui/Hud.hpp"
 
+#include <algorithm>
 #include <string>
 
 #include "core/GameResources.hpp"
@@ -10,8 +11,7 @@
 namespace rl {
 namespace {
 
-constexpr int uiTop = 43;
-constexpr int uiHeight = 7;
+constexpr int defaultUiHeight = 7;
 constexpr int hpBarWidth = 20;
 constexpr std::size_t visibleMessages = 5;
 
@@ -22,6 +22,9 @@ void drawHud(ConsoleBuffer& console,
              const entt::registry& registry,
              RunState state)
 {
+    const int uiHeight = std::min(defaultUiHeight, console.height());
+    const int uiTop = std::max(0, console.height() - uiHeight);
+
     drawPanel(console, uiTop, uiHeight);
 
     if (resources.player != entt::null && registry.valid(resources.player) &&

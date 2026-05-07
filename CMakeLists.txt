@@ -11,22 +11,45 @@ find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_ttf CONFIG REQUIRED)
 find_package(EnTT CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(ZLIB REQUIRED)
 
 set(ROGUELIKE_CORE_SOURCES
+    src/assets/RexPaintLoader.cpp
     src/core/GameLog.cpp
     src/core/Rng.cpp
+    src/debug/MapgenPlayback.cpp
     src/debug/MapgenViewer.cpp
     src/fov/ShadowcastingFov.cpp
     src/map/Map.cpp
+    src/map/MapBuilderCommon.cpp
+    src/map/MapBrush.cpp
+    src/map/MapBuilderRegistry.cpp
+    src/map/MapConnectivity.cpp
+    src/map/MapGeometry.cpp
     src/map/MapValidation.cpp
     src/map/generators/BspDungeonBuilder.cpp
     src/map/generators/BspInteriorBuilder.cpp
+    src/map/generators/BuilderChain.cpp
+    src/map/generators/CellularAutomataBuilder.cpp
+    src/map/generators/DlaBuilder.cpp
+    src/map/generators/DrunkardsWalkBuilder.cpp
+    src/map/generators/MazeBuilder.cpp
+    src/map/generators/RandomWalk.cpp
     src/map/generators/SimpleMapBuilder.cpp
+    src/map/generators/VoronoiBuilder.cpp
+    src/map/generators/WfcBuilder.cpp
+    src/map/corridors/CorridorBuilder.cpp
+    src/map/prefabs/Prefab.cpp
+    src/map/rooms/RoomCarver.cpp
+    src/raws/RawDatabase.cpp
+    src/render/Camera.cpp
     src/render/ConsoleBuffer.cpp
+    src/render/MapTheme.cpp
     src/render/WallGlyph.cpp
     src/save/SaveGame.cpp
     src/spawn/ItemSpawner.cpp
     src/spawn/MonsterSpawner.cpp
+    src/spawn/RawSpawner.cpp
     src/spawn/SpawnTable.cpp
     src/spawn/Spawner.cpp
     src/spawn/TrapSpawner.cpp
@@ -58,6 +81,7 @@ set(ROGUELIKE_APP_SOURCES
 )
 
 set(ROGUELIKE_TEST_SOURCES
+    tests/asset_tests.cpp
     tests/core_tests.cpp
     tests/descent_spawn_tests.cpp
     tests/equipment_tests.cpp
@@ -65,6 +89,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/inventory_tests.cpp
     tests/mapgen_tests.cpp
     tests/polish_pressure_tests.cpp
+    tests/raws_validation_tests.cpp
     tests/save_load_tests.cpp
     tests/targeting_tests.cpp
 )
@@ -75,12 +100,14 @@ set(ROGUELIKE_TEST_HEADERS
 )
 
 set(ROGUELIKE_HEADERS
+    src/assets/RexPaintLoader.hpp
     src/core/Game.hpp
     src/core/GameLog.hpp
     src/core/GameResources.hpp
     src/core/Point.hpp
     src/core/Rng.hpp
     src/core/RunState.hpp
+    src/debug/MapgenPlayback.hpp
     src/debug/MapgenViewer.hpp
     src/ecs/Components.hpp
     src/fov/IFovProvider.hpp
@@ -88,21 +115,42 @@ set(ROGUELIKE_HEADERS
     src/input/InputEvent.hpp
     src/map/generators/BspDungeonBuilder.hpp
     src/map/generators/BspInteriorBuilder.hpp
+    src/map/generators/BuilderChain.hpp
+    src/map/generators/CellularAutomataBuilder.hpp
+    src/map/generators/DlaBuilder.hpp
+    src/map/generators/DrunkardsWalkBuilder.hpp
+    src/map/generators/MazeBuilder.hpp
+    src/map/generators/RandomWalk.hpp
     src/map/generators/SimpleMapBuilder.hpp
+    src/map/generators/VoronoiBuilder.hpp
+    src/map/generators/WfcBuilder.hpp
+    src/map/corridors/CorridorBuilder.hpp
+    src/map/prefabs/Prefab.hpp
+    src/map/rooms/RoomCarver.hpp
+    src/map/MapBuilderCommon.hpp
+    src/map/MapBrush.hpp
+    src/map/MapConnectivity.hpp
+    src/map/MapGeometry.hpp
     src/map/Map.hpp
     src/map/MapBuilder.hpp
+    src/map/MapBuilderRegistry.hpp
     src/map/MapBuilderTypes.hpp
     src/map/MapValidation.hpp
     src/map/Rect.hpp
     src/map/TileType.hpp
+    src/raws/RawDatabase.hpp
+    src/raws/RawTypes.hpp
     src/render/Color.hpp
+    src/render/Camera.hpp
     src/render/ConsoleBuffer.hpp
     src/render/IRenderer.hpp
+    src/render/MapTheme.hpp
     src/render/SdlRenderer.hpp
     src/render/WallGlyph.hpp
     src/save/SaveGame.hpp
     src/spawn/ItemSpawner.hpp
     src/spawn/MonsterSpawner.hpp
+    src/spawn/RawSpawner.hpp
     src/spawn/SpawnTable.hpp
     src/spawn/Spawner.hpp
     src/spawn/TrapSpawner.hpp
@@ -149,6 +197,7 @@ target_include_directories(roguelike_core PUBLIC src)
 target_link_libraries(roguelike_core PUBLIC
     EnTT::EnTT
     nlohmann_json::nlohmann_json
+    ZLIB::ZLIB
 )
 
 add_executable(roguelike ${ROGUELIKE_APP_SOURCES})
@@ -169,6 +218,21 @@ add_executable(roguelike_core_tests
 target_compile_features(roguelike_core_tests PRIVATE cxx_std_20)
 set_target_properties(roguelike_core_tests PROPERTIES CXX_EXTENSIONS OFF)
 target_link_libraries(roguelike_core_tests PRIVATE roguelike_core)
+
+add_custom_target(copy_assets ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
+    COMMENT "Copying runtime assets"
+)
+add_custom_target(copy_data ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/data ${CMAKE_BINARY_DIR}/data
+    COMMENT "Copying runtime data"
+)
+add_dependencies(roguelike copy_assets)
+add_dependencies(roguelike_core_tests copy_assets)
+add_dependencies(roguelike copy_data)
+add_dependencies(roguelike_core_tests copy_data)
 
 foreach(target_name roguelike_core roguelike roguelike_core_tests)
     if(MSVC)

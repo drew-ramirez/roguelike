@@ -18,11 +18,13 @@
 #include "ecs/Components.hpp"
 #include "fov/ShadowcastingFov.hpp"
 #include "map/Map.hpp"
+#include "map/MapBuilderRegistry.hpp"
 #include "map/Rect.hpp"
 #include "map/generators/BspDungeonBuilder.hpp"
 #include "map/generators/BspInteriorBuilder.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "render/ConsoleBuffer.hpp"
+#include "render/MapTheme.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/DamageSystem.hpp"
@@ -109,6 +111,34 @@ parseStringArgument(int argc, char* argv[], std::string_view name)
 std::optional<std::string_view> parseBuilderArgument(int argc, char* argv[])
 {
     return parseStringArgument(argc, argv, "--builder");
+}
+
+int parsePositiveIntValue(std::string_view value, std::string_view name)
+{
+    if (value.empty()) {
+        throw std::invalid_argument(std::string{name} + " cannot be empty");
+    }
+
+    int parsed = 0;
+    const auto* const begin = value.data();
+    const auto* const end = value.data() + value.size();
+    const auto [next, error] = std::from_chars(begin, end, parsed);
+    if (error != std::errc{} || next != end || parsed <= 0) {
+        throw std::invalid_argument(std::string{name} +
+                                    " must be a positive integer");
+    }
+    return parsed;
+}
+
+int parsePositiveIntArgument(int argc,
+                             char* argv[],
+                             std::string_view name,
+                             int fallback)
+{
+    if (const auto value = parseStringArgument(argc, argv, name)) {
+        return parsePositiveIntValue(*value, name);
+    }
+    return fallback;
 }
 
 bool sameMapTiles(const rl::Map& left, const rl::Map& right)
@@ -312,6 +342,27 @@ bool smokeSeedParsing()
     return splitSeed == 12345U && equalsSeed == 67890U && !noSeed.has_value();
 }
 
+bool smokeMapThemeParsing()
+{
+    char executable[] = "roguelike";
+    char themeFlag[] = "--map-theme";
+    char themeValue[] = "druidic";
+    char themeEquals[] = "--map-theme=druidic";
+    char* splitThemeArgs[] = {executable, themeFlag, themeValue};
+    char* equalsThemeArgs[] = {executable, themeEquals};
+    char* noThemeArgs[] = {executable};
+
+    const auto splitTheme =
+        parseStringArgument(3, splitThemeArgs, "--map-theme");
+    const auto equalsTheme =
+        parseStringArgument(2, equalsThemeArgs, "--map-theme");
+    const auto noTheme = parseStringArgument(1, noThemeArgs, "--map-theme");
+
+    return splitTheme.has_value() && *splitTheme == "druidic" &&
+           equalsTheme.has_value() && *equalsTheme == "druidic" &&
+           !noTheme.has_value();
+}
+
 bool smokeEntityRendering()
 {
     entt::registry registry;
@@ -375,8 +426,8 @@ bool smokeMonsterSpawning()
     entt::registry registry;
     [[maybe_unused]] const auto player =
         rl::spawnPlayer(registry, build.playerStart);
-    const auto spawned =
-        rl::spawnMonsters(registry, build.rooms, rng, build.playerStart);
+    const auto spawned = rl::spawnMonsters(
+        registry, build.spawnRegions, build.map, rng, build.playerStart);
     if (spawned < 2) {
         return false;
     }
@@ -502,6 +553,9 @@ int runSmoke()
     if (!smokeSeedParsing()) {
         return 1;
     }
+    if (!smokeMapThemeParsing()) {
+        return 1;
+    }
     if (!smokeEntityRendering()) {
         return 1;
     }
@@ -536,11 +590,33 @@ int main(int argc, char* argv[])
             }
             options.seed = parseSeedArgument(argc, argv);
             options.showSnapshots = hasArgument(argc, argv, "--snapshots");
+            options.width = parsePositiveIntArgument(argc, argv, "--width", 40);
+            options.height =
+                parsePositiveIntArgument(argc, argv, "--height", 25);
             return rl::runMapgenViewer(options, std::cout);
         }
 
+        std::string builderId = "simple";
+        if (const auto builder = parseBuilderArgument(argc, argv)) {
+            builderId = std::string{*builder};
+        }
+        if (!rl::isKnownMapBuilder(builderId)) {
+            throw std::invalid_argument("Unknown map builder: " + builderId);
+        }
+
+        std::string mapThemeId = "default";
+        if (const auto mapTheme =
+                parseStringArgument(argc, argv, "--map-theme")) {
+            mapThemeId = std::string{*mapTheme};
+        }
+
         rl::Game game{parseSeedArgument(argc, argv),
-                      hasArgument(argc, argv, "--load")};
+                      hasArgument(argc, argv, "--load"),
+                      builderId,
+                      parsePositiveIntArgument(argc, argv, "--width", 80),
+                      parsePositiveIntArgument(argc, argv, "--height", 43),
+                      hasArgument(argc, argv, "--visual-mapgen"),
+                      rl::mapThemeById(mapThemeId)};
         game.run();
         return 0;
     } catch (const std::exception& error) {

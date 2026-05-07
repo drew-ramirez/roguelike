@@ -7,15 +7,18 @@
 
 #include "core/Game.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <exception>
 #include <filesystem>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <thread>
 #include <utility>
 
-#include "map/generators/SimpleMapBuilder.hpp"
+#include "ecs/Components.hpp"
+#include "map/MapBuilderRegistry.hpp"
 #include "render/SdlRenderer.hpp"
 #include "save/SaveGame.hpp"
 #include "spawn/ItemSpawner.hpp"
@@ -40,10 +43,27 @@
 #include "ui/Targeting.hpp"
 
 namespace rl {
+namespace {
 
-Game::Game(std::optional<Rng::Seed> seed, bool loadExisting)
-    : initialSeed_(seed), renderer_(std::make_unique<SdlRenderer>(
-                              console_.width(), console_.height()))
+constexpr int mapgenFrameMs = 300;
+constexpr int tickFrameMs = 16;
+constexpr int hudHeight = 7;
+
+} // namespace
+
+Game::Game(std::optional<Rng::Seed> seed,
+           bool loadExisting,
+           std::string builderId,
+           int mapWidth,
+           int mapHeight,
+           bool visualMapgen,
+           MapTheme mapTheme)
+    : initialSeed_(seed), builderId_(std::move(builderId)),
+      visualMapgen_(visualMapgen), mapTheme_(std::move(mapTheme)),
+      camera_(console_.width(), console_.height() - hudHeight),
+      map_(mapWidth, mapHeight, TileType::Wall),
+      renderer_(
+          std::make_unique<SdlRenderer>(console_.width(), console_.height()))
 {
     if (loadExisting &&
         loadGame(defaultSavePath(), registry_, resources_, map_)) {
@@ -54,7 +74,16 @@ Game::Game(std::optional<Rng::Seed> seed, bool loadExisting)
     }
 
     if (loadExisting) {
-        startNewGame(seed);
+        if (visualMapgen_) {
+            beginVisualMapgen(seed);
+        } else {
+            startNewGame(seed);
+        }
+        return;
+    }
+
+    if (visualMapgen_) {
+        beginVisualMapgen(seed);
     }
 }
 
@@ -62,27 +91,65 @@ void Game::startNewGame(std::optional<Rng::Seed> seed)
 {
     registry_ = entt::registry{};
     resources_ = GameResources{};
-    map_ = Map{80, 43, TileType::Wall};
+    resources_.mapBuilderId = builderId_;
+    map_ = Map{map_.width(), map_.height(), TileType::Wall};
     resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
     std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
 
-    auto build =
-        SimpleMapBuilder::build(map_.width(), map_.height(), resources_.rng);
+    commitGeneratedMap(buildMapById(resources_.mapBuilderId,
+                                    map_.width(),
+                                    map_.height(),
+                                    resources_.rng,
+                                    MapBuildOptions{}));
+}
+
+void Game::beginVisualMapgen(std::optional<Rng::Seed> seed)
+{
+    registry_ = entt::registry{};
+    resources_ = GameResources{};
+    resources_.mapBuilderId = builderId_;
+    map_ = Map{map_.width(), map_.height(), TileType::Wall};
+    resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
+    std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
+
+    auto build = buildMapById(resources_.mapBuilderId,
+                              map_.width(),
+                              map_.height(),
+                              resources_.rng,
+                              MapBuildOptions{true});
+    std::vector<MapSnapshot> frames = build.snapshots;
+    frames.push_back(MapSnapshot{"final generated map", build.map});
+    resetMapgenPlayback(mapgenPlayback_, std::move(frames));
+    pendingMapgen_ = std::move(build);
+    state_ = RunState::MapGeneration;
+}
+
+void Game::commitGeneratedMap(MapBuildResult build)
+{
     map_ = std::move(build.map);
     resources_.player = spawnPlayer(registry_, build.playerStart);
+    [[maybe_unused]] const auto requested =
+        spawnRequestedEntities(registry_,
+                               build.spawnRequests,
+                               map_,
+                               build.playerStart,
+                               build.stairsPosition);
     resources_.log.add("Entered the dungeon.");
     const auto spawned = spawnMonsters(registry_,
-                                       build.rooms,
+                                       build.spawnRegions,
+                                       map_,
                                        resources_.rng,
                                        build.playerStart,
                                        resources_.depth);
     [[maybe_unused]] const auto spawnedItems = spawnItems(registry_,
-                                                          build.rooms,
+                                                          build.spawnRegions,
+                                                          map_,
                                                           resources_.rng,
                                                           build.playerStart,
                                                           resources_.depth);
     [[maybe_unused]] const auto spawnedTraps = spawnTraps(registry_,
-                                                          build.rooms,
+                                                          build.spawnRegions,
+                                                          map_,
                                                           resources_.rng,
                                                           build.playerStart,
                                                           build.stairsPosition,
@@ -92,6 +159,24 @@ void Game::startNewGame(std::optional<Rng::Seed> seed)
     }
     updateVisibility(registry_, map_, resources_.player, fovProvider_);
     state_ = RunState::AwaitingInput;
+}
+
+void Game::tickMapGeneration(const std::vector<InputEvent>& events)
+{
+    const auto command = advanceMapgenPlayback(
+        mapgenPlayback_, events, tickFrameMs, mapgenFrameMs);
+    if (command == MapgenPlaybackCommand::Cancel) {
+        pendingMapgen_.reset();
+        resetMapgenPlayback(mapgenPlayback_, {});
+        state_ = RunState::MainMenu;
+    } else if (command == MapgenPlaybackCommand::Commit &&
+               pendingMapgen_.has_value()) {
+        auto build = std::move(*pendingMapgen_);
+        pendingMapgen_.reset();
+        resetMapgenPlayback(mapgenPlayback_, {});
+        commitGeneratedMap(std::move(build));
+    }
+    render();
 }
 
 void Game::run()
@@ -114,6 +199,11 @@ void Game::tick(const std::vector<InputEvent>& events)
         }
     }
 
+    if (state_ == RunState::MapGeneration) {
+        tickMapGeneration(events);
+        return;
+    }
+
     if (state_ == RunState::MainMenu || state_ == RunState::GameOver) {
         const bool loadAvailable = std::filesystem::exists(defaultSavePath());
         const MainMenuMode mode = state_ == RunState::MainMenu
@@ -122,7 +212,11 @@ void Game::tick(const std::vector<InputEvent>& events)
         const auto action =
             handleMainMenuInput(events, loadAvailable, mode, menuSelection_);
         if (action == MainMenuAction::NewGame) {
-            startNewGame(initialSeed_);
+            if (visualMapgen_) {
+                beginVisualMapgen(initialSeed_);
+            } else {
+                startNewGame(initialSeed_);
+            }
         } else if (action == MainMenuAction::LoadGame && loadAvailable) {
             if (loadGame(defaultSavePath(), registry_, resources_, map_)) {
                 resources_.log.add("Loaded saved game.");
@@ -208,6 +302,11 @@ void Game::resolvePlayerTurn(bool runMonsters)
 void Game::render()
 {
     console_.clear();
+    if (state_ == RunState::MapGeneration) {
+        renderMapGeneration();
+        return;
+    }
+
     if (state_ == RunState::MainMenu || state_ == RunState::GameOver) {
         drawMainMenu(console_,
                      std::filesystem::exists(defaultSavePath()),
@@ -218,15 +317,47 @@ void Game::render()
         return;
     }
 
-    renderMap(map_, console_);
-    renderEntities(registry_, map_, console_);
+    if (resources_.player != entt::null && registry_.valid(resources_.player) &&
+        registry_.all_of<Position>(resources_.player)) {
+        const auto& position = registry_.get<Position>(resources_.player);
+        camera_.centerOn(Point{position.x, position.y}, map_);
+    }
+
+    renderMap(map_, console_, camera_, mapTheme_);
+    renderEntities(registry_, map_, console_, camera_);
     if (state_ == RunState::ShowTargeting) {
-        drawTargetingOverlay(console_, registry_, resources_, map_);
+        drawTargetingOverlay(console_, registry_, resources_, map_, camera_);
     }
     drawHud(console_, resources_, registry_, state_);
     if (state_ == RunState::ShowInventory) {
         drawInventoryMenu(console_, registry_, resources_);
     }
+}
+
+void Game::renderMapGeneration()
+{
+    const auto* frame = currentMapgenFrame(mapgenPlayback_);
+    if (frame == nullptr) {
+        console_.print(1, 1, "No mapgen frames recorded.", Color::white());
+        return;
+    }
+
+    const int viewportHeight = std::max(1, console_.height() - 2);
+    Camera snapshotCamera{console_.width(), viewportHeight};
+    snapshotCamera.centerOn(
+        Point{frame->map.width() / 2, frame->map.height() / 2}, frame->map);
+    renderMapDebug(frame->map, console_, snapshotCamera);
+
+    const std::string status =
+        "Mapgen " + builderId_ + " seed " +
+        std::to_string(resources_.rng.seed()) + " frame " +
+        std::to_string(mapgenPlayback_.frameIndex + 1) + "/" +
+        std::to_string(mapgenPlayback_.frames.size()) + " " + frame->label;
+    console_.print(1, console_.height() - 2, status, Color::yellow());
+    console_.print(1,
+                   console_.height() - 1,
+                   "Space pause  Left/Right step  Enter play  Esc menu",
+                   Color{170, 170, 170, 255});
 }
 
 } // namespace rl

@@ -96,7 +96,7 @@ bool tryMoveEntity(entt::registry& registry,
 
 PlayerInputResult handleMapInput(entt::registry& registry,
                                  GameResources& resources,
-                                 const Map& map,
+                                 Map& map,
                                  const std::vector<InputEvent>& events)
 {
     for (const auto& event : events) {
@@ -130,6 +130,18 @@ PlayerInputResult handleMapInput(entt::registry& registry,
 
             const auto& position = registry.get<Position>(resources.player);
             const Point target{position.x + delta->x, position.y + delta->y};
+            if (map.inBounds(target.x, target.y) &&
+                map.tileAt(target.x, target.y) == TileType::ClosedDoor) {
+                map.setTile(target.x, target.y, TileType::OpenDoor);
+                resources.log.add("You open the door.");
+                if (registry.all_of<Viewshed>(resources.player)) {
+                    registry.patch<Viewshed>(
+                        resources.player,
+                        [](Viewshed& viewshed) { viewshed.dirty = true; });
+                }
+                return PlayerInputResult::TookTurn;
+            }
+
             if (const auto blocker =
                     blockingEntityAt(registry, target, resources.player);
                 blocker.has_value()) {

@@ -3,12 +3,14 @@
 int main()
 {
     rl::test::TestRunner runner;
+    rl::test::runAssetTests(runner);
     rl::test::runInputTests(runner);
     rl::test::runInventoryTests(runner);
     rl::test::runTargetingTests(runner);
     rl::test::runEquipmentTests(runner);
     rl::test::runSaveLoadTests(runner);
     rl::test::runDescentAndSpawnTests(runner);
+    rl::test::runRawsValidationTests(runner);
     rl::test::runPolishPressureTests(runner);
     rl::test::runMapgenTests(runner);
     return runner.failures == 0 ? 0 : 1;

@@ -11,17 +11,12 @@
 #include <stdexcept>
 
 #include "map/Map.hpp"
+#include "map/MapBuilderRegistry.hpp"
 #include "map/MapValidation.hpp"
 #include "map/TileType.hpp"
-#include "map/generators/BspDungeonBuilder.hpp"
-#include "map/generators/BspInteriorBuilder.hpp"
-#include "map/generators/SimpleMapBuilder.hpp"
 
 namespace rl {
 namespace {
-
-constexpr int viewerWidth = 40;
-constexpr int viewerHeight = 25;
 
 [[nodiscard]] char glyphForTile(TileType tile) noexcept
 {
@@ -32,6 +27,10 @@ constexpr int viewerHeight = 25;
         return '.';
     case TileType::DownStairs:
         return '>';
+    case TileType::ClosedDoor:
+        return '+';
+    case TileType::OpenDoor:
+        return '/';
     }
     return '#';
 }
@@ -62,39 +61,6 @@ void printValidation(std::ostream& output,
 
 } // namespace
 
-std::vector<std::string> availableMapBuilders()
-{
-    return {"simple", "bsp", "bsp-interior"};
-}
-
-bool isKnownMapBuilder(std::string_view builderId)
-{
-    for (const auto& id : availableMapBuilders()) {
-        if (id == builderId) {
-            return true;
-        }
-    }
-    return false;
-}
-
-MapBuildResult buildMapById(std::string_view builderId,
-                            int width,
-                            int height,
-                            Rng& rng,
-                            MapBuildOptions options)
-{
-    if (builderId == "simple") {
-        return SimpleMapBuilder::build(width, height, rng, options);
-    }
-    if (builderId == "bsp") {
-        return BspDungeonBuilder::build(width, height, rng, options);
-    }
-    if (builderId == "bsp-interior") {
-        return BspInteriorBuilder::build(width, height, rng, options);
-    }
-    throw std::invalid_argument("Unknown map builder");
-}
-
 int runMapgenViewer(const MapgenViewerOptions& options, std::ostream& output)
 {
     if (!isKnownMapBuilder(options.builderId)) {
@@ -111,7 +77,7 @@ int runMapgenViewer(const MapgenViewerOptions& options, std::ostream& output)
     const auto seed = rng.seed();
     const MapBuildOptions buildOptions{options.showSnapshots};
     const auto result = buildMapById(
-        options.builderId, viewerWidth, viewerHeight, rng, buildOptions);
+        options.builderId, options.width, options.height, rng, buildOptions);
 
     output << "Builder: " << result.builderName << '\n';
     output << "Seed: " << seed << '\n';

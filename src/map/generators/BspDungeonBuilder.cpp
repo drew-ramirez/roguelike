@@ -1,136 +1,90 @@
 /**
  * **************************************************************************
  * @file     BspDungeonBuilder.cpp
- * @brief    Builds connected dungeons from recursively split partitions
+ * @brief    Builds connected dungeons from BSP-style random sub-rectangles
  * **************************************************************************
  */
 
 #include "map/generators/BspDungeonBuilder.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cstddef>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "map/MapValidation.hpp"
+#include "map/MapBuilderCommon.hpp"
 #include "map/TileType.hpp"
+#include "map/corridors/CorridorBuilder.hpp"
+#include "map/rooms/RoomCarver.hpp"
 
 namespace rl {
 namespace {
 
-constexpr int minMapWidth = 20;
-constexpr int minMapHeight = 15;
-constexpr int minLeafSize = 9;
-constexpr int maxSplitDepth = 4;
+constexpr int maxRoomAttempts = 240;
+constexpr int maxRooms = 20;
+constexpr int minRoomSize = 3;
+constexpr int maxRoomSize = 10;
 
-void carveRoom(Map& map, const Rect& room)
+void addSubRects(const Rect& rect, std::vector<Rect>& rects)
 {
-    for (int y = room.y1; y < room.y2; ++y) {
-        for (int x = room.x1; x < room.x2; ++x) {
-            map.setTile(x, y, TileType::Floor);
+    if (rect.width() < minRoomSize * 2 || rect.height() < minRoomSize * 2) {
+        return;
+    }
+
+    const int halfWidth = std::max(1, rect.width() / 2);
+    const int halfHeight = std::max(1, rect.height() / 2);
+    const int midX = rect.x1 + halfWidth;
+    const int midY = rect.y1 + halfHeight;
+
+    const std::array<Rect, 4> children{
+        Rect{rect.x1, rect.y1, midX, midY},
+        Rect{midX, rect.y1, rect.x2, midY},
+        Rect{rect.x1, midY, midX, rect.y2},
+        Rect{midX, midY, rect.x2, rect.y2},
+    };
+    for (const Rect& child : children) {
+        if (child.width() >= minRoomSize && child.height() >= minRoomSize) {
+            rects.push_back(child);
         }
     }
 }
 
-void carveHorizontalTunnel(Map& map, int x1, int x2, int y)
+[[nodiscard]] std::optional<Rect> randomRoomInRect(const Rect& rect, Rng& rng)
 {
-    const auto [from, to] = std::minmax(x1, x2);
-    for (int x = from; x <= to; ++x) {
-        map.setTile(x, y, TileType::Floor);
-    }
-}
-
-void carveVerticalTunnel(Map& map, int y1, int y2, int x)
-{
-    const auto [from, to] = std::minmax(y1, y2);
-    for (int y = from; y <= to; ++y) {
-        map.setTile(x, y, TileType::Floor);
-    }
-}
-
-void connectRooms(Map& map, Point previous, Point next, Rng& rng)
-{
-    if (rng.coinFlip()) {
-        carveHorizontalTunnel(map, previous.x, next.x, previous.y);
-        carveVerticalTunnel(map, previous.y, next.y, next.x);
-        return;
+    if (rect.width() < minRoomSize || rect.height() < minRoomSize) {
+        return std::nullopt;
     }
 
-    carveVerticalTunnel(map, previous.y, next.y, previous.x);
-    carveHorizontalTunnel(map, previous.x, next.x, next.y);
-}
-
-void splitRect(const Rect& rect, int depth, Rng& rng, std::vector<Rect>& leaves)
-{
-    const bool canSplitHorizontal = rect.height() >= minLeafSize * 2;
-    const bool canSplitVertical = rect.width() >= minLeafSize * 2;
-    if (depth >= maxSplitDepth || (!canSplitHorizontal && !canSplitVertical)) {
-        leaves.push_back(rect);
-        return;
-    }
-
-    bool splitHorizontal = rng.coinFlip();
-    if (rect.width() > rect.height() * 2) {
-        splitHorizontal = false;
-    } else if (rect.height() > rect.width() * 2) {
-        splitHorizontal = true;
-    }
-    if (splitHorizontal && !canSplitHorizontal) {
-        splitHorizontal = false;
-    } else if (!splitHorizontal && !canSplitVertical) {
-        splitHorizontal = true;
-    }
-
-    if (splitHorizontal) {
-        const int split =
-            rng.rangeInclusive(rect.y1 + minLeafSize, rect.y2 - minLeafSize);
-        splitRect(
-            Rect{rect.x1, rect.y1, rect.x2, split}, depth + 1, rng, leaves);
-        splitRect(
-            Rect{rect.x1, split, rect.x2, rect.y2}, depth + 1, rng, leaves);
-        return;
-    }
-
-    const int split =
-        rng.rangeInclusive(rect.x1 + minLeafSize, rect.x2 - minLeafSize);
-    splitRect(Rect{rect.x1, rect.y1, split, rect.y2}, depth + 1, rng, leaves);
-    splitRect(Rect{split, rect.y1, rect.x2, rect.y2}, depth + 1, rng, leaves);
-}
-
-[[nodiscard]] Rect roomInsideLeaf(const Rect& leaf, Rng& rng)
-{
-    const int maxWidth = std::max(4, leaf.width() - 2);
-    const int maxHeight = std::max(4, leaf.height() - 2);
-    const int minWidth = std::min(5, maxWidth);
-    const int minHeight = std::min(5, maxHeight);
-    const int width = rng.rangeInclusive(minWidth, maxWidth);
-    const int height = rng.rangeInclusive(minHeight, maxHeight);
-    const int x = rng.rangeInclusive(leaf.x1 + 1, leaf.x2 - width - 1);
-    const int y = rng.rangeInclusive(leaf.y1 + 1, leaf.y2 - height - 1);
+    const int maxWidth = std::min(maxRoomSize, rect.width());
+    const int maxHeight = std::min(maxRoomSize, rect.height());
+    const int width = rng.rangeInclusive(minRoomSize, maxWidth);
+    const int height = rng.rangeInclusive(minRoomSize, maxHeight);
+    const int x = rng.rangeInclusive(rect.x1, rect.x2 - width);
+    const int y = rng.rangeInclusive(rect.y1, rect.y2 - height);
     return Rect{x, y, x + width, y + height};
+}
+
+[[nodiscard]] bool
+roomFits(const Map& map, const Rect& room, const std::vector<Rect>& rooms)
+{
+    if (room.x1 < 1 || room.y1 < 1 || room.x2 > map.width() - 1 ||
+        room.y2 > map.height() - 1) {
+        return false;
+    }
+
+    const Rect buffered{room.x1 - 1, room.y1 - 1, room.x2 + 1, room.y2 + 1};
+    return std::none_of(rooms.begin(), rooms.end(), [&buffered](const Rect& r) {
+        return buffered.intersects(r);
+    });
 }
 
 [[nodiscard]] SpawnRegion roomSpawnRegion(const Rect& room)
 {
-    SpawnRegion region;
-    region.kind = SpawnRegionKind::Room;
-    for (int y = room.y1; y < room.y2; ++y) {
-        for (int x = room.x1; x < room.x2; ++x) {
-            region.tiles.push_back(Point{x, y});
-        }
-    }
-    return region;
-}
-
-void recordSnapshot(std::vector<MapSnapshot>& snapshots,
-                    const Map& map,
-                    std::string label,
-                    bool enabled)
-{
-    if (enabled) {
-        snapshots.push_back(MapSnapshot{std::move(label), map});
-    }
+    return spawnRegionFromTiles(roomTiles(room), SpawnRegionKind::Room);
 }
 
 } // namespace
@@ -140,39 +94,30 @@ MapBuildResult BspDungeonBuilder::build(int width,
                                         Rng& rng,
                                         MapBuildOptions options)
 {
-    if (width < minMapWidth || height < minMapHeight) {
-        throw std::invalid_argument(
-            "BspDungeonBuilder requires at least a 20x15 map");
-    }
+    validateBuilderDimensions("BspDungeonBuilder", width, height);
 
     Map map{width, height, TileType::Wall};
-    std::vector<Rect> leaves;
+    std::vector<Rect> rects{Rect{2, 2, width - 2, height - 2}};
     std::vector<Rect> rooms;
-    std::vector<SpawnRegion> spawnRegions;
     std::vector<MapSnapshot> snapshots;
-    splitRect(Rect{1, 1, width - 1, height - 1}, 0, rng, leaves);
+    addSubRects(rects.front(), rects);
 
-    for (const auto& leaf : leaves) {
-        if (leaf.width() < 5 || leaf.height() < 5) {
+    for (int attempt = 0;
+         attempt < maxRoomAttempts && rooms.size() < maxRooms && !rects.empty();
+         ++attempt) {
+        const Rect partition = rects[static_cast<std::size_t>(
+            rng.rangeInclusive(0, static_cast<int>(rects.size()) - 1))];
+        const auto candidate = randomRoomInRect(partition, rng);
+        if (!candidate.has_value() || !roomFits(map, *candidate, rooms)) {
             continue;
         }
 
-        const Rect room = roomInsideLeaf(leaf, rng);
-        carveRoom(map, room);
-        rooms.push_back(room);
-        spawnRegions.push_back(roomSpawnRegion(room));
+        [[maybe_unused]] const auto carved = carveRectRoom(map, *candidate);
+        rooms.push_back(*candidate);
+        addSubRects(*candidate, rects);
         recordSnapshot(snapshots,
                        map,
                        "bsp room " + std::to_string(rooms.size()),
-                       options.recordSnapshots);
-    }
-
-    for (std::size_t index = 1; index < rooms.size(); ++index) {
-        connectRooms(
-            map, rooms[index - 1].center(), rooms[index].center(), rng);
-        recordSnapshot(snapshots,
-                       map,
-                       "bsp corridor " + std::to_string(index),
                        options.recordSnapshots);
     }
 
@@ -180,23 +125,54 @@ MapBuildResult BspDungeonBuilder::build(int width,
         throw std::runtime_error("BSP generation failed to place enough rooms");
     }
 
+    std::sort(
+        rooms.begin(), rooms.end(), [](const Rect& left, const Rect& right) {
+            if (left.x1 == right.x1) {
+                return left.y1 < right.y1;
+            }
+            return left.x1 < right.x1;
+        });
+
+    std::vector<CorridorPath> corridorPaths;
+    for (std::size_t index = 1; index < rooms.size(); ++index) {
+        auto path =
+            carveCorridor(map,
+                          randomInteriorPointInRoom(rooms[index - 1], rng),
+                          randomInteriorPointInRoom(rooms[index], rng),
+                          rng,
+                          CorridorStrategy::LShaped);
+        corridorPaths.push_back(std::move(path));
+        recordSnapshot(snapshots,
+                       map,
+                       "bsp corridor " + std::to_string(index),
+                       options.recordSnapshots);
+    }
+
+    std::vector<SpawnRegion> spawnRegions;
+    spawnRegions.reserve(rooms.size());
+    for (const Rect& room : rooms) {
+        spawnRegions.push_back(roomSpawnRegion(room));
+    }
+
     const Point playerStart = rooms.front().center();
     const Point stairsPosition = rooms.back().center();
     map.setTile(stairsPosition.x, stairsPosition.y, TileType::DownStairs);
     recordSnapshot(snapshots, map, "bsp stairs", options.recordSnapshots);
 
-    const auto validation = validateMapBuild(map, playerStart, stairsPosition);
-    if (!validation.valid) {
-        throw std::runtime_error("BSP generation produced an invalid map");
-    }
-
-    return MapBuildResult{std::move(map),
+    MapBuildResult result{std::move(map),
                           playerStart,
                           stairsPosition,
                           std::move(rooms),
                           std::move(spawnRegions),
                           std::move(snapshots),
-                          "bsp"};
+                          "bsp",
+                          std::move(corridorPaths)};
+    addBuildStep(result, "base: bsp random subrects");
+    addBuildStep(result, "connector: sorted rooms with random interior points");
+
+    validateBuildOrThrow(result, "BSP generation produced an invalid map");
+
+    return result;
 }
 
 } // namespace rl

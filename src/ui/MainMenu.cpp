@@ -11,6 +11,7 @@
 #include <fstream>
 #include <string>
 
+#include "assets/RexPaintLoader.hpp"
 #include "render/ConsoleBuffer.hpp"
 
 namespace rl {
@@ -69,6 +70,59 @@ void drawCentered(ConsoleBuffer& console,
     console.print(x, y, text, color);
 }
 
+[[nodiscard]] std::filesystem::path
+textTitlePathFor(const std::filesystem::path& titlePath)
+{
+    auto textPath = titlePath;
+    if (textPath.extension() == ".xp") {
+        textPath.replace_extension(".txt");
+    }
+    return textPath;
+}
+
+[[nodiscard]] std::filesystem::path
+xpTitlePathFor(const std::filesystem::path& titlePath)
+{
+    auto xpPath = titlePath;
+    if (xpPath.extension() != ".xp") {
+        xpPath.replace_extension(".xp");
+    }
+    return xpPath;
+}
+
+void drawRexPaintImage(ConsoleBuffer& console, const RexPaintImage& image)
+{
+    const int originX = std::max(0, (console.width() - image.width) / 2);
+    const int originY = std::max(0, (console.height() - image.height) / 2);
+
+    for (const auto& layer : image.layers) {
+        for (int y = 0; y < layer.height; ++y) {
+            for (int x = 0; x < layer.width; ++x) {
+                const auto& cell = layer.cellAt(x, y);
+                if (cell.transparentBackground) {
+                    continue;
+                }
+                console.set(originX + x,
+                            originY + y,
+                            cell.glyph,
+                            cell.foreground,
+                            cell.background);
+            }
+        }
+    }
+}
+
+[[nodiscard]] bool drawRexPaintTitle(ConsoleBuffer& console,
+                                     const std::filesystem::path& path)
+{
+    try {
+        drawRexPaintImage(console, loadRexPaintImage(path));
+        return true;
+    } catch (const std::exception&) {
+        return false;
+    }
+}
+
 } // namespace
 
 MainMenuAction handleMainMenuInput(const std::vector<InputEvent>& events,
@@ -114,11 +168,18 @@ void drawMainMenu(ConsoleBuffer& console,
                   int selection,
                   const std::filesystem::path& titlePath)
 {
-    const auto art = loadTitleArt(titlePath);
+    const auto art = loadTitleArt(textTitlePathFor(titlePath));
+    const bool drewRexPaintTitle =
+        drawRexPaintTitle(console, xpTitlePathFor(titlePath));
+
     int row = mode == MainMenuMode::Title ? 8 : 6;
-    for (const auto& line : art) {
-        drawCentered(console, row, line, Color{120, 220, 255, 255});
-        ++row;
+    if (drewRexPaintTitle) {
+        row += static_cast<int>(art.size());
+    } else {
+        for (const auto& line : art) {
+            drawCentered(console, row, line, Color{120, 220, 255, 255});
+            ++row;
+        }
     }
 
     if (mode == MainMenuMode::GameOver) {
