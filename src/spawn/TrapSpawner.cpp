@@ -11,6 +11,8 @@
 
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
+#include "raws/RawDatabase.hpp"
+#include "spawn/RawSpawner.hpp"
 #include "systems/ItemSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 
@@ -65,14 +67,14 @@ entt::entity spawnSpikeTrap(entt::registry& registry,
                             bool hidden,
                             bool triggered)
 {
-    const auto entity = registry.create();
-    registry.emplace<Position>(entity, Position{position.x, position.y});
-    registry.emplace<Renderable>(
-        entity, Renderable{U'^', Color{220, 90, 80, 255}, Color::black(), 1});
-    registry.emplace<Name>(entity, Name{"Spike Trap"});
-    registry.emplace<Trap>(entity, Trap{3, triggered});
-    if (hidden && !triggered) {
-        registry.emplace<Hidden>(entity);
+    const auto entity = spawnNamedEntity(registry,
+                                         defaultRawDatabase(),
+                                         "spike_trap",
+                                         position,
+                                         RawSpawnOptions{hidden, triggered});
+    registry.emplace_or_replace<Trap>(entity, Trap{3, triggered});
+    if ((!hidden || triggered) && registry.all_of<Hidden>(entity)) {
+        registry.remove<Hidden>(entity);
     }
     return entity;
 }

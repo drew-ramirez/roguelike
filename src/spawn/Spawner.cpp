@@ -2,8 +2,10 @@
 
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
+#include "raws/RawDatabase.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
+#include "spawn/RawSpawner.hpp"
 #include "spawn/TrapSpawner.hpp"
 #include "systems/ItemSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
@@ -53,22 +55,9 @@ std::size_t spawnRequestedEntities(entt::registry& registry,
             continue;
         }
 
-        if (request.id == "goblin") {
-            [[maybe_unused]] const auto entity =
-                spawnGoblin(registry, request.position);
-        } else if (request.id == "orc") {
-            [[maybe_unused]] const auto entity =
-                spawnOrc(registry, request.position);
-        } else if (request.id == "healing_potion") {
-            [[maybe_unused]] const auto entity =
-                spawnHealingPotion(registry, request.position);
-        } else if (request.id == "food_ration") {
-            [[maybe_unused]] const auto entity =
-                spawnFoodRation(registry, request.position);
-        } else if (request.id == "spike_trap") {
-            [[maybe_unused]] const auto entity =
-                spawnSpikeTrap(registry, request.position);
-        } else {
+        if (const auto entity = spawnRawEntity(
+                registry, defaultRawDatabase(), request.id, request.position);
+            !entity.has_value()) {
             continue;
         }
         ++spawned;
