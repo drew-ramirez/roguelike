@@ -1,12 +1,13 @@
 /**
  * **************************************************************************
  * @file     RawDatabase.cpp
- * @brief    Loads JSON raw content into the raw database
+ * @brief    Loads and validates JSON raw content
  * **************************************************************************
  */
 
 #include "raws/RawDatabase.hpp"
 
+#include <algorithm>
 #include <charconv>
 #include <fstream>
 #include <iterator>
@@ -102,9 +103,36 @@ using Json = nlohmann::json;
     return renderable;
 }
 
+[[nodiscard]] EquipmentSlot parseEquipmentSlot(const Json& json)
+{
+    const auto text = json.get<std::string>();
+    if (text == "weapon") {
+        return EquipmentSlot::Weapon;
+    }
+    if (text == "armor") {
+        return EquipmentSlot::Armor;
+    }
+    throw std::runtime_error("Unknown equipment slot: " + text);
+}
+
 void parseEffectsObject(const Json& json, RawEffects& effects)
 {
+    static const std::vector<std::string> knownKeys{
+        "provides_healing",
+        "provides_nutrition",
+        "magic_mapping",
+        "inflicts_damage",
+        "area_of_effect",
+        "town_portal",
+        "confusion",
+        "identify",
+    };
+
     for (const auto& [key, value] : json.items()) {
+        if (std::find(knownKeys.begin(), knownKeys.end(), key) ==
+            knownKeys.end()) {
+            throw std::runtime_error("Unknown effect key: " + key);
+        }
         if (key == "provides_healing") {
             effects.providesHealing = parseIntLike(value);
         } else if (key == "provides_nutrition") {
@@ -121,8 +149,6 @@ void parseEffectsObject(const Json& json, RawEffects& effects)
             effects.confusionTurns = parseIntLike(value);
         } else if (key == "identify") {
             effects.identify = value.get<bool>();
-        } else {
-            throw std::runtime_error("Unknown effect key: " + key);
         }
     }
 }
@@ -148,6 +174,62 @@ void parseEffectsObject(const Json& json, RawEffects& effects)
                           json.value("hp", json.at("max_hp").get<int>()),
                           json.value("defense", 0),
                           json.value("power", 1)};
+}
+
+[[nodiscard]] RawAttributes parseAttributes(const Json& json)
+{
+    return RawAttributes{json.value("might", 10),
+                         json.value("fitness", 10),
+                         json.value("quickness", 10),
+                         json.value("intelligence", 10)};
+}
+
+[[nodiscard]] RawPools parsePools(const Json& json)
+{
+    return RawPools{json.value("hit_points", 1),
+                    json.value("max_hit_points", json.value("hit_points", 1)),
+                    json.value("mana", 0),
+                    json.value("max_mana", json.value("mana", 0)),
+                    json.value("level", 1),
+                    json.value("xp", 0),
+                    json.value("gold", 0)};
+}
+
+[[nodiscard]] RawItemStats parseItemStats(const Json& json)
+{
+    return RawItemStats{json.value("weight", 0),
+                        json.value("base_value", 0),
+                        json.value("initiative_penalty", 0),
+                        json.value("category", std::string{})};
+}
+
+[[nodiscard]] RawWeaponStats parseWeapon(const Json& json)
+{
+    return RawWeaponStats{json.value("damage", std::string{"1d4"}),
+                          json.value("hit_bonus", 0),
+                          json.value("attribute", std::string{"might"})};
+}
+
+[[nodiscard]] RawRangedWeaponStats parseRangedWeapon(const Json& json)
+{
+    return RawRangedWeaponStats{
+        json.value("range", 0),
+        json.value("damage", std::string{"1d4"}),
+        json.value("hit_bonus", 0),
+        json.value("attribute", std::string{"quickness"})};
+}
+
+[[nodiscard]] RawMagicItem parseMagicItem(const Json& json)
+{
+    return RawMagicItem{json.value("tier", std::string{"common"}),
+                        json.value("unidentified_name", std::string{}),
+                        json.value("identified", true)};
+}
+
+[[nodiscard]] RawVendor parseVendor(const Json& json)
+{
+    return RawVendor{json.value("category", std::string{}),
+                     json.value("gold", 0)};
 }
 
 void parseStringList(const Json& json, std::vector<std::string>& out)
@@ -182,8 +264,38 @@ void parseStringList(const Json& json, std::vector<std::string>& out)
                           : std::nullopt;
     entity.effects = parseEffects(json);
 
+    if (json.contains("vendor")) {
+        entity.vendor = parseVendor(json.at("vendor"));
+    }
     if (json.contains("combat")) {
         entity.combat = parseCombat(json.at("combat"));
+    }
+    if (json.contains("attributes")) {
+        entity.attributes = parseAttributes(json.at("attributes"));
+    }
+    if (json.contains("pools")) {
+        entity.pools = parsePools(json.at("pools"));
+    }
+    if (json.contains("equippable")) {
+        entity.equippable = parseEquipmentSlot(json.at("equippable"));
+    }
+    if (json.contains("melee_power_bonus")) {
+        entity.meleePowerBonus = json.at("melee_power_bonus").get<int>();
+    }
+    if (json.contains("defense_bonus")) {
+        entity.defenseBonus = json.at("defense_bonus").get<int>();
+    }
+    if (json.contains("item_stats")) {
+        entity.itemStats = parseItemStats(json.at("item_stats"));
+    }
+    if (json.contains("weapon")) {
+        entity.weapon = parseWeapon(json.at("weapon"));
+    }
+    if (json.contains("ranged_weapon")) {
+        entity.rangedWeapon = parseRangedWeapon(json.at("ranged_weapon"));
+    }
+    if (json.contains("magic")) {
+        entity.magic = parseMagicItem(json.at("magic"));
     }
     if (json.contains("equipped")) {
         parseStringList(json.at("equipped"), entity.equipped);
@@ -193,6 +305,14 @@ void parseStringList(const Json& json, std::vector<std::string>& out)
     }
     if (json.contains("spellbook")) {
         entity.spellbook = json.at("spellbook").get<std::string>();
+    }
+    if (json.contains("mana_cost")) {
+        entity.manaCost = json.at("mana_cost").get<int>();
+    }
+    if (json.contains("breath_weapon")) {
+        const auto& breath = json.at("breath_weapon");
+        entity.breathDamage = breath.value("damage", 0);
+        entity.breathRange = breath.value("range", 0);
     }
 
     return entity;
@@ -311,6 +431,26 @@ RawDatabase RawDatabase::fromJson(std::string_view text)
     appendSpawnTable(root, "item_spawn_table", database.itemSpawnTable_);
     appendSpawnTable(root, "prop_spawn_table", database.propSpawnTable_);
 
+    if (root.contains("spawn_table")) {
+        for (const auto& json : root.at("spawn_table")) {
+            const auto entry = parseSpawnEntry(json);
+            const auto* raw = database.entity(entry.id);
+            if (raw == nullptr) {
+                database.itemSpawnTable_.push_back(entry);
+            } else if (raw->kind == RawEntityKind::Mob) {
+                database.monsterSpawnTable_.push_back(entry);
+            } else if (raw->kind == RawEntityKind::Prop) {
+                database.propSpawnTable_.push_back(entry);
+            } else {
+                database.itemSpawnTable_.push_back(entry);
+            }
+        }
+    }
+
+    if (const auto errors = database.validate(); !errors.empty()) {
+        throw std::runtime_error(errors.front());
+    }
+
     return database;
 }
 
@@ -379,7 +519,53 @@ const std::vector<SpawnEntry>& RawDatabase::propSpawnTable() const
 
 std::vector<std::string> RawDatabase::validate() const
 {
-    return {};
+    std::vector<std::string> errors;
+    const auto validateSpawnTable = [&](const std::vector<SpawnEntry>& table,
+                                        std::string_view label) {
+        for (const auto& entry : table) {
+            if (entry.id.empty() || entity(entry.id) == nullptr) {
+                errors.push_back(std::string{label} +
+                                 " references unknown entity: " + entry.id);
+            }
+            if (entry.weight <= 0) {
+                errors.push_back(std::string{label} +
+                                 " entry has non-positive weight: " + entry.id);
+            }
+        }
+    };
+
+    validateSpawnTable(monsterSpawnTable_, "monster spawn table");
+    validateSpawnTable(itemSpawnTable_, "item spawn table");
+    validateSpawnTable(propSpawnTable_, "prop spawn table");
+
+    for (const auto& [name, entityTemplate] : entities_) {
+        for (const auto& item : entityTemplate.equipped) {
+            if (entity(item) == nullptr) {
+                errors.push_back(name + " equips unknown item: " + item);
+            }
+        }
+        for (const auto& spellId : entityTemplate.knownSpells) {
+            if (spell(spellId) == nullptr) {
+                errors.push_back(name + " knows unknown spell: " + spellId);
+            }
+        }
+        if (!entityTemplate.faction.empty() &&
+            faction(entityTemplate.faction) == nullptr) {
+            errors.push_back(name + " references unknown faction: " +
+                             entityTemplate.faction);
+        }
+    }
+
+    for (const auto& [id, factionTemplate] : factions_) {
+        for (const auto& target : factionTemplate.hostileTo) {
+            if (target != "player" && faction(target) == nullptr) {
+                errors.push_back(id +
+                                 " is hostile to unknown faction: " + target);
+            }
+        }
+    }
+
+    return errors;
 }
 
 const RawDatabase& defaultRawDatabase()
