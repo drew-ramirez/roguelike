@@ -1,0 +1,261 @@
+{
+  "factions": [
+    {"id": "town", "hostile_to": []},
+    {"id": "goblins", "hostile_to": ["player", "town"]},
+    {"id": "orcs", "hostile_to": ["player", "town"]},
+    {"id": "wildlife", "hostile_to": ["player"]},
+    {"id": "dark_elf_clan_a", "hostile_to": ["player", "dark_elf_clan_b", "dark_elf_clan_c"]},
+    {"id": "dark_elf_clan_b", "hostile_to": ["player", "dark_elf_clan_a", "dark_elf_clan_c"]},
+    {"id": "dark_elf_clan_c", "hostile_to": ["player", "dark_elf_clan_a", "dark_elf_clan_b"]},
+    {"id": "bosses", "hostile_to": ["player"]}
+  ],
+  "spells": [
+    {
+      "id": "spark",
+      "name": "Spark",
+      "mana_cost": 2,
+      "range": 6,
+      "effects": {"inflicts_damage": 5}
+    },
+    {
+      "id": "heal",
+      "name": "Heal",
+      "mana_cost": 3,
+      "effects": {"provides_healing": 8}
+    }
+  ],
+  "mobs": [
+    {
+      "id": "goblin",
+      "name": "Goblin",
+      "renderable": {"glyph": "g", "fg": "#6EDC6E", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 8,
+      "faction": "goblins",
+      "combat": {"max_hp": 8, "hp": 8, "defense": 0, "power": 3},
+      "attributes": {"might": 9, "fitness": 9, "quickness": 11, "intelligence": 8},
+      "pools": {"hit_points": 8, "max_hit_points": 8, "level": 1, "xp": 0},
+      "xp_reward": 100
+    },
+    {
+      "id": "orc",
+      "name": "Orc",
+      "renderable": {"glyph": "o", "fg": "#50B450", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 8,
+      "faction": "orcs",
+      "combat": {"max_hp": 12, "hp": 12, "defense": 1, "power": 4},
+      "attributes": {"might": 12, "fitness": 11, "quickness": 9, "intelligence": 8},
+      "pools": {"hit_points": 12, "max_hit_points": 12, "level": 2, "xp": 0},
+      "xp_reward": 200
+    },
+    {
+      "id": "troll",
+      "name": "Troll",
+      "renderable": {"glyph": "T", "fg": "#5AA05A", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 8,
+      "faction": "orcs",
+      "combat": {"max_hp": 20, "hp": 20, "defense": 2, "power": 6},
+      "attributes": {"might": 15, "fitness": 14, "quickness": 7, "intelligence": 6},
+      "pools": {"hit_points": 20, "max_hit_points": 20, "level": 3, "xp": 0},
+      "xp_reward": 300
+    },
+    {
+      "id": "townsfolk",
+      "name": "Townsfolk",
+      "renderable": {"glyph": "t", "fg": "#D8C890", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "neutral": true,
+      "bystander": true,
+      "faction": "town",
+      "combat": {"max_hp": 6, "hp": 6, "defense": 0, "power": 1},
+      "pools": {"hit_points": 6, "max_hit_points": 6, "level": 1}
+    },
+    {
+      "id": "blacksmith",
+      "name": "Blacksmith",
+      "renderable": {"glyph": "B", "fg": "#F0C070", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "neutral": true,
+      "faction": "town",
+      "vendor": {"category": "weapons", "gold": 250},
+      "combat": {"max_hp": 16, "hp": 16, "defense": 2, "power": 4},
+      "pools": {"hit_points": 16, "max_hit_points": 16, "level": 3, "gold": 250}
+    },
+    {
+      "id": "alchemist",
+      "name": "Alchemist",
+      "renderable": {"glyph": "A", "fg": "#C080FF", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "neutral": true,
+      "faction": "town",
+      "vendor": {"category": "potions", "gold": 250},
+      "combat": {"max_hp": 10, "hp": 10, "defense": 0, "power": 2},
+      "pools": {"hit_points": 10, "max_hit_points": 10, "level": 2, "mana": 8, "max_mana": 8, "gold": 250}
+    },
+    {
+      "id": "dark_elf_archer",
+      "name": "Dark Elf Archer",
+      "renderable": {"glyph": "d", "fg": "#B0A0FF", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 10,
+      "faction": "dark_elf_clan_a",
+      "combat": {"max_hp": 14, "hp": 14, "defense": 2, "power": 4},
+      "pools": {"hit_points": 14, "max_hit_points": 14, "level": 5},
+      "ranged_weapon": {"range": 7, "damage": "1d6+2", "hit_bonus": 2, "attribute": "quickness"},
+      "xp_reward": 500
+    },
+    {
+      "id": "dragon",
+      "name": "Dragon",
+      "renderable": {"glyph": "D", "fg": "#FF6040", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 12,
+      "faction": "bosses",
+      "boss": true,
+      "grants_win": true,
+      "combat": {"max_hp": 80, "hp": 80, "defense": 6, "power": 14},
+      "pools": {"hit_points": 80, "max_hit_points": 80, "level": 8},
+      "breath_weapon": {"range": 8, "damage": 18},
+      "xp_reward": 1000
+    }
+  ],
+  "items": [
+    {
+      "id": "healing_potion",
+      "name": "Healing Potion",
+      "renderable": {"glyph": "!", "fg": "#DC508C", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 25, "category": "potions"},
+      "consumable": {"effects": {"provides_healing": 8}}
+    },
+    {
+      "id": "food_ration",
+      "name": "Food Ration",
+      "renderable": {"glyph": "%", "fg": "#BE9646", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 5, "category": "food"},
+      "consumable": {"effects": {"provides_nutrition": 350}}
+    },
+    {
+      "id": "fireball_scroll",
+      "name": "Fireball Scroll",
+      "renderable": {"glyph": "?", "fg": "#FFA03C", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 80, "category": "scrolls"},
+      "ranged_weapon": {"range": 6, "damage": "3d4", "hit_bonus": 0, "attribute": "intelligence"},
+      "consumable": {"effects": {"inflicts_damage": 12, "area_of_effect": 2}},
+      "magic": {"tier": "rare", "unidentified_name": "Orange Scroll", "identified": false}
+    },
+    {
+      "id": "magic_mapping_scroll",
+      "name": "Magic Mapping Scroll",
+      "renderable": {"glyph": "?", "fg": "#5AB4FF", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 65, "category": "scrolls"},
+      "consumable": {"effects": {"magic_mapping": true}},
+      "magic": {"tier": "rare", "unidentified_name": "Blue Scroll", "identified": false}
+    },
+    {
+      "id": "town_portal_scroll",
+      "name": "Town Portal Scroll",
+      "renderable": {"glyph": "?", "fg": "#70FFFF", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 100, "category": "scrolls"},
+      "consumable": {"effects": {"town_portal": true}},
+      "magic": {"tier": "rare", "unidentified_name": "Silver Scroll", "identified": false}
+    },
+    {
+      "id": "dagger",
+      "name": "Dagger",
+      "renderable": {"glyph": "/", "fg": "#B4B4BE", "bg": "#000000", "order": 2},
+      "equippable": "weapon",
+      "melee_power_bonus": 2,
+      "weapon": {"damage": "1d4+1", "hit_bonus": 1, "attribute": "might"},
+      "item_stats": {"weight": 1, "base_value": 12, "category": "weapons"}
+    },
+    {
+      "id": "sword",
+      "name": "Sword",
+      "renderable": {"glyph": "/", "fg": "#D0D0D8", "bg": "#000000", "order": 2},
+      "equippable": "weapon",
+      "melee_power_bonus": 4,
+      "weapon": {"damage": "1d8+1", "hit_bonus": 2, "attribute": "might"},
+      "item_stats": {"weight": 3, "base_value": 45, "category": "weapons"}
+    },
+    {
+      "id": "shortbow",
+      "name": "Shortbow",
+      "renderable": {"glyph": "}", "fg": "#C89858", "bg": "#000000", "order": 2},
+      "equippable": "weapon",
+      "melee_power_bonus": 1,
+      "ranged_weapon": {"range": 7, "damage": "1d6", "hit_bonus": 1, "attribute": "quickness"},
+      "item_stats": {"weight": 2, "base_value": 55, "category": "weapons"}
+    },
+    {
+      "id": "chain_mail",
+      "name": "Chain Mail",
+      "renderable": {"glyph": "[", "fg": "#82AAD2", "bg": "#000000", "order": 2},
+      "equippable": "armor",
+      "defense_bonus": 2,
+      "item_stats": {"weight": 7, "base_value": 80, "initiative_penalty": 1, "category": "armor"}
+    },
+    {
+      "id": "cursed_dagger",
+      "name": "Cursed Dagger",
+      "renderable": {"glyph": "/", "fg": "#8060A0", "bg": "#000000", "order": 2},
+      "equippable": "weapon",
+      "melee_power_bonus": -1,
+      "weapon": {"damage": "1d4-1", "hit_bonus": -1, "attribute": "might"},
+      "item_stats": {"weight": 1, "base_value": 5, "category": "weapons"},
+      "magic": {"tier": "common", "unidentified_name": "Old Dagger", "identified": false},
+      "cursed": true
+    },
+    {
+      "id": "spark_spellbook",
+      "name": "Spark Spellbook",
+      "renderable": {"glyph": "?", "fg": "#FFFF80", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 2, "base_value": 120, "category": "books"},
+      "spellbook": "spark"
+    }
+  ],
+  "props": [
+    {
+      "id": "town_portal",
+      "name": "Town Portal",
+      "renderable": {"glyph": "O", "fg": "#70FFFF", "bg": "#000000", "order": 1},
+      "blocks_tile": false
+    },
+    {
+      "id": "chair",
+      "name": "Chair",
+      "renderable": {"glyph": "h", "fg": "#B08050", "bg": "#000000", "order": 1},
+      "blocks_tile": true
+    },
+    {
+      "id": "spike_trap",
+      "name": "Spike Trap",
+      "renderable": {"glyph": "^", "fg": "#A0A0A0", "bg": "#000000", "order": 1},
+      "effects": {"inflicts_damage": 3},
+      "hidden": true
+    }
+  ],
+  "monster_spawn_table": [
+    {"name": "goblin", "weight": 80, "min_depth": 1, "max_depth": 5},
+    {"name": "orc", "weight": 30, "min_depth": 2, "max_depth": 8},
+    {"name": "troll", "weight": 12, "min_depth": 3, "max_depth": 20, "add_map_depth_to_weight": 1},
+    {"name": "dark_elf_archer", "weight": 20, "min_depth": 8, "max_depth": 20}
+  ],
+  "item_spawn_table": [
+    {"name": "healing_potion", "weight": 70, "min_depth": 1, "max_depth": 20},
+    {"name": "food_ration", "weight": 45, "min_depth": 1, "max_depth": 20},
+    {"name": "fireball_scroll", "weight": 20, "min_depth": 1, "max_depth": 20},
+    {"name": "magic_mapping_scroll", "weight": 12, "min_depth": 1, "max_depth": 20},
+    {"name": "town_portal_scroll", "weight": 10, "min_depth": 3, "max_depth": 20},
+    {"name": "dagger", "weight": 20, "min_depth": 1, "max_depth": 20},
+    {"name": "sword", "weight": 18, "min_depth": 2, "max_depth": 20},
+    {"name": "shortbow", "weight": 12, "min_depth": 5, "max_depth": 20},
+    {"name": "chain_mail", "weight": 12, "min_depth": 2, "max_depth": 20},
+    {"name": "cursed_dagger", "weight": 5, "min_depth": 3, "max_depth": 20},
+    {"name": "spark_spellbook", "weight": 6, "min_depth": 4, "max_depth": 20}
+  ],
+  "prop_spawn_table": [
+    {"name": "chair", "weight": 10, "min_depth": 1, "max_depth": 1}
+  ]
+}

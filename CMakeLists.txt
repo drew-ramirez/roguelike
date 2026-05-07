@@ -135,6 +135,8 @@ set(ROGUELIKE_HEADERS
     src/map/MapValidation.hpp
     src/map/Rect.hpp
     src/map/TileType.hpp
+    src/raws/RawDatabase.hpp
+    src/raws/RawTypes.hpp
     src/render/Color.hpp
     src/render/Camera.hpp
     src/render/ConsoleBuffer.hpp
@@ -218,8 +220,15 @@ add_custom_target(copy_assets ALL
             ${CMAKE_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
     COMMENT "Copying runtime assets"
 )
+add_custom_target(copy_data ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/data ${CMAKE_BINARY_DIR}/data
+    COMMENT "Copying runtime data"
+)
 add_dependencies(roguelike copy_assets)
 add_dependencies(roguelike_core_tests copy_assets)
+add_dependencies(roguelike copy_data)
+add_dependencies(roguelike_core_tests copy_data)
 
 foreach(target_name roguelike_core roguelike roguelike_core_tests)
     if(MSVC)
