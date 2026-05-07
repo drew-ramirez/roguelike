@@ -41,6 +41,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/corridors/CorridorBuilder.cpp
     src/map/prefabs/Prefab.cpp
     src/map/rooms/RoomCarver.cpp
+    src/raws/RawDatabase.cpp
     src/render/Camera.cpp
     src/render/ConsoleBuffer.cpp
     src/render/MapTheme.cpp
