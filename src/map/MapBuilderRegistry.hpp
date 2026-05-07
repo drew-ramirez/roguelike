@@ -23,5 +23,7 @@ namespace rl {
                                           int height,
                                           Rng& rng,
                                           MapBuildOptions options);
+[[nodiscard]] MapBuildResult buildLevelForDepth(
+    int depth, int width, int height, Rng& rng, MapBuildOptions options);
 
 } // namespace rl

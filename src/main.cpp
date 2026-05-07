@@ -596,11 +596,11 @@ int main(int argc, char* argv[])
             return rl::runMapgenViewer(options, std::cout);
         }
 
-        std::string builderId = "simple";
+        std::string builderId = "normal";
         if (const auto builder = parseBuilderArgument(argc, argv)) {
             builderId = std::string{*builder};
         }
-        if (!rl::isKnownMapBuilder(builderId)) {
+        if (builderId != "normal" && !rl::isKnownMapBuilder(builderId)) {
             throw std::invalid_argument("Unknown map builder: " + builderId);
         }
 

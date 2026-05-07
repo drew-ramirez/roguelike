@@ -9,6 +9,8 @@
 
 #include <stdexcept>
 
+#include "map/DungeonRegionRouter.hpp"
+#include "map/TileType.hpp"
 #include "map/generators/BspDungeonBuilder.hpp"
 #include "map/generators/BspInteriorBuilder.hpp"
 #include "map/generators/BuilderChain.hpp"
@@ -216,6 +218,22 @@ MapBuildResult buildMapById(std::string_view builderId,
         return BuilderChain::buildRuinedRooms(width, height, rng, options);
     }
     throw std::invalid_argument("Unknown map builder");
+}
+
+MapBuildResult buildLevelForDepth(
+    int depth, int width, int height, Rng& rng, MapBuildOptions options)
+{
+    const auto route = routeForDepth(depth);
+    options.depth = depth;
+    auto result = buildMapById(route.builderId, width, height, rng, options);
+    result.builderName = route.builderId;
+    if (!route.hasDownStairs) {
+        result.map.setTile(
+            result.stairsPosition.x, result.stairsPosition.y, TileType::Floor);
+        result.stairsPosition = result.playerStart;
+    }
+    result.buildSteps.push_back("region:" + route.regionId);
+    return result;
 }
 
 } // namespace rl

@@ -35,7 +35,7 @@ struct GameResources {
     GameLog log;
     entt::entity player = entt::null;
     int depth = 1;
-    std::string mapBuilderId = "simple";
+    std::string mapBuilderId = "normal";
     int inventorySelection = 0;
     std::optional<PendingTargeting> pendingTargeting;
     std::vector<ParticleRequest> particleRequests;

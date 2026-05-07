@@ -25,6 +25,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/MapBrush.cpp
     src/map/MapBuilderRegistry.cpp
     src/map/MapConnectivity.cpp
+    src/map/DungeonRegionRouter.cpp
     src/map/MapGeometry.cpp
     src/map/MapValidation.cpp
     src/map/generators/BspDungeonBuilder.cpp
@@ -91,6 +92,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/mapgen_tests.cpp
     tests/polish_pressure_tests.cpp
     tests/raws_validation_tests.cpp
+    tests/region_routing_tests.cpp
     tests/save_load_tests.cpp
     tests/targeting_tests.cpp
 )
@@ -132,6 +134,7 @@ set(ROGUELIKE_HEADERS
     src/map/MapBuilderCommon.hpp
     src/map/MapBrush.hpp
     src/map/MapConnectivity.hpp
+    src/map/DungeonRegionRouter.hpp
     src/map/MapGeometry.hpp
     src/map/Map.hpp
     src/map/MapBuilder.hpp

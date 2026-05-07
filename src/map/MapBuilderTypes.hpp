@@ -11,6 +11,7 @@ namespace rl {
 
 struct MapBuildOptions {
     bool recordSnapshots = false;
+    int depth = 1;
 };
 
 struct MapSnapshot {

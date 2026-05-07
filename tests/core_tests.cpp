@@ -11,6 +11,7 @@ int main()
     rl::test::runSaveLoadTests(runner);
     rl::test::runDescentAndSpawnTests(runner);
     rl::test::runRawsValidationTests(runner);
+    rl::test::runRegionRoutingTests(runner);
     rl::test::runPolishPressureTests(runner);
     rl::test::runMapgenTests(runner);
     return runner.failures == 0 ? 0 : 1;
