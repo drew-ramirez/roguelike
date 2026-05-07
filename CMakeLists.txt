@@ -89,6 +89,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/inventory_tests.cpp
     tests/mapgen_tests.cpp
     tests/polish_pressure_tests.cpp
+    tests/raws_validation_tests.cpp
     tests/save_load_tests.cpp
     tests/targeting_tests.cpp
 )
