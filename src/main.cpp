@@ -18,6 +18,7 @@
 #include "ecs/Components.hpp"
 #include "fov/ShadowcastingFov.hpp"
 #include "map/Map.hpp"
+#include "map/MapBuilderRegistry.hpp"
 #include "map/Rect.hpp"
 #include "map/generators/BspDungeonBuilder.hpp"
 #include "map/generators/BspInteriorBuilder.hpp"
@@ -569,8 +570,20 @@ int main(int argc, char* argv[])
             return rl::runMapgenViewer(options, std::cout);
         }
 
+        std::string builderId = "simple";
+        if (const auto builder = parseBuilderArgument(argc, argv)) {
+            builderId = std::string{*builder};
+        }
+        if (!rl::isKnownMapBuilder(builderId)) {
+            throw std::invalid_argument("Unknown map builder: " + builderId);
+        }
+
         rl::Game game{parseSeedArgument(argc, argv),
-                      hasArgument(argc, argv, "--load")};
+                      hasArgument(argc, argv, "--load"),
+                      builderId,
+                      parsePositiveIntArgument(argc, argv, "--width", 80),
+                      parsePositiveIntArgument(argc, argv, "--height", 43),
+                      hasArgument(argc, argv, "--visual-mapgen")};
         game.run();
         return 0;
     } catch (const std::exception& error) {

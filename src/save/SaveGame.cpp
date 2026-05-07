@@ -214,6 +214,7 @@ void ensureSaveIds(entt::registry& registry)
 
     return Json{{"depth", resources.depth},
                 {"player", entityId(registry, resources.player)},
+                {"map_builder", resources.mapBuilderId},
                 {"rng_seed", resources.rng.seed()},
                 {"rng_engine", resources.rng.engineState()},
                 {"log", std::move(messages)}};
@@ -230,6 +231,7 @@ void loadResources(const Json& json,
     }
 
     loaded.rng.reseed(json.at("rng_seed").get<Rng::Seed>());
+    loaded.mapBuilderId = json.value("map_builder", std::string{"simple"});
     loaded.rng.restoreEngineState(json.at("rng_engine").get<std::string>());
     const auto playerId = json.at("player").get<EntityId>();
     const auto player = entities.find(playerId);

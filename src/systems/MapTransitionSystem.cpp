@@ -8,8 +8,8 @@
 #include "ecs/Components.hpp"
 #include "fov/IFovProvider.hpp"
 #include "map/Map.hpp"
+#include "map/MapBuilderRegistry.hpp"
 #include "map/TileType.hpp"
-#include "map/generators/SimpleMapBuilder.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
@@ -80,8 +80,11 @@ bool tryDescendToNextLevel(entt::registry& registry,
     ++resources.depth;
     destroyLevelLocalEntities(registry, resources);
 
-    auto build =
-        SimpleMapBuilder::build(map.width(), map.height(), resources.rng);
+    auto build = buildMapById(resources.mapBuilderId,
+                              map.width(),
+                              map.height(),
+                              resources.rng,
+                              MapBuildOptions{});
     map = std::move(build.map);
 
     auto& position = registry.get<Position>(resources.player);

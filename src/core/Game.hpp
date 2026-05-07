@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include <entt/entt.hpp>
@@ -30,6 +31,9 @@ class Game {
   public:
     explicit Game(std::optional<Rng::Seed> seed = std::nullopt,
                   bool loadExisting = false,
+                  std::string builderId = "simple",
+                  int mapWidth = 80,
+                  int mapHeight = 43,
                   bool visualMapgen = false);
 
     void run();
@@ -45,6 +49,7 @@ class Game {
     void renderMapGeneration();
 
     std::optional<Rng::Seed> initialSeed_;
+    std::string builderId_ = "simple";
     bool visualMapgen_ = false;
     RunState state_ = RunState::MainMenu;
     int menuSelection_ = 0;

@@ -12,12 +12,13 @@
 #include <exception>
 #include <filesystem>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <thread>
 #include <utility>
 
 #include "ecs/Components.hpp"
-#include "map/generators/SimpleMapBuilder.hpp"
+#include "map/MapBuilderRegistry.hpp"
 #include "render/SdlRenderer.hpp"
 #include "save/SaveGame.hpp"
 #include "spawn/ItemSpawner.hpp"
@@ -46,13 +47,20 @@ namespace {
 
 constexpr int mapgenFrameMs = 300;
 constexpr int tickFrameMs = 16;
+constexpr int hudHeight = 7;
 
 } // namespace
 
 Game::Game(std::optional<Rng::Seed> seed,
            bool loadExisting,
+           std::string builderId,
+           int mapWidth,
+           int mapHeight,
            bool visualMapgen)
-    : initialSeed_(seed), visualMapgen_(visualMapgen),
+    : initialSeed_(seed), builderId_(std::move(builderId)),
+      visualMapgen_(visualMapgen),
+      camera_(console_.width(), console_.height() - hudHeight),
+      map_(mapWidth, mapHeight, TileType::Wall),
       renderer_(
           std::make_unique<SdlRenderer>(console_.width(), console_.height()))
 {
@@ -82,24 +90,32 @@ void Game::startNewGame(std::optional<Rng::Seed> seed)
 {
     registry_ = entt::registry{};
     resources_ = GameResources{};
-    map_ = Map{80, 43, TileType::Wall};
+    resources_.mapBuilderId = builderId_;
+    map_ = Map{map_.width(), map_.height(), TileType::Wall};
     resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
     std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
 
-    commitGeneratedMap(
-        SimpleMapBuilder::build(map_.width(), map_.height(), resources_.rng));
+    commitGeneratedMap(buildMapById(resources_.mapBuilderId,
+                                    map_.width(),
+                                    map_.height(),
+                                    resources_.rng,
+                                    MapBuildOptions{}));
 }
 
 void Game::beginVisualMapgen(std::optional<Rng::Seed> seed)
 {
     registry_ = entt::registry{};
     resources_ = GameResources{};
-    map_ = Map{80, 43, TileType::Wall};
+    resources_.mapBuilderId = builderId_;
+    map_ = Map{map_.width(), map_.height(), TileType::Wall};
     resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
     std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
 
-    auto build = SimpleMapBuilder::build(
-        map_.width(), map_.height(), resources_.rng, MapBuildOptions{true});
+    auto build = buildMapById(resources_.mapBuilderId,
+                              map_.width(),
+                              map_.height(),
+                              resources_.rng,
+                              MapBuildOptions{true});
     std::vector<MapSnapshot> frames = build.snapshots;
     frames.push_back(MapSnapshot{"final generated map", build.map});
     resetMapgenPlayback(mapgenPlayback_, std::move(frames));
@@ -332,8 +348,9 @@ void Game::renderMapGeneration()
     renderMapDebug(frame->map, console_, snapshotCamera);
 
     const std::string status =
-        "Mapgen simple seed " + std::to_string(resources_.rng.seed()) +
-        " frame " + std::to_string(mapgenPlayback_.frameIndex + 1) + "/" +
+        "Mapgen " + builderId_ + " seed " +
+        std::to_string(resources_.rng.seed()) + " frame " +
+        std::to_string(mapgenPlayback_.frameIndex + 1) + "/" +
         std::to_string(mapgenPlayback_.frames.size()) + " " + frame->label;
     console_.print(1, console_.height() - 2, status, Color::yellow());
     console_.print(1,
