@@ -43,6 +43,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/rooms/RoomCarver.cpp
     src/render/Camera.cpp
     src/render/ConsoleBuffer.cpp
+    src/render/MapTheme.cpp
     src/render/WallGlyph.cpp
     src/save/SaveGame.cpp
     src/spawn/ItemSpawner.cpp
@@ -138,6 +139,7 @@ set(ROGUELIKE_HEADERS
     src/render/Color.hpp
     src/render/ConsoleBuffer.hpp
     src/render/IRenderer.hpp
+    src/render/MapTheme.hpp
     src/render/SdlRenderer.hpp
     src/render/WallGlyph.hpp
     src/save/SaveGame.hpp

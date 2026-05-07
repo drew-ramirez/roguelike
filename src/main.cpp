@@ -24,6 +24,7 @@
 #include "map/generators/BspInteriorBuilder.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "render/ConsoleBuffer.hpp"
+#include "render/MapTheme.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/DamageSystem.hpp"
@@ -340,6 +341,27 @@ bool smokeSeedParsing()
     return splitSeed == 12345U && equalsSeed == 67890U && !noSeed.has_value();
 }
 
+bool smokeMapThemeParsing()
+{
+    char executable[] = "roguelike";
+    char themeFlag[] = "--map-theme";
+    char themeValue[] = "druidic";
+    char themeEquals[] = "--map-theme=druidic";
+    char* splitThemeArgs[] = {executable, themeFlag, themeValue};
+    char* equalsThemeArgs[] = {executable, themeEquals};
+    char* noThemeArgs[] = {executable};
+
+    const auto splitTheme =
+        parseStringArgument(3, splitThemeArgs, "--map-theme");
+    const auto equalsTheme =
+        parseStringArgument(2, equalsThemeArgs, "--map-theme");
+    const auto noTheme = parseStringArgument(1, noThemeArgs, "--map-theme");
+
+    return splitTheme.has_value() && *splitTheme == "druidic" &&
+           equalsTheme.has_value() && *equalsTheme == "druidic" &&
+           !noTheme.has_value();
+}
+
 bool smokeEntityRendering()
 {
     entt::registry registry;
@@ -530,6 +552,9 @@ int runSmoke()
     if (!smokeSeedParsing()) {
         return 1;
     }
+    if (!smokeMapThemeParsing()) {
+        return 1;
+    }
     if (!smokeEntityRendering()) {
         return 1;
     }
@@ -578,12 +603,19 @@ int main(int argc, char* argv[])
             throw std::invalid_argument("Unknown map builder: " + builderId);
         }
 
+        std::string mapThemeId = "default";
+        if (const auto mapTheme =
+                parseStringArgument(argc, argv, "--map-theme")) {
+            mapThemeId = std::string{*mapTheme};
+        }
+
         rl::Game game{parseSeedArgument(argc, argv),
                       hasArgument(argc, argv, "--load"),
                       builderId,
                       parsePositiveIntArgument(argc, argv, "--width", 80),
                       parsePositiveIntArgument(argc, argv, "--height", 43),
-                      hasArgument(argc, argv, "--visual-mapgen")};
+                      hasArgument(argc, argv, "--visual-mapgen"),
+                      rl::mapThemeById(mapThemeId)};
         game.run();
         return 0;
     } catch (const std::exception& error) {

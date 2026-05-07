@@ -24,6 +24,7 @@
 #include "render/Camera.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "render/IRenderer.hpp"
+#include "render/MapTheme.hpp"
 
 namespace rl {
 
@@ -34,7 +35,8 @@ class Game {
                   std::string builderId = "simple",
                   int mapWidth = 80,
                   int mapHeight = 43,
-                  bool visualMapgen = false);
+                  bool visualMapgen = false,
+                  MapTheme mapTheme = defaultMapTheme());
 
     void run();
 
@@ -51,6 +53,7 @@ class Game {
     std::optional<Rng::Seed> initialSeed_;
     std::string builderId_ = "simple";
     bool visualMapgen_ = false;
+    MapTheme mapTheme_;
     RunState state_ = RunState::MainMenu;
     int menuSelection_ = 0;
     ConsoleBuffer console_{80, 50};

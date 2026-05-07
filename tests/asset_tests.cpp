@@ -1,5 +1,6 @@
 #include "TestSuites.hpp"
 
+#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -12,6 +13,7 @@
 
 #include "assets/RexPaintLoader.hpp"
 #include "render/ConsoleBuffer.hpp"
+#include "render/MapTheme.hpp"
 #include "ui/MainMenu.hpp"
 
 namespace rl::test {
@@ -122,6 +124,12 @@ void setFixtureCell(
     return false;
 }
 
+[[nodiscard]] bool sameColor(Color left, Color right) noexcept
+{
+    return left.r == right.r && left.g == right.g && left.b == right.b &&
+           left.a == right.a;
+}
+
 } // namespace
 
 void runAssetTests(TestRunner& runner)
@@ -215,6 +223,55 @@ void runAssetTests(TestRunner& runner)
 
         std::filesystem::remove(titleText);
         std::filesystem::remove(titleXp);
+    }
+
+    {
+        const auto image = loadRexPaintImage("assets/map-theme-druidic.xp");
+        runner.expect(image.width == 6 && image.height == 2,
+                      "druidic map theme asset is a 6x2 palette sheet");
+        runner.expect(image.layers.size() == 1U,
+                      "druidic map theme asset uses one palette layer");
+
+        constexpr std::array<char32_t, 6> expectedGlyphs{
+            U'#',
+            U'.',
+            U',',
+            U'>',
+            U'+',
+            U'/',
+        };
+        bool slotsMatch = true;
+        for (std::size_t index = 0; index < expectedGlyphs.size(); ++index) {
+            const int x = static_cast<int>(index);
+            slotsMatch = slotsMatch &&
+                         image.cellAt(0, x, 0).glyph == expectedGlyphs[index] &&
+                         image.cellAt(0, x, 1).glyph == expectedGlyphs[index];
+        }
+        runner.expect(slotsMatch,
+                      "druidic map theme asset keeps terrain glyph slots");
+        runner.expect(sameColor(image.cellAt(0, 1, 0).foreground,
+                                Color{190, 205, 158, 255}) &&
+                          sameColor(image.cellAt(0, 0, 1).foreground,
+                                    Color{70, 88, 62, 255}),
+                      "druidic map theme asset stores matcha and remembered "
+                      "lichen colors");
+
+        const auto theme = mapThemeById("druidic");
+        runner.expect(
+            sameColor(theme.style(MapThemeTile::Floor, true).foreground,
+                      Color{190, 205, 158, 255}) &&
+                sameColor(theme.style(MapThemeTile::Wall, false).foreground,
+                          Color{70, 88, 62, 255}),
+            "druidic map theme id loads the REX palette");
+
+        bool rejectedUnknownTheme = false;
+        try {
+            static_cast<void>(mapThemeById("unknown-theme"));
+        } catch (const std::invalid_argument&) {
+            rejectedUnknownTheme = true;
+        }
+        runner.expect(rejectedUnknownTheme,
+                      "map theme resolver rejects unknown theme ids");
     }
 }
 

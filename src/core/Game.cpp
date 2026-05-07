@@ -56,9 +56,10 @@ Game::Game(std::optional<Rng::Seed> seed,
            std::string builderId,
            int mapWidth,
            int mapHeight,
-           bool visualMapgen)
+           bool visualMapgen,
+           MapTheme mapTheme)
     : initialSeed_(seed), builderId_(std::move(builderId)),
-      visualMapgen_(visualMapgen),
+      visualMapgen_(visualMapgen), mapTheme_(std::move(mapTheme)),
       camera_(console_.width(), console_.height() - hudHeight),
       map_(mapWidth, mapHeight, TileType::Wall),
       renderer_(
@@ -322,7 +323,7 @@ void Game::render()
         camera_.centerOn(Point{position.x, position.y}, map_);
     }
 
-    renderMap(map_, console_, camera_);
+    renderMap(map_, console_, camera_, mapTheme_);
     renderEntities(registry_, map_, console_, camera_);
     if (state_ == RunState::ShowTargeting) {
         drawTargetingOverlay(console_, registry_, resources_, map_, camera_);
