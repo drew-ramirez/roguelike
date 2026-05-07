@@ -35,6 +35,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/generators/DrunkardsWalkBuilder.cpp
     src/map/generators/MazeBuilder.cpp
     src/map/generators/RandomWalk.cpp
+    src/map/generators/Section4Builders.cpp
     src/map/generators/SimpleMapBuilder.cpp
     src/map/generators/VoronoiBuilder.cpp
     src/map/generators/WfcBuilder.cpp
@@ -121,6 +122,7 @@ set(ROGUELIKE_HEADERS
     src/map/generators/DrunkardsWalkBuilder.hpp
     src/map/generators/MazeBuilder.hpp
     src/map/generators/RandomWalk.hpp
+    src/map/generators/Section4Builders.hpp
     src/map/generators/SimpleMapBuilder.hpp
     src/map/generators/VoronoiBuilder.hpp
     src/map/generators/WfcBuilder.hpp

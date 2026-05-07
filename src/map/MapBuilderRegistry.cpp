@@ -16,6 +16,7 @@
 #include "map/generators/DlaBuilder.hpp"
 #include "map/generators/DrunkardsWalkBuilder.hpp"
 #include "map/generators/MazeBuilder.hpp"
+#include "map/generators/Section4Builders.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "map/generators/VoronoiBuilder.hpp"
 #include "map/generators/WfcBuilder.hpp"
@@ -54,6 +55,7 @@ std::vector<std::string> availableMapBuilders()
             "voronoi-manhattan",
             "voronoi-chebyshev",
             "wfc",
+            "town",
             "cavern-vaults",
             "ruined-rooms"};
 }
@@ -203,6 +205,9 @@ MapBuildResult buildMapById(std::string_view builderId,
     }
     if (builderId == "wfc") {
         return WfcBuilder::build(width, height, rng, options);
+    }
+    if (builderId == "town") {
+        return Section4Builders::buildTown(width, height, rng, options);
     }
     if (builderId == "cavern-vaults") {
         return BuilderChain::buildCavernVaults(width, height, rng, options);
