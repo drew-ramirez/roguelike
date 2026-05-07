@@ -21,7 +21,7 @@ DungeonRoute routeForDepth(int depth)
         return DungeonRoute{depth, DungeonRegion::Town, "town", "town"};
     }
     if (depth == 2) {
-        return DungeonRoute{depth, DungeonRegion::Woods, "woods", "cellular"};
+        return DungeonRoute{depth, DungeonRegion::Woods, "woods", "woods"};
     }
     if (depth <= 4) {
         return DungeonRoute{
@@ -38,21 +38,19 @@ DungeonRoute routeForDepth(int depth)
                             "ruined-rooms"};
     }
     if (depth == 8) {
-        return DungeonRoute{depth,
-                            DungeonRegion::DragonLair,
-                            "dragon_lair",
-                            "ruined-rooms"};
+        return DungeonRoute{
+            depth, DungeonRegion::DragonLair, "dragon_lair", "dragon-lair"};
     }
     if (depth <= 10) {
         return DungeonRoute{depth,
                             DungeonRegion::MushroomForest,
                             "mushroom_forest",
-                            "cellular"};
+                            "mushroom-forest"};
     }
     return DungeonRoute{depth,
                         DungeonRegion::DarkElfCity,
                         "dark_elf_city",
-                        "ruined-rooms",
+                        "dark-elf-city",
                         false};
 }
 

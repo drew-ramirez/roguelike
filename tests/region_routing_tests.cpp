@@ -22,6 +22,16 @@ namespace {
                        });
 }
 
+[[nodiscard]] bool hasSpawnRequest(const MapBuildResult& result,
+                                   std::string_view id)
+{
+    return std::any_of(result.spawnRequests.begin(),
+                       result.spawnRequests.end(),
+                       [id](const SpawnRequest& request) {
+                           return request.id == id;
+                       });
+}
+
 } // namespace
 
 void runRegionRoutingTests(TestRunner& runner)
@@ -47,6 +57,12 @@ void runRegionRoutingTests(TestRunner& runner)
             TileType::DownStairs,
         "town has a down exit");
 
+    Rng woodsRng{100U};
+    const auto woods = buildLevelForDepth(2, 40, 25, woodsRng, {});
+    runner.expect(woods.builderName == "woods", "depth 2 builds woods");
+    runner.expect(!woods.spawnRegions.empty(),
+                  "woods provides spawn regions");
+
     Rng cavernRng{101U};
     const auto cavern = buildLevelForDepth(3, 40, 25, cavernRng, {});
     runner.expect(cavern.builderName == "cellular",
@@ -59,12 +75,21 @@ void runRegionRoutingTests(TestRunner& runner)
     runner.expect(deep.builderName == "cavern-vaults",
                   "deep depths use cavern vaults");
 
-    Rng finalRng{103U};
-    const auto final = buildLevelForDepth(11, 40, 25, finalRng, {});
-    runner.expect(final.builderName == "ruined-rooms",
-                  "final routed depth uses an existing city stand-in");
-    runner.expect(final.stairsPosition == final.playerStart,
-                  "final routed depth does not place a deeper exit");
+    Rng dragonRng{103U};
+    const auto dragon = buildLevelForDepth(8, 40, 25, dragonRng, {});
+    runner.expect(dragon.builderName == "dragon-lair",
+                  "depth 8 builds the dragon lair");
+    runner.expect(hasSpawnRequest(dragon, "dragon"),
+                  "dragon lair requests its boss spawn");
+
+    Rng cityRng{104U};
+    const auto city = buildLevelForDepth(11, 40, 25, cityRng, {});
+    runner.expect(city.builderName == "dark-elf-city",
+                  "deep final depths build the dark elf city");
+    runner.expect(city.stairsPosition == city.playerStart,
+                  "final city does not place a deeper exit");
+    runner.expect(hasSpawnRequest(city, "dark_elf_archer"),
+                  "dark elf city requests guard spawns");
 }
 
 } // namespace rl::test

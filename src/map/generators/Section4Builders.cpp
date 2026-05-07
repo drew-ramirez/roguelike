@@ -12,6 +12,7 @@
 #include <string>
 #include <utility>
 
+#include "core/Rng.hpp"
 #include "map/MapBuilderCommon.hpp"
 #include "map/MapConnectivity.hpp"
 #include "map/Rect.hpp"
@@ -49,19 +50,45 @@ void carveVertical(Map& map, int x, int y1, int y2)
     }
 }
 
+void addScatterFloors(Map& map, Rng& rng, int count, char mode)
+{
+    for (int i = 0; i < count; ++i) {
+        const int x = rng.rangeInclusive(1, map.width() - 2);
+        const int y = rng.rangeInclusive(1, map.height() - 2);
+        if (mode == 'c') {
+            for (int yy = std::max(1, y - 1);
+                 yy <= std::min(map.height() - 2, y + 1);
+                 ++yy) {
+                for (int xx = std::max(1, x - 1);
+                     xx <= std::min(map.width() - 2, x + 1);
+                     ++xx) {
+                    map.setTile(xx, yy, TileType::Floor);
+                }
+            }
+        } else {
+            map.setTile(x, y, TileType::Floor);
+        }
+    }
+}
+
 void finalizeRegion(MapBuildResult& result,
                     std::string builderName,
-                    bool snapshots)
+                    bool snapshots,
+                    bool hasDownStairs = true)
 {
     result.builderName = std::move(builderName);
-    setDistantStairs(result.map, result.playerStart, result.stairsPosition);
+    if (hasDownStairs) {
+        setDistantStairs(result.map, result.playerStart, result.stairsPosition);
+    } else {
+        result.stairsPosition = result.playerStart;
+    }
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);
-    recordSnapshot(result.snapshots, result.map, "town final", snapshots);
+    recordSnapshot(result.snapshots, result.map, "region final", snapshots);
     if (!result.map.isWalkable(result.playerStart.x, result.playerStart.y) ||
         !result.map.isWalkable(result.stairsPosition.x,
                                result.stairsPosition.y)) {
-        throw std::runtime_error("Town builder failed validation");
+        throw std::runtime_error("Region builder failed validation");
     }
 }
 
@@ -102,6 +129,86 @@ MapBuildResult Section4Builders::buildTown(int width,
         SpawnRequest{"chair", Point{midX - 2, midY - 1}});
 
     finalizeRegion(result, "town", options.recordSnapshots);
+    return result;
+}
+
+MapBuildResult Section4Builders::buildWoods(int width,
+                                            int height,
+                                            Rng& rng,
+                                            MapBuildOptions options)
+{
+    validateBuilderDimensions("woods", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    const int roadX = width / 2;
+    carveVertical(result.map, roadX, 1, height - 2);
+    carveHorizontal(result.map, height / 3, roadX - 8, roadX + 8);
+    addScatterFloors(result.map, rng, (width * height) / 6, 'c');
+    repairConnectivity(result.map, Point{roadX, 2}, rng);
+    cullUnreachable(result.map, Point{roadX, 2});
+    result.playerStart = Point{roadX, 2};
+    finalizeRegion(result, "woods", options.recordSnapshots);
+    return result;
+}
+
+MapBuildResult Section4Builders::buildDragonLair(int width,
+                                                 int height,
+                                                 Rng& rng,
+                                                 MapBuildOptions options)
+{
+    validateBuilderDimensions("dragon-lair", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    result.playerStart = Point{width / 2, 2};
+    carveVertical(result.map, width / 2, 2, height - 6);
+    carveRect(result.map,
+              Rect{width / 2 - 8, height - 12, width / 2 + 9, height - 3});
+    addScatterFloors(result.map, rng, (width * height) / 12, 'p');
+    repairConnectivity(result.map, result.playerStart, rng);
+    cullUnreachable(result.map, result.playerStart);
+    result.spawnRequests.push_back(
+        SpawnRequest{"dragon", Point{width / 2, height - 8}});
+    finalizeRegion(result, "dragon-lair", options.recordSnapshots);
+    return result;
+}
+
+MapBuildResult Section4Builders::buildMushroomForest(int width,
+                                                     int height,
+                                                     Rng& rng,
+                                                     MapBuildOptions options)
+{
+    validateBuilderDimensions("mushroom-forest", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    result.playerStart = Point{width / 2, 2};
+    carveVertical(result.map, width / 2, 2, height - 3);
+    addScatterFloors(result.map, rng, (width * height) / 4, 'c');
+    repairConnectivity(result.map, result.playerStart, rng);
+    cullUnreachable(result.map, result.playerStart);
+    finalizeRegion(result, "mushroom-forest", options.recordSnapshots);
+    return result;
+}
+
+MapBuildResult Section4Builders::buildDarkElfCity(int width,
+                                                  int height,
+                                                  [[maybe_unused]] Rng& rng,
+                                                  MapBuildOptions options)
+{
+    validateBuilderDimensions("dark-elf-city", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    const int midX = width / 2;
+    const int midY = height / 2;
+    carveHorizontal(result.map, midY, 1, width - 2);
+    carveVertical(result.map, midX, 1, height - 2);
+    for (int y = 3; y < height - 6; y += 8) {
+        for (int x = 3; x < width - 10; x += 12) {
+            carveRect(result.map, Rect{x, y, x + 7, y + 5});
+            carveHorizontal(result.map, y + 2, x + 6, midX);
+        }
+    }
+    result.playerStart = Point{midX, 2};
+    result.spawnRequests.push_back(
+        SpawnRequest{"dark_elf_archer", Point{midX - 5, midY}});
+    result.spawnRequests.push_back(
+        SpawnRequest{"dark_elf_archer", Point{midX + 5, midY}});
+    finalizeRegion(result, "dark-elf-city", options.recordSnapshots, false);
     return result;
 }
 

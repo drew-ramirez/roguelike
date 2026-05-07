@@ -58,6 +58,10 @@ std::vector<std::string> availableMapBuilders()
             "voronoi-chebyshev",
             "wfc",
             "town",
+            "woods",
+            "dragon-lair",
+            "mushroom-forest",
+            "dark-elf-city",
             "cavern-vaults",
             "ruined-rooms"};
 }
@@ -210,6 +214,19 @@ MapBuildResult buildMapById(std::string_view builderId,
     }
     if (builderId == "town") {
         return Section4Builders::buildTown(width, height, rng, options);
+    }
+    if (builderId == "woods") {
+        return Section4Builders::buildWoods(width, height, rng, options);
+    }
+    if (builderId == "dragon-lair") {
+        return Section4Builders::buildDragonLair(width, height, rng, options);
+    }
+    if (builderId == "mushroom-forest") {
+        return Section4Builders::buildMushroomForest(
+            width, height, rng, options);
+    }
+    if (builderId == "dark-elf-city") {
+        return Section4Builders::buildDarkElfCity(width, height, rng, options);
     }
     if (builderId == "cavern-vaults") {
         return BuilderChain::buildCavernVaults(width, height, rng, options);
