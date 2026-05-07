@@ -22,15 +22,9 @@ struct MapgenViewerOptions {
     std::string builderId = "simple";
     std::optional<Rng::Seed> seed;
     bool showSnapshots = false;
+    int width = 40;
+    int height = 25;
 };
-
-[[nodiscard]] std::vector<std::string> availableMapBuilders();
-[[nodiscard]] bool isKnownMapBuilder(std::string_view builderId);
-[[nodiscard]] MapBuildResult buildMapById(std::string_view builderId,
-                                          int width,
-                                          int height,
-                                          Rng& rng,
-                                          MapBuildOptions options);
 
 int runMapgenViewer(const MapgenViewerOptions& options, std::ostream& output);
 

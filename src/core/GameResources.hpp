@@ -8,6 +8,7 @@
 #include "render/Color.hpp"
 
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace rl {
@@ -34,6 +35,7 @@ struct GameResources {
     GameLog log;
     entt::entity player = entt::null;
     int depth = 1;
+    std::string mapBuilderId = "simple";
     int inventorySelection = 0;
     std::optional<PendingTargeting> pendingTargeting;
     std::vector<ParticleRequest> particleRequests;

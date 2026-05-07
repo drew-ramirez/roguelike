@@ -10,6 +10,7 @@ enum class RunState {
     ShowInventory,
     ShowDropItem,
     ShowTargeting,
+    MapGeneration,
     GameOver
 };
 

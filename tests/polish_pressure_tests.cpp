@@ -6,6 +6,8 @@
 #include "core/RunState.hpp"
 #include "ecs/Components.hpp"
 #include "input/InputEvent.hpp"
+#include "render/ConsoleBuffer.hpp"
+#include "render/MapTheme.hpp"
 #include "render/WallGlyph.hpp"
 #include "save/SaveGame.hpp"
 #include "spawn/ItemSpawner.hpp"
@@ -15,6 +17,7 @@
 #include "systems/DamageSystem.hpp"
 #include "systems/HungerSystem.hpp"
 #include "systems/ItemSystem.hpp"
+#include "systems/MapRenderSystem.hpp"
 #include "systems/ParticleSystem.hpp"
 #include "systems/TrapSystem.hpp"
 #include "ui/MainMenu.hpp"
@@ -30,6 +33,12 @@ namespace {
         ++count;
     }
     return count;
+}
+
+[[nodiscard]] bool sameColor(Color left, Color right) noexcept
+{
+    return left.r == right.r && left.g == right.g && left.b == right.b &&
+           left.a == right.a;
 }
 
 } // namespace
@@ -49,6 +58,88 @@ void runPolishPressureTests(TestRunner& runner)
         runner.expect(wallGlyphFromMask(3, WallGlyphStyle::AsciiFallback) ==
                           U'#',
                       "wall glyph fallback stays ASCII");
+    }
+
+    {
+        Map map{7, 4, TileType::Floor};
+        map.setTile(1, 1, TileType::Wall);
+        map.setTile(3, 1, TileType::ClosedDoor);
+        map.setTile(4, 1, TileType::OpenDoor);
+        map.setTile(5, 1, TileType::DownStairs);
+        map.setVisible(1, 1);
+        map.setVisible(2, 1);
+        map.setVisible(3, 1);
+        map.setVisible(4, 1);
+        map.setVisible(5, 1);
+
+        ConsoleBuffer console{7, 4};
+        console.clear();
+        renderMap(map, console);
+        runner.expect(
+            sameColor(console.cellAt(1, 1).foreground, Color::white()) &&
+                sameColor(console.cellAt(2, 1).foreground,
+                          Color{120, 120, 120, 255}) &&
+                sameColor(console.cellAt(3, 1).foreground,
+                          Color{185, 130, 70, 255}) &&
+                sameColor(console.cellAt(4, 1).foreground,
+                          Color{170, 120, 65, 255}) &&
+                sameColor(console.cellAt(5, 1).foreground,
+                          Color{220, 220, 120, 255}),
+            "default map rendering keeps grayscale yellow brown colors");
+
+        const auto druidic = mapThemeById("druidic");
+        console.clear();
+        renderMap(map, console, druidic);
+        runner.expect(
+            sameColor(console.cellAt(1, 1).foreground,
+                      druidic.style(MapThemeTile::Wall, true).foreground) &&
+                sameColor(
+                    console.cellAt(2, 1).foreground,
+                    druidic.style(MapThemeTile::Floor, true).foreground) &&
+                sameColor(
+                    console.cellAt(3, 1).foreground,
+                    druidic.style(MapThemeTile::ClosedDoor, true).foreground) &&
+                sameColor(
+                    console.cellAt(5, 1).foreground,
+                    druidic.style(MapThemeTile::DownStairs, true).foreground) &&
+                !sameColor(console.cellAt(2, 1).foreground,
+                           Color{120, 120, 120, 255}),
+            "druidic map rendering changes floor wall door and stairs colors");
+    }
+
+    {
+        Map map{4, 3, TileType::Floor};
+        map.setRevealed(1, 1);
+
+        const auto druidic = mapThemeById("druidic");
+        ConsoleBuffer console{4, 3};
+        console.clear();
+        renderMap(map, console, druidic);
+        runner.expect(
+            sameColor(console.cellAt(1, 1).foreground,
+                      druidic.style(MapThemeTile::Floor, false).foreground) &&
+                sameColor(console.cellAt(1, 1).background,
+                          druidic.style(MapThemeTile::Floor, false).background),
+            "remembered tiles use the darker REX palette row");
+    }
+
+    {
+        Map map{4, 3, TileType::Floor};
+        map.setBloodstain(1, 1);
+        map.setVisible(1, 1);
+
+        const auto druidic = mapThemeById("druidic");
+        ConsoleBuffer console{4, 3};
+        console.clear();
+        renderMap(map, console, druidic);
+        runner.expect(
+            console.cellAt(1, 1).glyph == U',' &&
+                sameColor(
+                    console.cellAt(1, 1).foreground,
+                    druidic.style(MapThemeTile::Blood, true).foreground) &&
+                !sameColor(console.cellAt(1, 1).foreground,
+                           druidic.style(MapThemeTile::Floor, true).foreground),
+            "bloodstains override floor glyph and theme color");
     }
 
     {

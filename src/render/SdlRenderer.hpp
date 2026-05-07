@@ -77,13 +77,13 @@ class SdlRenderer final : public IRenderer {
         char32_t glyph = U' ';
         std::uint32_t foregroundRgba = 0;
 
-        [[nodiscard]] bool operator==(
-            const GlyphCacheKey& other) const noexcept;
+        [[nodiscard]] bool
+        operator==(const GlyphCacheKey& other) const noexcept;
     };
 
     struct GlyphCacheKeyHash {
-        [[nodiscard]] std::size_t operator()(
-            const GlyphCacheKey& key) const noexcept;
+        [[nodiscard]] std::size_t
+        operator()(const GlyphCacheKey& key) const noexcept;
     };
 
     struct CachedGlyph {

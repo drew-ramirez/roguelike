@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include "ecs/Components.hpp"
+#include "map/Map.hpp"
 #include "spawn/SpawnTable.hpp"
 #include "systems/ItemSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
@@ -31,6 +32,15 @@ canSpawnAt(const entt::registry& registry, Point point, Point playerStart)
     return point != playerStart &&
            !blockingEntityAt(registry, point).has_value() &&
            !hasItemAt(registry, point);
+}
+
+[[nodiscard]] bool canSpawnAt(const entt::registry& registry,
+                              const Map& map,
+                              Point point,
+                              Point playerStart)
+{
+    return map.isWalkable(point.x, point.y) &&
+           canSpawnAt(registry, point, playerStart);
 }
 
 [[nodiscard]] entt::entity
@@ -172,6 +182,57 @@ std::size_t spawnItems(entt::registry& registry,
         for (int attempt = 0; attempt < maxAttempts; ++attempt) {
             const Point position = randomPointInRoom(rooms[roomIndex], rng);
             if (!canSpawnAt(registry, position, playerStart)) {
+                continue;
+            }
+
+            const auto id = forceEarlyItems && spawned == 0
+                                ? std::string{"healing_potion"}
+                                : rollSpawn(itemSpawnTable(), depth, rng);
+            [[maybe_unused]] const auto item =
+                spawnItemById(registry, id, position);
+            ++spawned;
+            break;
+        }
+    }
+
+    return spawned;
+}
+
+std::size_t spawnItems(entt::registry& registry,
+                       const std::vector<SpawnRegion>& regions,
+                       const Map& map,
+                       Rng& rng,
+                       Point playerStart,
+                       int depth)
+{
+    if (regions.size() <= 1) {
+        return 0;
+    }
+
+    std::size_t spawned = 0;
+    const auto maximum = static_cast<std::size_t>(maxItemsForDepth(depth));
+    for (std::size_t regionIndex = 1;
+         regionIndex < regions.size() && spawned < maximum;
+         ++regionIndex) {
+        const bool hallway =
+            regions[regionIndex].kind == SpawnRegionKind::Corridor;
+        const bool forceEarlyItems = spawned < 2 && !hallway;
+        if (!forceEarlyItems && hallway && rng.rangeInclusive(0, 8) != 0) {
+            continue;
+        }
+        if (!forceEarlyItems && !hallway && rng.rangeInclusive(0, 3) != 0) {
+            continue;
+        }
+
+        constexpr int maxAttempts = 12;
+        for (int attempt = 0; attempt < maxAttempts; ++attempt) {
+            const auto& tiles = regions[regionIndex].tiles;
+            if (tiles.empty()) {
+                break;
+            }
+            const Point position = tiles[static_cast<std::size_t>(
+                rng.rangeInclusive(0, static_cast<int>(tiles.size()) - 1))];
+            if (!canSpawnAt(registry, map, position, playerStart)) {
                 continue;
             }
 

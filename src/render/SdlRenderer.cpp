@@ -38,8 +38,7 @@ SDL_Color toSdlColor(rl::Color color)
 
 std::uint32_t packColor(rl::Color color) noexcept
 {
-    return (std::uint32_t{color.r} << 24U) |
-           (std::uint32_t{color.g} << 16U) |
+    return (std::uint32_t{color.r} << 24U) | (std::uint32_t{color.g} << 16U) |
            (std::uint32_t{color.b} << 8U) | std::uint32_t{color.a};
 }
 
@@ -158,6 +157,8 @@ rl::Key mapSdlKey(SDL_Keycode key)
     case SDLK_RETURN:
     case SDLK_KP_ENTER:
         return rl::Key::Enter;
+    case SDLK_SPACE:
+        return rl::Key::Space;
     case SDLK_F5:
         return rl::Key::F5;
     case SDLK_PERIOD:
@@ -414,7 +415,7 @@ void SdlRenderer::drawCell(int x, int y, const Cell& cell)
     }
 
     // Rendering a glyph through SDL_ttf allocates transient surface/texture
-    // resources, so we have to cache by glyph & foreground color instead 
+    // resources, so we have to cache by glyph & foreground color instead
     // of repeating that for every visible cell on every frame
     const GlyphCacheKey key{cell.glyph, packColor(cell.foreground)};
     auto cachedGlyph = glyphCache_.find(key);
@@ -441,14 +442,11 @@ void SdlRenderer::drawCell(int x, int y, const Cell& cell)
         cachedGlyph = glyphCache_.emplace(key, std::move(glyph)).first;
     }
 
-    SDL_Rect glyphDestination{destination.x +
-                                  ((cellWidth_ - cachedGlyph->second.width) /
-                                   2),
-                              destination.y +
-                                  ((cellHeight_ - cachedGlyph->second.height) /
-                                   2),
-                              cachedGlyph->second.width,
-                              cachedGlyph->second.height};
+    SDL_Rect glyphDestination{
+        destination.x + ((cellWidth_ - cachedGlyph->second.width) / 2),
+        destination.y + ((cellHeight_ - cachedGlyph->second.height) / 2),
+        cachedGlyph->second.width,
+        cachedGlyph->second.height};
     SDL_RenderCopy(renderer_.get(),
                    cachedGlyph->second.texture.get(),
                    nullptr,

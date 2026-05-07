@@ -25,6 +25,16 @@ struct SpawnRegion {
     std::vector<Point> tiles;
 };
 
+struct CorridorPath {
+    std::string strategy;
+    std::vector<Point> tiles;
+};
+
+struct SpawnRequest {
+    std::string id;
+    Point position;
+};
+
 struct MapBuildResult {
     Map map;
     Point playerStart;
@@ -33,6 +43,9 @@ struct MapBuildResult {
     std::vector<SpawnRegion> spawnRegions;
     std::vector<MapSnapshot> snapshots;
     std::string builderName = "simple";
+    std::vector<CorridorPath> corridorPaths;
+    std::vector<std::string> buildSteps;
+    std::vector<SpawnRequest> spawnRequests;
 };
 
 using BuilderMap = MapBuildResult;
