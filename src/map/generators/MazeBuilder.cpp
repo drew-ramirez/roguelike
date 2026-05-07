@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "map/MapBuilderCommon.hpp"
-#include "map/MapConnectivity.hpp"
 #include "map/TileType.hpp"
 
 namespace rl {
@@ -22,6 +21,8 @@ namespace {
 
 [[nodiscard]] Point twoStep(Point point, Point delta)
 {
+    // Maze cells live on every other tile, the skipped tile between them
+    // remains available as the corridor wall we carve through
     return Point{point.x + (delta.x * 2), point.y + (delta.y * 2)};
 }
 
@@ -75,6 +76,8 @@ MazeBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
                 continue;
             }
 
+            // Carve the wall between the current cell and the destination,
+            // then carve the destination, preserves one-tile corridors
             result.map.setTile(
                 current.x + delta.x, current.y + delta.y, TileType::Floor);
             result.map.setTile(next.x, next.y, TileType::Floor);
@@ -95,11 +98,7 @@ MazeBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Corridor);
     addBuildStep(result, "modifier: distant exit");
 
-    const auto validation =
-        validateMapBuild(result.map, result.playerStart, result.stairsPosition);
-    if (!validation.valid) {
-        throw std::runtime_error("Maze generation produced an invalid map");
-    }
+    validateBuildOrThrow(result, "Maze generation produced an invalid map");
 
     return result;
 }
