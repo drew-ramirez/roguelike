@@ -164,6 +164,9 @@ rl::Key mapSdlKey(SDL_Keycode key)
     case SDLK_PERIOD:
     case SDLK_GREATER:
         return rl::Key::Descend;
+    case SDLK_COMMA:
+    case SDLK_LESS:
+        return rl::Key::Ascend;
     default:
         return rl::Key::Unknown;
     }

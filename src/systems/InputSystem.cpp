@@ -1,5 +1,7 @@
 #include "systems/InputSystem.hpp"
 
+#include <string>
+
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
@@ -61,6 +63,7 @@ std::optional<Point> movementDeltaForKey(Key key)
     case Key::Enter:
     case Key::F5:
     case Key::Descend:
+    case Key::Ascend:
     case Key::Unknown:
         return std::nullopt;
     }
@@ -119,6 +122,9 @@ PlayerInputResult handleMapInput(entt::registry& registry,
         if (event.key == Key::Descend) {
             return PlayerInputResult::Descend;
         }
+        if (event.key == Key::Ascend) {
+            return PlayerInputResult::Ascend;
+        }
 
         const auto delta = movementDeltaForKey(event.key);
         if (delta.has_value()) {
@@ -145,6 +151,18 @@ PlayerInputResult handleMapInput(entt::registry& registry,
             if (const auto blocker =
                     blockingEntityAt(registry, target, resources.player);
                 blocker.has_value()) {
+                if (registry.all_of<Neutral>(*blocker) ||
+                    registry.all_of<Vendor>(*blocker)) {
+                    const auto name = registry.all_of<Name>(*blocker)
+                                          ? registry.get<Name>(*blocker).value
+                                          : std::string{"Someone"};
+                    resources.log.add(name + " has nothing urgent to say.");
+                    return PlayerInputResult::TookTurn;
+                }
+                if (registry.all_of<Prop>(*blocker)) {
+                    resources.log.add("Something blocks the way.");
+                    return PlayerInputResult::None;
+                }
                 registry.emplace_or_replace<WantsToMelee>(
                     resources.player, WantsToMelee{*blocker});
                 return PlayerInputResult::TookTurn;

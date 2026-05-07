@@ -19,6 +19,7 @@ void runSaveLoadTests(TestRunner& runner)
 {
     auto map = openMap();
     map.setTile(6, 4, TileType::DownStairs);
+    map.setTile(6, 3, TileType::UpStairs);
     map.setTile(3, 3, TileType::ClosedDoor);
     map.setTile(4, 3, TileType::OpenDoor);
     map.setRevealed(2, 2, true);
@@ -54,6 +55,8 @@ void runSaveLoadTests(TestRunner& runner)
     runner.expect(loadedResources.depth == 3, "load restores depth");
     runner.expect(loadedMap.tileAt(6, 4) == TileType::DownStairs,
                   "load restores stair tile");
+    runner.expect(loadedMap.tileAt(6, 3) == TileType::UpStairs,
+                  "load restores up stair tile");
     runner.expect(loadedMap.tileAt(3, 3) == TileType::ClosedDoor &&
                       loadedMap.tileAt(4, 3) == TileType::OpenDoor,
                   "load restores door tile state");

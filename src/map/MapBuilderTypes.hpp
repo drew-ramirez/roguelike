@@ -11,6 +11,8 @@ namespace rl {
 
 struct MapBuildOptions {
     bool recordSnapshots = false;
+    int depth = 1;
+    bool placeUpStairs = false;
 };
 
 struct MapSnapshot {
@@ -46,6 +48,7 @@ struct MapBuildResult {
     std::vector<CorridorPath> corridorPaths;
     std::vector<std::string> buildSteps;
     std::vector<SpawnRequest> spawnRequests;
+    Point upStairsPosition;
 };
 
 using BuilderMap = MapBuildResult;

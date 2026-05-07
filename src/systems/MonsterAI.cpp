@@ -63,7 +63,7 @@ Point chooseMonsterStep(Point monsterPosition,
 } // namespace
 
 void runMonsterAi(entt::registry& registry,
-                  const GameResources& resources,
+                  GameResources& resources,
                   const Map& map)
 {
     if (resources.player == entt::null || !registry.valid(resources.player) ||
@@ -75,6 +75,19 @@ void runMonsterAi(entt::registry& registry,
         registry.get<Position>(resources.player);
     const Point playerPosition{playerPositionComponent.x,
                                playerPositionComponent.y};
+
+    const auto bystanders = registry.view<const Bystander, Position>();
+    for (const auto bystander : bystanders) {
+        if (registry.all_of<Vendor>(bystander)) {
+            continue;
+        }
+        const Point step{resources.rng.rangeInclusive(-1, 1),
+                         resources.rng.rangeInclusive(-1, 1)};
+        if (step.x != 0 || step.y != 0) {
+            [[maybe_unused]] const bool moved =
+                tryMoveEntity(registry, bystander, map, step);
+        }
+    }
 
     const auto view = registry.view<const Monster, Position>();
     for (const auto monster : view) {

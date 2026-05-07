@@ -9,6 +9,9 @@
 
 #include <stdexcept>
 
+#include "map/DungeonRegionRouter.hpp"
+#include "map/MapBuilderCommon.hpp"
+#include "map/TileType.hpp"
 #include "map/generators/BspDungeonBuilder.hpp"
 #include "map/generators/BspInteriorBuilder.hpp"
 #include "map/generators/BuilderChain.hpp"
@@ -16,6 +19,7 @@
 #include "map/generators/DlaBuilder.hpp"
 #include "map/generators/DrunkardsWalkBuilder.hpp"
 #include "map/generators/MazeBuilder.hpp"
+#include "map/generators/Section4Builders.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "map/generators/VoronoiBuilder.hpp"
 #include "map/generators/WfcBuilder.hpp"
@@ -54,6 +58,11 @@ std::vector<std::string> availableMapBuilders()
             "voronoi-manhattan",
             "voronoi-chebyshev",
             "wfc",
+            "town",
+            "woods",
+            "dragon-lair",
+            "mushroom-forest",
+            "dark-elf-city",
             "cavern-vaults",
             "ruined-rooms"};
 }
@@ -204,6 +213,22 @@ MapBuildResult buildMapById(std::string_view builderId,
     if (builderId == "wfc") {
         return WfcBuilder::build(width, height, rng, options);
     }
+    if (builderId == "town") {
+        return Section4Builders::buildTown(width, height, rng, options);
+    }
+    if (builderId == "woods") {
+        return Section4Builders::buildWoods(width, height, rng, options);
+    }
+    if (builderId == "dragon-lair") {
+        return Section4Builders::buildDragonLair(width, height, rng, options);
+    }
+    if (builderId == "mushroom-forest") {
+        return Section4Builders::buildMushroomForest(
+            width, height, rng, options);
+    }
+    if (builderId == "dark-elf-city") {
+        return Section4Builders::buildDarkElfCity(width, height, rng, options);
+    }
     if (builderId == "cavern-vaults") {
         return BuilderChain::buildCavernVaults(width, height, rng, options);
     }
@@ -211,6 +236,27 @@ MapBuildResult buildMapById(std::string_view builderId,
         return BuilderChain::buildRuinedRooms(width, height, rng, options);
     }
     throw std::invalid_argument("Unknown map builder");
+}
+
+MapBuildResult buildLevelForDepth(
+    int depth, int width, int height, Rng& rng, MapBuildOptions options)
+{
+    const auto route = routeForDepth(depth);
+    options.depth = depth;
+    options.placeUpStairs = route.hasUpStairs;
+    auto result = buildMapById(route.builderId, width, height, rng, options);
+    result.builderName = route.builderId;
+    if (!route.hasDownStairs) {
+        result.map.setTile(
+            result.stairsPosition.x, result.stairsPosition.y, TileType::Floor);
+        result.stairsPosition = result.playerStart;
+    }
+    if (route.hasUpStairs) {
+        setUpStairsAtStart(
+            result.map, result.playerStart, result.upStairsPosition);
+    }
+    result.buildSteps.push_back("region:" + route.regionId);
+    return result;
 }
 
 } // namespace rl

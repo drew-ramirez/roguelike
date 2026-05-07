@@ -46,7 +46,8 @@ enum class Key {
     Enter,
     Space,
     F5,
-    Descend
+    Descend,
+    Ascend
 };
 
 enum class InputEventType { Quit, KeyDown };

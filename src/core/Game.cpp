@@ -96,11 +96,20 @@ void Game::startNewGame(std::optional<Rng::Seed> seed)
     resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
     std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
 
-    commitGeneratedMap(buildMapById(resources_.mapBuilderId,
-                                    map_.width(),
-                                    map_.height(),
-                                    resources_.rng,
-                                    MapBuildOptions{}));
+    const auto options = MapBuildOptions{false, resources_.depth};
+    if (resources_.mapBuilderId == "normal") {
+        commitGeneratedMap(buildLevelForDepth(resources_.depth,
+                                              map_.width(),
+                                              map_.height(),
+                                              resources_.rng,
+                                              options));
+    } else {
+        commitGeneratedMap(buildMapById(resources_.mapBuilderId,
+                                        map_.width(),
+                                        map_.height(),
+                                        resources_.rng,
+                                        options));
+    }
 }
 
 void Game::beginVisualMapgen(std::optional<Rng::Seed> seed)
@@ -112,11 +121,18 @@ void Game::beginVisualMapgen(std::optional<Rng::Seed> seed)
     resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
     std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
 
-    auto build = buildMapById(resources_.mapBuilderId,
-                              map_.width(),
-                              map_.height(),
-                              resources_.rng,
-                              MapBuildOptions{true});
+    const auto options = MapBuildOptions{true, resources_.depth};
+    auto build = resources_.mapBuilderId == "normal"
+                     ? buildLevelForDepth(resources_.depth,
+                                          map_.width(),
+                                          map_.height(),
+                                          resources_.rng,
+                                          options)
+                     : buildMapById(resources_.mapBuilderId,
+                                    map_.width(),
+                                    map_.height(),
+                                    resources_.rng,
+                                    options);
     std::vector<MapSnapshot> frames = build.snapshots;
     frames.push_back(MapSnapshot{"final generated map", build.map});
     resetMapgenPlayback(mapgenPlayback_, std::move(frames));
@@ -134,26 +150,34 @@ void Game::commitGeneratedMap(MapBuildResult build)
                                map_,
                                build.playerStart,
                                build.stairsPosition);
-    resources_.log.add("Entered the dungeon.");
-    const auto spawned = spawnMonsters(registry_,
-                                       build.spawnRegions,
-                                       map_,
-                                       resources_.rng,
-                                       build.playerStart,
-                                       resources_.depth);
-    [[maybe_unused]] const auto spawnedItems = spawnItems(registry_,
-                                                          build.spawnRegions,
-                                                          map_,
-                                                          resources_.rng,
-                                                          build.playerStart,
-                                                          resources_.depth);
-    [[maybe_unused]] const auto spawnedTraps = spawnTraps(registry_,
-                                                          build.spawnRegions,
-                                                          map_,
-                                                          resources_.rng,
-                                                          build.playerStart,
-                                                          build.stairsPosition,
-                                                          resources_.depth);
+    const bool townStart =
+        resources_.mapBuilderId == "normal" && resources_.depth == 1;
+    resources_.log.add(townStart ? "Entered the town."
+                                 : "Entered the dungeon.");
+    const auto spawned = townStart ? 0
+                                   : spawnMonsters(registry_,
+                                                   build.spawnRegions,
+                                                   map_,
+                                                   resources_.rng,
+                                                   build.playerStart,
+                                                   resources_.depth);
+    [[maybe_unused]] const auto spawnedItems =
+        townStart ? 0
+                  : spawnItems(registry_,
+                               build.spawnRegions,
+                               map_,
+                               resources_.rng,
+                               build.playerStart,
+                               resources_.depth);
+    [[maybe_unused]] const auto spawnedTraps =
+        townStart ? 0
+                  : spawnTraps(registry_,
+                               build.spawnRegions,
+                               map_,
+                               resources_.rng,
+                               build.playerStart,
+                               build.stairsPosition,
+                               resources_.depth);
     if (spawned > 0) {
         resources_.log.add("You hear movement in the dark.");
     }
