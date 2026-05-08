@@ -1,7 +1,7 @@
 /**
  * **************************************************************************
  * @file     MonsterAI.hpp
- * @brief    Declares visible-monster movement and attack decisions
+ * @brief    Declares hostile monster movement and attack decisions
  * **************************************************************************
  */
 
@@ -13,6 +13,10 @@ namespace rl {
 
 struct GameResources;
 class Map;
+
+void runHostileMonsterAi(entt::registry& registry,
+                         GameResources& resources,
+                         const Map& map);
 
 void runMonsterAi(entt::registry& registry,
                   GameResources& resources,

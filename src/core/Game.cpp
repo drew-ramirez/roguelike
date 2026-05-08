@@ -25,6 +25,7 @@
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "spawn/TrapSpawner.hpp"
+#include "systems/BystanderAI.hpp"
 #include "systems/DamageSystem.hpp"
 #include "systems/HungerSystem.hpp"
 #include "systems/InputSystem.hpp"
@@ -316,7 +317,8 @@ void Game::resolvePlayerTurn(bool runMonsters)
 
     if (state_ != RunState::GameOver && runMonsters) {
         state_ = RunState::MonsterTurn;
-        runMonsterAi(registry_, resources_, map_);
+        runBystanderAi(registry_, resources_, map_);
+        runHostileMonsterAi(registry_, resources_, map_);
         processMeleeCombat(registry_, resources_.log, &resources_.rng);
         applyDamageAndCleanup(registry_, resources_, state_, &map_);
     }

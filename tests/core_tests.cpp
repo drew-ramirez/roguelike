@@ -4,6 +4,7 @@ int main()
 {
     rl::test::TestRunner runner;
     rl::test::runAssetTests(runner);
+    rl::test::runAiTests(runner);
     rl::test::runInputTests(runner);
     rl::test::runInventoryTests(runner);
     rl::test::runTargetingTests(runner);

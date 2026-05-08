@@ -4,6 +4,7 @@
 
 namespace rl::test {
 
+void runAiTests(TestRunner& runner);
 void runAssetTests(TestRunner& runner);
 void runDescentAndSpawnTests(TestRunner& runner);
 void runDiceTests(TestRunner& runner);

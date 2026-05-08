@@ -1,7 +1,7 @@
 /**
  * **************************************************************************
  * @file     MonsterAI.cpp
- * @brief    Moves visible monsters and queues adjacent melee attacks
+ * @brief    Moves visible hostile monsters and queues adjacent melee attacks
  * **************************************************************************
  */
 
@@ -13,6 +13,7 @@
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
+#include "systems/BystanderAI.hpp"
 #include "systems/InputSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 
@@ -60,11 +61,19 @@ Point chooseMonsterStep(Point monsterPosition,
     return Point{};
 }
 
+[[nodiscard]] bool isHostileAiActor(const entt::registry& registry,
+                                    entt::entity entity)
+{
+    return !registry.all_of<Neutral>(entity) &&
+           !registry.all_of<Bystander>(entity) &&
+           !registry.all_of<Vendor>(entity);
+}
+
 } // namespace
 
-void runMonsterAi(entt::registry& registry,
-                  GameResources& resources,
-                  const Map& map)
+void runHostileMonsterAi(entt::registry& registry,
+                         GameResources& resources,
+                         const Map& map)
 {
     if (resources.player == entt::null || !registry.valid(resources.player) ||
         !registry.all_of<Position>(resources.player)) {
@@ -76,21 +85,12 @@ void runMonsterAi(entt::registry& registry,
     const Point playerPosition{playerPositionComponent.x,
                                playerPositionComponent.y};
 
-    const auto bystanders = registry.view<const Bystander, Position>();
-    for (const auto bystander : bystanders) {
-        if (registry.all_of<Vendor>(bystander)) {
-            continue;
-        }
-        const Point step{resources.rng.rangeInclusive(-1, 1),
-                         resources.rng.rangeInclusive(-1, 1)};
-        if (step.x != 0 || step.y != 0) {
-            [[maybe_unused]] const bool moved =
-                tryMoveEntity(registry, bystander, map, step);
-        }
-    }
-
     const auto view = registry.view<const Monster, Position>();
     for (const auto monster : view) {
+        if (!isHostileAiActor(registry, monster)) {
+            continue;
+        }
+
         auto& monsterPositionComponent = view.get<Position>(monster);
         const Point monsterPosition{monsterPositionComponent.x,
                                     monsterPositionComponent.y};
@@ -115,6 +115,14 @@ void runMonsterAi(entt::registry& registry,
                 tryMoveEntity(registry, monster, map, step);
         }
     }
+}
+
+void runMonsterAi(entt::registry& registry,
+                  GameResources& resources,
+                  const Map& map)
+{
+    runBystanderAi(registry, resources, map);
+    runHostileMonsterAi(registry, resources, map);
 }
 
 } // namespace rl
