@@ -266,6 +266,11 @@ void Game::tick(const std::vector<InputEvent>& events)
                     registry_, resources_, map_, fovProvider_)) {
                 state_ = RunState::AwaitingInput;
             }
+        } else if (input == PlayerInputResult::Ascend) {
+            if (tryAscendToPreviousLevel(
+                    registry_, resources_, map_, fovProvider_)) {
+                state_ = RunState::AwaitingInput;
+            }
         } else if (input == PlayerInputResult::Save) {
             try {
                 saveGame(defaultSavePath(), registry_, resources_, map_);
