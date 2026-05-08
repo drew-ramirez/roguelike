@@ -69,7 +69,8 @@ void runUiTests(TestRunner& runner)
 
     runner.expect(bufferContains(console, "17/30") &&
                       bufferContains(console, "MP 4/6") &&
-                      bufferContains(console, "Lvl 2 XP 250") &&
+                      bufferContains(console, "Lv 2") &&
+                      bufferContains(console, "250/2000") &&
                       bufferContains(console, "Gold 35"),
                   "HUD renders pools and progress stats");
     runner.expect(bufferContains(console, "Mgt 13 Fit 12 Qck 11 Int 10") &&

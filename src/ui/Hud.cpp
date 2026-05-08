@@ -7,6 +7,7 @@
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
+#include "progression/ExperienceSystem.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "systems/EquipmentSystem.hpp"
 #include "systems/ItemSystem.hpp"
@@ -17,6 +18,7 @@ namespace {
 
 constexpr int defaultUiHeight = 7;
 constexpr int hpBarWidth = 16;
+constexpr int xpBarWidth = 10;
 constexpr std::size_t visibleMessages = 3;
 
 [[nodiscard]] std::string entityName(const entt::registry& registry,
@@ -28,10 +30,8 @@ constexpr std::size_t visibleMessages = 3;
     return "None";
 }
 
-[[nodiscard]] std::optional<entt::entity>
-equippedInSlot(const entt::registry& registry,
-               entt::entity owner,
-               EquipmentSlot slot)
+[[nodiscard]] std::optional<entt::entity> equippedInSlot(
+    const entt::registry& registry, entt::entity owner, EquipmentSlot slot)
 {
     const auto view = registry.view<const Equipped>();
     for (const auto item : view) {
@@ -113,15 +113,25 @@ void drawHud(ConsoleBuffer& console,
                       "MP " + std::to_string(pools.mana) + "/" +
                           std::to_string(pools.maxMana),
                       Color{120, 180, 255, 255});
+        const int xpThreshold = xpThresholdForLevel(pools.level);
         console.print(44,
                       uiTop + 1,
-                      "Lvl " + std::to_string(pools.level) + " XP " +
-                          std::to_string(pools.xp),
+                      "Lv " + std::to_string(pools.level),
                       Color{180, 180, 180, 255});
-        console.print(60,
+        console.print(50, uiTop + 1, "XP", Color{180, 180, 180, 255});
+        drawBar(console,
+                53,
+                uiTop + 1,
+                xpBarWidth,
+                pools.xp,
+                xpThreshold,
+                Color{220, 200, 90, 255},
+                Color{70, 60, 30, 255});
+        console.print(64,
                       uiTop + 1,
-                      "Gold " + std::to_string(pools.gold),
-                      Color{220, 200, 120, 255});
+                      std::to_string(pools.xp) + "/" +
+                          std::to_string(xpThreshold),
+                      Color{180, 180, 180, 255});
 
         console.print(1,
                       uiTop + 2,
@@ -130,30 +140,33 @@ void drawHud(ConsoleBuffer& console,
                           std::to_string(attributes.quickness) + " Int " +
                           std::to_string(attributes.intelligence),
                       Color{180, 180, 180, 255});
-        console.print(36,
+        console.print(
+            36,
+            uiTop + 2,
+            "Atk " +
+                std::to_string(
+                    meleePowerWithEquipment(registry, resources.player)) +
+                " Def " +
+                std::to_string(
+                    defenseWithEquipment(registry, resources.player)) +
+                " Wt " +
+                std::to_string(carriedWeight(registry, resources.player)),
+            Color{180, 180, 180, 255});
+        console.print(56,
                       uiTop + 2,
-                      "Atk " +
-                          std::to_string(meleePowerWithEquipment(
-                              registry, resources.player)) +
-                          " Def " +
-                          std::to_string(defenseWithEquipment(
-                              registry, resources.player)) +
-                          " Wt " +
-                          std::to_string(
-                              carriedWeight(registry, resources.player)),
-                      Color{180, 180, 180, 255});
+                      "Gold " + std::to_string(pools.gold),
+                      Color{220, 200, 120, 255});
 
         const auto weapon =
             equippedInSlot(registry, resources.player, EquipmentSlot::Weapon);
         const auto armor =
             equippedInSlot(registry, resources.player, EquipmentSlot::Armor);
-        console.print(1,
-                      uiTop + 3,
-                      "W: " +
-                          entityName(registry, weapon.value_or(entt::null)) +
-                          "  A: " +
-                          entityName(registry, armor.value_or(entt::null)),
-                      Color{200, 200, 200, 255});
+        console.print(
+            1,
+            uiTop + 3,
+            "W: " + entityName(registry, weapon.value_or(entt::null)) +
+                "  A: " + entityName(registry, armor.value_or(entt::null)),
+            Color{200, 200, 200, 255});
     }
 
     console.print(1,
