@@ -72,6 +72,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/systems/RenderSystem.cpp
     src/systems/SpatialIndexSystem.cpp
     src/systems/TrapSystem.cpp
+    src/systems/VendorSystem.cpp
     src/systems/VisibilitySystem.cpp
     src/ui/Hud.cpp
     src/ui/InventoryMenu.cpp
@@ -105,6 +106,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/spatial_tests.cpp
     tests/targeting_tests.cpp
     tests/ui_tests.cpp
+    tests/vendor_tests.cpp
 )
 
 set(ROGUELIKE_TEST_HEADERS
@@ -186,6 +188,7 @@ set(ROGUELIKE_HEADERS
     src/systems/RenderSystem.hpp
     src/systems/SpatialIndexSystem.hpp
     src/systems/TrapSystem.hpp
+    src/systems/VendorSystem.hpp
     src/systems/VisibilitySystem.hpp
     src/ui/Hud.hpp
     src/ui/InventoryMenu.hpp

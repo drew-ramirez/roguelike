@@ -21,5 +21,6 @@ void runSaveLoadTests(TestRunner& runner);
 void runSpatialTests(TestRunner& runner);
 void runTargetingTests(TestRunner& runner);
 void runUiTests(TestRunner& runner);
+void runVendorTests(TestRunner& runner);
 
 } // namespace rl::test
