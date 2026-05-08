@@ -62,6 +62,30 @@
       "xp_reward": 300
     },
     {
+      "id": "wolf",
+      "name": "Wolf",
+      "renderable": {"glyph": "w", "fg": "#A8C8A0", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 9,
+      "faction": "wildlife",
+      "combat": {"max_hp": 10, "hp": 10, "defense": 1, "power": 4},
+      "attributes": {"might": 11, "fitness": 10, "quickness": 13, "intelligence": 5},
+      "pools": {"hit_points": 10, "max_hit_points": 10, "level": 2, "xp": 0},
+      "xp_reward": 150
+    },
+    {
+      "id": "wild_boar",
+      "name": "Wild Boar",
+      "renderable": {"glyph": "b", "fg": "#B98A58", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 7,
+      "faction": "wildlife",
+      "combat": {"max_hp": 14, "hp": 14, "defense": 1, "power": 4},
+      "attributes": {"might": 13, "fitness": 12, "quickness": 9, "intelligence": 4},
+      "pools": {"hit_points": 14, "max_hit_points": 14, "level": 2, "xp": 0},
+      "xp_reward": 175
+    },
+    {
       "id": "townsfolk",
       "name": "Townsfolk",
       "renderable": {"glyph": "t", "fg": "#D8C890", "bg": "#000000", "order": 5},
@@ -238,6 +262,8 @@
   ],
   "monster_spawn_table": [
     {"name": "goblin", "weight": 80, "min_depth": 1, "max_depth": 5},
+    {"name": "wolf", "weight": 45, "min_depth": 2, "max_depth": 4},
+    {"name": "wild_boar", "weight": 25, "min_depth": 2, "max_depth": 5},
     {"name": "orc", "weight": 30, "min_depth": 2, "max_depth": 8},
     {"name": "troll", "weight": 12, "min_depth": 3, "max_depth": 20, "add_map_depth_to_weight": 1},
     {"name": "dark_elf_archer", "weight": 20, "min_depth": 8, "max_depth": 20}

@@ -62,6 +62,13 @@ void runRegionRoutingTests(TestRunner& runner)
     runner.expect(woods.builderName == "woods", "depth 2 builds woods");
     runner.expect(!woods.spawnRegions.empty(),
                   "woods provides spawn regions");
+    runner.expect(hasSpawnRequest(woods, "wolf") &&
+                      hasSpawnRequest(woods, "wild_boar") &&
+                      hasSpawnRequest(woods, "food_ration") &&
+                      hasSpawnRequest(woods, "healing_potion"),
+                  "woods requests wildlife and supplies");
+    runner.expect(hasBuildStep(woods, "content: woods wildlife and supplies"),
+                  "woods build records authored content");
 
     Rng cavernRng{101U};
     const auto cavern = buildLevelForDepth(3, 40, 25, cavernRng, {});

@@ -75,6 +75,9 @@ void runRawsValidationTests(TestRunner& runner)
     runner.expect(rollSpawn(raws.monsterSpawnTable(), 1, first) ==
                       rollSpawn(raws.monsterSpawnTable(), 1, second),
                   "raw spawn table rolls are deterministic");
+    runner.expect(defaultRawDatabase().entity("wolf") != nullptr &&
+                      defaultRawDatabase().entity("wild_boar") != nullptr,
+                  "default raw content includes woods wildlife");
 
     bool rejectedBadReference = false;
     try {

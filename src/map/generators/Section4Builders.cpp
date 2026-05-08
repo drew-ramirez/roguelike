@@ -92,6 +92,26 @@ void finalizeRegion(MapBuildResult& result,
     }
 }
 
+bool addSpawnRequestIfOpen(MapBuildResult& result, std::string id, Point point)
+{
+    if (point == result.playerStart || point == result.stairsPosition ||
+        !result.map.isWalkable(point.x, point.y)) {
+        return false;
+    }
+    const bool occupied =
+        std::any_of(result.spawnRequests.begin(),
+                    result.spawnRequests.end(),
+                    [point](const SpawnRequest& request) {
+                        return request.position == point;
+                    });
+    if (occupied) {
+        return false;
+    }
+
+    result.spawnRequests.push_back(SpawnRequest{std::move(id), point});
+    return true;
+}
+
 } // namespace
 
 MapBuildResult Section4Builders::buildTown(int width,
@@ -147,6 +167,13 @@ MapBuildResult Section4Builders::buildWoods(int width,
     cullUnreachable(result.map, Point{roadX, 2});
     result.playerStart = Point{roadX, 2};
     finalizeRegion(result, "woods", options.recordSnapshots);
+    const int clearingY = height / 3;
+    addSpawnRequestIfOpen(result, "wolf", Point{roadX - 6, clearingY});
+    addSpawnRequestIfOpen(result, "wild_boar", Point{roadX + 6, clearingY});
+    addSpawnRequestIfOpen(result, "food_ration", Point{roadX - 2, clearingY});
+    addSpawnRequestIfOpen(
+        result, "healing_potion", Point{roadX + 2, clearingY});
+    addBuildStep(result, "content: woods wildlife and supplies");
     return result;
 }
 
