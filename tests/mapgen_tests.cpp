@@ -734,6 +734,7 @@ void runMapgenTests(TestRunner& runner)
                           isKnownMapBuilder("voronoi-manhattan") &&
                           isKnownMapBuilder("voronoi-chebyshev") &&
                           isKnownMapBuilder("wfc") &&
+                          isKnownMapBuilder("limestone-caverns") &&
                           isKnownMapBuilder("cavern-vaults") &&
                           isKnownMapBuilder("ruined-rooms"),
                       "mapgen viewer exposes all implemented builders");
@@ -758,6 +759,7 @@ void runMapgenTests(TestRunner& runner)
                                            "dla",
                                            "voronoi",
                                            "wfc",
+                                           "limestone-caverns",
                                            "cavern-vaults",
                                            "ruined-rooms"};
         const std::array<Rng::Seed, 2> seeds{1U, 4242U};
@@ -818,6 +820,7 @@ void runMapgenTests(TestRunner& runner)
         };
         const std::vector<OpennessLimit> limits{
             {"cellular", 72.0, 82.0},
+            {"limestone-caverns", 72.0, 82.0},
             {"cavern-vaults", 75.0, 84.0},
             {"drunkard", 48.0, 66.0},
             {"dla", 34.0, 36.0},

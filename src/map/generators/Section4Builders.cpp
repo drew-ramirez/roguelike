@@ -8,15 +8,18 @@
 #include "map/generators/Section4Builders.hpp"
 
 #include <algorithm>
+#include <array>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "core/Rng.hpp"
 #include "map/MapBuilderCommon.hpp"
 #include "map/MapConnectivity.hpp"
 #include "map/Rect.hpp"
 #include "map/TileType.hpp"
+#include "map/generators/CellularAutomataBuilder.hpp"
 
 namespace rl {
 namespace {
@@ -98,18 +101,94 @@ bool addSpawnRequestIfOpen(MapBuildResult& result, std::string id, Point point)
         !result.map.isWalkable(point.x, point.y)) {
         return false;
     }
-    const bool occupied =
-        std::any_of(result.spawnRequests.begin(),
-                    result.spawnRequests.end(),
-                    [point](const SpawnRequest& request) {
-                        return request.position == point;
-                    });
+    const bool occupied = std::any_of(result.spawnRequests.begin(),
+                                      result.spawnRequests.end(),
+                                      [point](const SpawnRequest& request) {
+                                          return request.position == point;
+                                      });
     if (occupied) {
         return false;
     }
 
     result.spawnRequests.push_back(SpawnRequest{std::move(id), point});
     return true;
+}
+
+[[nodiscard]] int manhattanDistance(Point lhs, Point rhs) noexcept
+{
+    const int dx = lhs.x > rhs.x ? lhs.x - rhs.x : rhs.x - lhs.x;
+    const int dy = lhs.y > rhs.y ? lhs.y - rhs.y : rhs.y - lhs.y;
+    return dx + dy;
+}
+
+[[nodiscard]] std::vector<SpawnRegion>
+partitionCavernSpawnRegions(const Map& map, Point start, Point stairs)
+{
+    constexpr int protectedEntranceDistance = 6;
+    std::array<std::vector<Point>, 5> groups;
+    const int midX = map.width() / 2;
+    const int midY = map.height() / 2;
+
+    for (int y = 1; y < map.height() - 1; ++y) {
+        for (int x = 1; x < map.width() - 1; ++x) {
+            const Point point{x, y};
+            if (!map.isWalkable(x, y) || point == stairs) {
+                continue;
+            }
+
+            std::size_t group = 0;
+            if (manhattanDistance(point, start) > protectedEntranceDistance) {
+                group = 1;
+                if (x >= midX) {
+                    group += 1;
+                }
+                if (y >= midY) {
+                    group += 2;
+                }
+            }
+            groups[group].push_back(point);
+        }
+    }
+
+    std::vector<SpawnRegion> regions;
+    for (auto& group : groups) {
+        if (!group.empty()) {
+            regions.push_back(
+                spawnRegionFromTiles(std::move(group), SpawnRegionKind::Room));
+        }
+    }
+    return regions;
+}
+
+bool addSpawnRequestFromDistantFloor(MapBuildResult& result,
+                                     std::string id,
+                                     std::size_t offset)
+{
+    std::vector<Point> candidates;
+    for (std::size_t index = 1; index < result.spawnRegions.size(); ++index) {
+        candidates.insert(candidates.end(),
+                          result.spawnRegions[index].tiles.begin(),
+                          result.spawnRegions[index].tiles.end());
+    }
+    std::sort(candidates.begin(), candidates.end(), [&](Point lhs, Point rhs) {
+        const int lhsDistance = manhattanDistance(lhs, result.playerStart);
+        const int rhsDistance = manhattanDistance(rhs, result.playerStart);
+        if (lhsDistance != rhsDistance) {
+            return lhsDistance > rhsDistance;
+        }
+        if (lhs.y != rhs.y) {
+            return lhs.y < rhs.y;
+        }
+        return lhs.x < rhs.x;
+    });
+
+    for (std::size_t attempt = 0; attempt < candidates.size(); ++attempt) {
+        const Point point = candidates[(offset + attempt) % candidates.size()];
+        if (addSpawnRequestIfOpen(result, id, point)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 } // namespace
@@ -174,6 +253,37 @@ MapBuildResult Section4Builders::buildWoods(int width,
     addSpawnRequestIfOpen(
         result, "healing_potion", Point{roadX + 2, clearingY});
     addBuildStep(result, "content: woods wildlife and supplies");
+    return result;
+}
+
+MapBuildResult Section4Builders::buildLimestoneCaverns(int width,
+                                                       int height,
+                                                       Rng& rng,
+                                                       MapBuildOptions options)
+{
+    validateBuilderDimensions("limestone-caverns", width, height, 30, 20);
+
+    auto result = CellularAutomataBuilder::build(width, height, rng, options);
+    result.builderName = "limestone-caverns";
+    result.spawnRegions = partitionCavernSpawnRegions(
+        result.map, result.playerStart, result.stairsPosition);
+
+    constexpr std::size_t koboldOffset = 0;
+    constexpr std::size_t batOffset = 5;
+    constexpr std::size_t columnOffset = 10;
+    constexpr std::size_t supplyOffset = 15;
+    addSpawnRequestFromDistantFloor(result, "kobold", koboldOffset);
+    addSpawnRequestFromDistantFloor(result, "cave_bat", batOffset);
+    addSpawnRequestFromDistantFloor(result, "limestone_column", columnOffset);
+    addSpawnRequestFromDistantFloor(result, "healing_potion", supplyOffset);
+    addBuildStep(result, "theme: limestone caverns");
+    addBuildStep(result, "content: cavern denizens and formations");
+    recordSnapshot(result.snapshots,
+                   result.map,
+                   "limestone region",
+                   options.recordSnapshots);
+    validateBuildOrThrow(result,
+                         "Limestone cavern generation produced an invalid map");
     return result;
 }
 

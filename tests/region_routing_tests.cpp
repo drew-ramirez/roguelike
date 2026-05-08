@@ -42,6 +42,8 @@ void runRegionRoutingTests(TestRunner& runner)
                   "depth 2 routes to woods");
     runner.expect(routeForDepth(3).region == DungeonRegion::LimestoneCaverns,
                   "depth 3 routes to limestone caverns");
+    runner.expect(routeForDepth(4).builderId == "limestone-caverns",
+                  "depth 4 still routes to limestone caverns");
     runner.expect(routeForDepth(8).region == DungeonRegion::DragonLair,
                   "depth 8 routes to dragon lair");
     runner.expect(routeForDepth(11).region == DungeonRegion::DarkElfCity,
@@ -72,10 +74,24 @@ void runRegionRoutingTests(TestRunner& runner)
 
     Rng cavernRng{101U};
     const auto cavern = buildLevelForDepth(3, 40, 25, cavernRng, {});
-    runner.expect(cavern.builderName == "cellular",
-                  "limestone depths reuse the cellular cavern builder");
+    runner.expect(cavern.builderName == "limestone-caverns",
+                  "limestone depths use the themed cavern builder");
     runner.expect(hasBuildStep(cavern, "region:limestone"),
                   "limestone build records its region route");
+    runner.expect(hasBuildStep(cavern, "theme: limestone caverns"),
+                  "limestone build records its theme");
+    runner.expect(cavern.spawnRegions.size() >= 3,
+                  "limestone caverns expose multiple spawn regions");
+    runner.expect(hasSpawnRequest(cavern, "kobold") &&
+                      hasSpawnRequest(cavern, "cave_bat") &&
+                      hasSpawnRequest(cavern, "limestone_column"),
+                  "limestone caverns request themed encounters");
+    runner.expect(
+        cavern.map.tileAt(cavern.playerStart.x, cavern.playerStart.y) ==
+                TileType::UpStairs &&
+            cavern.map.tileAt(cavern.stairsPosition.x,
+                              cavern.stairsPosition.y) == TileType::DownStairs,
+        "limestone caverns connect backtracking exits");
 
     Rng deepRng{102U};
     const auto deep = buildLevelForDepth(5, 40, 25, deepRng, {});

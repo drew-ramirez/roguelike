@@ -28,7 +28,7 @@ DungeonRoute routeForDepth(int depth)
         return DungeonRoute{depth,
                             DungeonRegion::LimestoneCaverns,
                             "limestone",
-                            "cellular",
+                            "limestone-caverns",
                             true};
     }
     if (depth <= 6) {

@@ -2,6 +2,7 @@
   "factions": [
     {"id": "town", "hostile_to": []},
     {"id": "goblins", "hostile_to": ["player", "town"]},
+    {"id": "kobolds", "hostile_to": ["player", "town", "goblins"]},
     {"id": "orcs", "hostile_to": ["player", "town"]},
     {"id": "wildlife", "hostile_to": ["player"]},
     {"id": "dark_elf_clan_a", "hostile_to": ["player", "dark_elf_clan_b", "dark_elf_clan_c"]},
@@ -25,6 +26,30 @@
     }
   ],
   "mobs": [
+    {
+      "id": "cave_bat",
+      "name": "Cave Bat",
+      "renderable": {"glyph": "v", "fg": "#B8B8A0", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 6,
+      "faction": "wildlife",
+      "combat": {"max_hp": 5, "hp": 5, "defense": 0, "power": 2},
+      "attributes": {"might": 6, "fitness": 8, "quickness": 14, "intelligence": 3},
+      "pools": {"hit_points": 5, "max_hit_points": 5, "level": 1, "xp": 0},
+      "xp_reward": 60
+    },
+    {
+      "id": "kobold",
+      "name": "Kobold",
+      "renderable": {"glyph": "k", "fg": "#D0D090", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 8,
+      "faction": "kobolds",
+      "combat": {"max_hp": 7, "hp": 7, "defense": 1, "power": 3},
+      "attributes": {"might": 8, "fitness": 9, "quickness": 12, "intelligence": 9},
+      "pools": {"hit_points": 7, "max_hit_points": 7, "level": 1, "xp": 0},
+      "xp_reward": 90
+    },
     {
       "id": "goblin",
       "name": "Goblin",
@@ -247,6 +272,12 @@
       "blocks_tile": false
     },
     {
+      "id": "limestone_column",
+      "name": "Limestone Column",
+      "renderable": {"glyph": "^", "fg": "#D8D8C0", "bg": "#000000", "order": 1},
+      "blocks_tile": true
+    },
+    {
       "id": "chair",
       "name": "Chair",
       "renderable": {"glyph": "h", "fg": "#B08050", "bg": "#000000", "order": 1},
@@ -264,6 +295,8 @@
     {"name": "goblin", "weight": 80, "min_depth": 1, "max_depth": 5},
     {"name": "wolf", "weight": 45, "min_depth": 2, "max_depth": 4},
     {"name": "wild_boar", "weight": 25, "min_depth": 2, "max_depth": 5},
+    {"name": "cave_bat", "weight": 45, "min_depth": 3, "max_depth": 5},
+    {"name": "kobold", "weight": 55, "min_depth": 3, "max_depth": 6},
     {"name": "orc", "weight": 30, "min_depth": 2, "max_depth": 8},
     {"name": "troll", "weight": 12, "min_depth": 3, "max_depth": 20, "add_map_depth_to_weight": 1},
     {"name": "dark_elf_archer", "weight": 20, "min_depth": 8, "max_depth": 20}
@@ -282,6 +315,7 @@
     {"name": "spark_spellbook", "weight": 6, "min_depth": 4, "max_depth": 20}
   ],
   "prop_spawn_table": [
-    {"name": "chair", "weight": 10, "min_depth": 1, "max_depth": 1}
+    {"name": "chair", "weight": 10, "min_depth": 1, "max_depth": 1},
+    {"name": "limestone_column", "weight": 20, "min_depth": 3, "max_depth": 4}
   ]
 }

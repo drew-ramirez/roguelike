@@ -60,6 +60,7 @@ std::vector<std::string> availableMapBuilders()
             "wfc",
             "town",
             "woods",
+            "limestone-caverns",
             "dragon-lair",
             "mushroom-forest",
             "dark-elf-city",
@@ -218,6 +219,10 @@ MapBuildResult buildMapById(std::string_view builderId,
     }
     if (builderId == "woods") {
         return Section4Builders::buildWoods(width, height, rng, options);
+    }
+    if (builderId == "limestone-caverns") {
+        return Section4Builders::buildLimestoneCaverns(
+            width, height, rng, options);
     }
     if (builderId == "dragon-lair") {
         return Section4Builders::buildDragonLair(width, height, rng, options);
