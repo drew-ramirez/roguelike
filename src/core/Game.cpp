@@ -308,7 +308,7 @@ void Game::resolvePlayerTurn(bool runMonsters)
     processPickupItems(registry_, resources_);
     [[maybe_unused]] const bool usedItem =
         processItemUses(registry_, resources_, map_);
-    processMeleeCombat(registry_, resources_.log);
+    processMeleeCombat(registry_, resources_.log, &resources_.rng);
     processPlayerTraps(registry_, resources_);
     processHunger(registry_, resources_);
     applyDamageAndCleanup(registry_, resources_, state_, &map_);
@@ -317,7 +317,7 @@ void Game::resolvePlayerTurn(bool runMonsters)
     if (state_ != RunState::GameOver && runMonsters) {
         state_ = RunState::MonsterTurn;
         runMonsterAi(registry_, resources_, map_);
-        processMeleeCombat(registry_, resources_.log);
+        processMeleeCombat(registry_, resources_.log, &resources_.rng);
         applyDamageAndCleanup(registry_, resources_, state_, &map_);
     }
 

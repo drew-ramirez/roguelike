@@ -49,6 +49,38 @@ void runEquipmentTests(TestRunner& runner)
     applyDamageAndCleanup(registry, resources, state);
     runner.expect(registry.get<CombatStats>(defender).hp == 11,
                   "melee combat uses computed equipment power");
+
+    entt::registry statRegistry;
+    GameResources statResources;
+    statResources.rng.reseed(123U);
+    statResources.player = spawnPlayer(statRegistry, Point{2, 2});
+    statRegistry.emplace_or_replace<Attributes>(
+        statResources.player, Attributes{14, 10, 10, 10});
+
+    const auto trainingSword = statRegistry.create();
+    statRegistry.emplace<Name>(trainingSword, Name{"Training Sword"});
+    statRegistry.emplace<Item>(trainingSword);
+    statRegistry.emplace<Equippable>(trainingSword,
+                                     Equippable{EquipmentSlot::Weapon});
+    statRegistry.emplace<WeaponStats>(
+        trainingSword, WeaponStats{"2d1+2", 1, "might"});
+    statRegistry.emplace<InBackpack>(
+        trainingSword, InBackpack{statResources.player});
+    runner.expect(equipOrUnequipItem(statRegistry,
+                                     statResources.log,
+                                     statResources.player,
+                                     trainingSword),
+                  "stat weapon equips before combat");
+
+    const auto target = spawnGoblin(statRegistry, Point{3, 2});
+    statRegistry.get<CombatStats>(target).hp = 20;
+    statRegistry.get<CombatStats>(target).defense = 1;
+    statRegistry.emplace_or_replace<WantsToMelee>(statResources.player,
+                                                  WantsToMelee{target});
+
+    processMeleeCombat(statRegistry, statResources.log, &statResources.rng);
+    runner.expect(statRegistry.get<SufferDamage>(target).amount == 11,
+                  "stat melee uses weapon dice hit bonus and attributes");
 }
 
 } // namespace rl::test
