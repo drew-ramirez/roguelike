@@ -90,6 +90,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/equipment_tests.cpp
     tests/input_tests.cpp
     tests/inventory_tests.cpp
+    tests/level_snapshot_tests.cpp
     tests/mapgen_tests.cpp
     tests/polish_pressure_tests.cpp
     tests/raws_validation_tests.cpp
