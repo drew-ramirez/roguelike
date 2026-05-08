@@ -31,10 +31,17 @@ void runSaveLoadTests(TestRunner& runner)
     (void)resources.rng.rangeInclusive(1, 100);
     resources.player = spawnPlayer(registry, Point{2, 2});
     registry.get<CombatStats>(resources.player).hp = 17;
+    registry.get<Attributes>(resources.player).might = 13;
+    registry.get<Pools>(resources.player).hitPoints = 17;
+    registry.get<Pools>(resources.player).xp = 250;
+    registry.get<Pools>(resources.player).gold = 35;
 
     const auto potion = spawnHealingPotion(registry, Point{1, 1});
     registry.remove<Position>(potion);
     registry.emplace<InBackpack>(potion, InBackpack{resources.player});
+    const auto sword = spawnSword(registry, Point{1, 3});
+    registry.remove<Position>(sword);
+    registry.emplace<InBackpack>(sword, InBackpack{resources.player});
     const auto armor = spawnChainMail(registry, Point{1, 2});
     registry.remove<Position>(armor);
     registry.emplace<InBackpack>(armor, InBackpack{resources.player});
@@ -66,11 +73,18 @@ void runSaveLoadTests(TestRunner& runner)
     runner.expect(loadedRegistry.get<CombatStats>(loadedResources.player).hp ==
                       17,
                   "load restores player HP");
+    runner.expect(
+        loadedRegistry.get<Attributes>(loadedResources.player).might == 13,
+        "load restores player attributes");
+    runner.expect(loadedRegistry.get<Pools>(loadedResources.player).xp == 250 &&
+                      loadedRegistry.get<Pools>(loadedResources.player).gold ==
+                          35,
+                  "load restores player pools");
     runner.expect(nextOriginal == loadedResources.rng.rangeInclusive(1, 100000),
                   "load restores RNG engine continuation");
 
     const auto items = inventoryItems(loadedRegistry, loadedResources.player);
-    runner.expect(items.size() == 2, "load restores backpack and equipment");
+    runner.expect(items.size() == 3, "load restores backpack and equipment");
     runner.expect(
         std::any_of(items.begin(),
                     items.end(),
@@ -80,6 +94,21 @@ void runSaveLoadTests(TestRunner& runner)
                                    loadedResources.player;
                     }),
         "load remaps equipped owner references");
+    runner.expect(
+        std::any_of(items.begin(),
+                    items.end(),
+                    [&](auto item) {
+                        return loadedRegistry.all_of<RawIdentity, ItemStats>(
+                                   item) &&
+                               loadedRegistry.get<RawIdentity>(item)
+                                       .templateName == "sword" &&
+                               loadedRegistry.get<ItemStats>(item).baseValue ==
+                                   45 &&
+                               loadedRegistry.all_of<WeaponStats>(item) &&
+                               loadedRegistry.get<WeaponStats>(item).damage ==
+                                   "1d8+1";
+                    }),
+        "load restores raw equipment stat components");
 
     int monsterCount = 0;
     const auto monsters = loadedRegistry.view<const Monster>();

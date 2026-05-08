@@ -83,6 +83,11 @@ void applyDamageAndCleanup(entt::registry& registry,
         markBlood(map, registry, entity);
         requestDamageAt(resources, registry, entity);
         stats.hp = std::max(0, stats.hp - damage.amount);
+        if (registry.all_of<Pools>(entity)) {
+            auto& pools = registry.get<Pools>(entity);
+            pools.maxHitPoints = stats.maxHp;
+            pools.hitPoints = stats.hp;
+        }
 
         if (stats.hp <= 0) {
             dead.push_back(entity);

@@ -19,6 +19,11 @@ void runEquipmentTests(TestRunner& runner)
     entt::registry registry;
     GameResources resources;
     resources.player = spawnPlayer(registry, Point{2, 2});
+    runner.expect(registry.all_of<Attributes, Pools>(resources.player),
+                  "player spawns with attributes and pools");
+    runner.expect(registry.get<Pools>(resources.player).hitPoints == 30 &&
+                      registry.get<Pools>(resources.player).mana == 6,
+                  "player pools mirror starting health and mana");
     const auto dagger = spawnDagger(registry, Point{1, 1});
     const auto sword = spawnSword(registry, Point{1, 2});
     registry.remove<Position>(dagger);
@@ -41,7 +46,8 @@ void runEquipmentTests(TestRunner& runner)
                   "base CombatStats power is not mutated by equipment");
 
     const auto defender = spawnGoblin(registry, Point{3, 2});
-    registry.get<CombatStats>(defender).hp = 20;
+    registry.get<CombatStats>(defender) = CombatStats{20, 20, 0, 3};
+    registry.get<Pools>(defender) = Pools{20, 20, 0, 0, 1, 0, 0};
     registry.emplace_or_replace<WantsToMelee>(resources.player,
                                               WantsToMelee{defender});
     processMeleeCombat(registry, resources.log);
@@ -49,6 +55,8 @@ void runEquipmentTests(TestRunner& runner)
     applyDamageAndCleanup(registry, resources, state);
     runner.expect(registry.get<CombatStats>(defender).hp == 11,
                   "melee combat uses computed equipment power");
+    runner.expect(registry.get<Pools>(defender).hitPoints == 11,
+                  "damage updates pools alongside combat HP");
 
     entt::registry statRegistry;
     GameResources statResources;
@@ -73,7 +81,8 @@ void runEquipmentTests(TestRunner& runner)
                   "stat weapon equips before combat");
 
     const auto target = spawnGoblin(statRegistry, Point{3, 2});
-    statRegistry.get<CombatStats>(target).hp = 20;
+    statRegistry.get<CombatStats>(target) = CombatStats{20, 20, 1, 3};
+    statRegistry.get<Pools>(target) = Pools{20, 20, 0, 0, 1, 0, 0};
     statRegistry.get<CombatStats>(target).defense = 1;
     statRegistry.emplace_or_replace<WantsToMelee>(statResources.player,
                                                   WantsToMelee{target});

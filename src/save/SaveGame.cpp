@@ -26,7 +26,7 @@ namespace {
 
 using Json = nlohmann::json;
 using EntityId = std::uint32_t;
-constexpr int currentSaveVersion = 2;
+constexpr int currentSaveVersion = 3;
 
 [[nodiscard]] std::string tileToString(TileType tile)
 {
@@ -639,6 +639,10 @@ void loadResources(const Json& json,
     if (registry.all_of<Name>(entity)) {
         components["name"] = registry.get<Name>(entity).value;
     }
+    if (registry.all_of<RawIdentity>(entity)) {
+        components["raw_identity"] =
+            registry.get<RawIdentity>(entity).templateName;
+    }
     if (registry.all_of<Player>(entity)) {
         components["player"] = true;
     }
@@ -662,6 +666,24 @@ void loadResources(const Json& json,
                                           {"hp", component.hp},
                                           {"defense", component.defense},
                                           {"power", component.power}};
+    }
+    if (registry.all_of<Attributes>(entity)) {
+        const auto& component = registry.get<Attributes>(entity);
+        components["attributes"] =
+            Json{{"might", component.might},
+                 {"fitness", component.fitness},
+                 {"quickness", component.quickness},
+                 {"intelligence", component.intelligence}};
+    }
+    if (registry.all_of<Pools>(entity)) {
+        const auto& component = registry.get<Pools>(entity);
+        components["pools"] = Json{{"hit_points", component.hitPoints},
+                                   {"max_hit_points", component.maxHitPoints},
+                                   {"mana", component.mana},
+                                   {"max_mana", component.maxMana},
+                                   {"level", component.level},
+                                   {"xp", component.xp},
+                                   {"gold", component.gold}};
     }
     if (registry.all_of<Consumable>(entity)) {
         components["consumable"] = true;
@@ -693,6 +715,28 @@ void loadResources(const Json& json,
     if (registry.all_of<InflictsDamage>(entity)) {
         components["inflicts_damage"] =
             registry.get<InflictsDamage>(entity).amount;
+    }
+    if (registry.all_of<ItemStats>(entity)) {
+        const auto& component = registry.get<ItemStats>(entity);
+        components["item_stats"] =
+            Json{{"weight", component.weight},
+                 {"base_value", component.baseValue},
+                 {"initiative_penalty", component.initiativePenalty},
+                 {"category", component.category}};
+    }
+    if (registry.all_of<WeaponStats>(entity)) {
+        const auto& component = registry.get<WeaponStats>(entity);
+        components["weapon_stats"] = Json{{"damage", component.damage},
+                                          {"hit_bonus", component.hitBonus},
+                                          {"attribute", component.attribute}};
+    }
+    if (registry.all_of<RangedWeapon>(entity)) {
+        const auto& component = registry.get<RangedWeapon>(entity);
+        components["ranged_weapon"] = Json{
+            {"range", component.range},
+            {"damage", component.damage},
+            {"hit_bonus", component.hitBonus},
+            {"attribute", component.attribute}};
     }
     if (registry.all_of<Equippable>(entity)) {
         components["equippable"] =
@@ -753,6 +797,11 @@ void loadEntityImmediateComponents(entt::registry& registry,
         registry.emplace<Name>(entity,
                                Name{components.at("name").get<std::string>()});
     }
+    if (components.contains("raw_identity")) {
+        registry.emplace<RawIdentity>(
+            entity,
+            RawIdentity{components.at("raw_identity").get<std::string>()});
+    }
     if (components.contains("player")) {
         registry.emplace<Player>(entity);
     }
@@ -777,6 +826,27 @@ void loadEntityImmediateComponents(entt::registry& registry,
                                                   json.at("hp").get<int>(),
                                                   json.at("defense").get<int>(),
                                                   json.at("power").get<int>()});
+    }
+    if (components.contains("attributes")) {
+        const auto& json = components.at("attributes");
+        registry.emplace<Attributes>(
+            entity,
+            Attributes{json.value("might", 10),
+                       json.value("fitness", 10),
+                       json.value("quickness", 10),
+                       json.value("intelligence", 10)});
+    }
+    if (components.contains("pools")) {
+        const auto& json = components.at("pools");
+        registry.emplace<Pools>(
+            entity,
+            Pools{json.value("hit_points", 1),
+                  json.value("max_hit_points", 1),
+                  json.value("mana", 0),
+                  json.value("max_mana", 0),
+                  json.value("level", 1),
+                  json.value("xp", 0),
+                  json.value("gold", 0)});
     }
     if (components.contains("consumable")) {
         registry.emplace<Consumable>(entity);
@@ -814,6 +884,32 @@ void loadEntityImmediateComponents(entt::registry& registry,
         registry.emplace<InflictsDamage>(
             entity,
             InflictsDamage{components.at("inflicts_damage").get<int>()});
+    }
+    if (components.contains("item_stats")) {
+        const auto& json = components.at("item_stats");
+        registry.emplace<ItemStats>(
+            entity,
+            ItemStats{json.value("weight", 0),
+                      json.value("base_value", 0),
+                      json.value("initiative_penalty", 0),
+                      json.value("category", std::string{})});
+    }
+    if (components.contains("weapon_stats")) {
+        const auto& json = components.at("weapon_stats");
+        registry.emplace<WeaponStats>(
+            entity,
+            WeaponStats{json.value("damage", std::string{"1d4"}),
+                        json.value("hit_bonus", 0),
+                        json.value("attribute", std::string{"might"})});
+    }
+    if (components.contains("ranged_weapon")) {
+        const auto& json = components.at("ranged_weapon");
+        registry.emplace<RangedWeapon>(
+            entity,
+            RangedWeapon{json.value("range", 0),
+                         json.value("damage", std::string{"1d4"}),
+                         json.value("hit_bonus", 0),
+                         json.value("attribute", std::string{"quickness"})});
     }
     if (components.contains("equippable")) {
         registry.emplace<Equippable>(

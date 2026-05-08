@@ -85,6 +85,11 @@ void consumeIfNeeded(entt::registry& registry, entt::entity item)
 
     const int amount = registry.get<ProvidesHealing>(item).amount;
     stats.hp = std::min(stats.maxHp, stats.hp + amount);
+    if (registry.all_of<Pools>(owner)) {
+        auto& pools = registry.get<Pools>(owner);
+        pools.maxHitPoints = stats.maxHp;
+        pools.hitPoints = stats.hp;
+    }
     resources.log.add("You drink " + entityName(registry, item) + ".");
     if (const auto ownerPosition = entityPosition(registry, owner);
         ownerPosition.has_value()) {
