@@ -99,6 +99,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/region_routing_tests.cpp
     tests/save_load_tests.cpp
     tests/targeting_tests.cpp
+    tests/ui_tests.cpp
 )
 
 set(ROGUELIKE_TEST_HEADERS

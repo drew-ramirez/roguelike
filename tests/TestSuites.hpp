@@ -17,5 +17,6 @@ void runRawsValidationTests(TestRunner& runner);
 void runRegionRoutingTests(TestRunner& runner);
 void runSaveLoadTests(TestRunner& runner);
 void runTargetingTests(TestRunner& runner);
+void runUiTests(TestRunner& runner);
 
 } // namespace rl::test

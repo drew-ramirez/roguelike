@@ -527,7 +527,8 @@ bool smokeHudAndLog()
     console.clear();
     rl::drawHud(console, resources, registry, rl::RunState::AwaitingInput);
     return console.cellAt(1, 44).glyph == U'H' &&
-           console.cellAt(1, 45).glyph == U't';
+           console.cellAt(1, 45).glyph == U'M' &&
+           console.cellAt(28, 47).glyph == U'f';
 }
 
 int runSmoke()

@@ -7,6 +7,7 @@ int main()
     rl::test::runInputTests(runner);
     rl::test::runInventoryTests(runner);
     rl::test::runTargetingTests(runner);
+    rl::test::runUiTests(runner);
     rl::test::runDiceTests(runner);
     rl::test::runEquipmentTests(runner);
     rl::test::runLevelSnapshotTests(runner);
