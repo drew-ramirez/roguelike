@@ -32,7 +32,7 @@ bool trySpawnMonsterInRoom(entt::registry& registry,
     for (int attempt = 0; attempt < maxAttempts; ++attempt) {
         const Point position = randomPointInRoom(room, rng);
         if (position == playerStart ||
-            blockingEntityAt(registry, position).has_value()) {
+            tileContentAt(registry, position).blocker.has_value()) {
             continue;
         }
 
@@ -63,7 +63,7 @@ bool trySpawnMonsterInRoom(entt::registry& registry,
             rng.rangeInclusive(0, static_cast<int>(region.tiles.size()) - 1))];
         if (position == playerStart ||
             !map.isWalkable(position.x, position.y) ||
-            blockingEntityAt(registry, position).has_value()) {
+            tileContentAt(registry, position).blocker.has_value()) {
             continue;
         }
 

@@ -102,6 +102,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/raws_validation_tests.cpp
     tests/region_routing_tests.cpp
     tests/save_load_tests.cpp
+    tests/spatial_tests.cpp
     tests/targeting_tests.cpp
     tests/ui_tests.cpp
 )

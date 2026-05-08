@@ -13,7 +13,6 @@
 #include "map/Map.hpp"
 #include "raws/RawDatabase.hpp"
 #include "spawn/RawSpawner.hpp"
-#include "systems/ItemSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
@@ -27,27 +26,15 @@ Point randomPointInRoom(const Rect& room, Rng& rng)
     };
 }
 
-[[nodiscard]] bool trapAtPosition(const entt::registry& registry, Point point)
-{
-    const auto view = registry.view<const Trap, const Position>();
-    for (const auto entity : view) {
-        const auto& position = view.get<const Position>(entity);
-        if (position.x == point.x && position.y == point.y) {
-            return true;
-        }
-    }
-    return false;
-}
-
 [[nodiscard]] bool canSpawnTrapAt(const entt::registry& registry,
                                   Point point,
                                   Point playerStart,
                                   Point stairsPosition)
 {
+    const auto tileContent = tileContentAt(registry, point);
     return point != playerStart && point != stairsPosition &&
-           !blockingEntityAt(registry, point).has_value() &&
-           !itemAtPosition(registry, point).has_value() &&
-           !trapAtPosition(registry, point);
+           !tileContent.blocker.has_value() && !tileContent.item.has_value() &&
+           !tileContent.trap.has_value();
 }
 
 [[nodiscard]] bool canSpawnTrapAt(const entt::registry& registry,

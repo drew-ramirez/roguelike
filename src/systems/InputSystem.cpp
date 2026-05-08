@@ -148,23 +148,24 @@ PlayerInputResult handleMapInput(entt::registry& registry,
                 return PlayerInputResult::TookTurn;
             }
 
-            if (const auto blocker =
-                    blockingEntityAt(registry, target, resources.player);
-                blocker.has_value()) {
-                if (registry.all_of<Neutral>(*blocker) ||
-                    registry.all_of<Vendor>(*blocker)) {
-                    const auto name = registry.all_of<Name>(*blocker)
-                                          ? registry.get<Name>(*blocker).value
+            const auto targetContent =
+                tileContentAt(registry, target, resources.player);
+            if (targetContent.blocker.has_value()) {
+                const auto blocker = *targetContent.blocker;
+                if (registry.all_of<Neutral>(blocker) ||
+                    registry.all_of<Vendor>(blocker)) {
+                    const auto name = registry.all_of<Name>(blocker)
+                                          ? registry.get<Name>(blocker).value
                                           : std::string{"Someone"};
                     resources.log.add(name + " has nothing urgent to say.");
                     return PlayerInputResult::TookTurn;
                 }
-                if (registry.all_of<Prop>(*blocker)) {
+                if (registry.all_of<Prop>(blocker)) {
                     resources.log.add("Something blocks the way.");
                     return PlayerInputResult::None;
                 }
                 registry.emplace_or_replace<WantsToMelee>(
-                    resources.player, WantsToMelee{*blocker});
+                    resources.player, WantsToMelee{blocker});
                 return PlayerInputResult::TookTurn;
             }
 
@@ -197,12 +198,11 @@ bool handlePlayerInput(entt::registry& registry,
 
             const auto& position = registry.get<Position>(resources.player);
             const Point target{position.x + delta->x, position.y + delta->y};
-            // Walking into a blocker becomes bump combat instead of movement
-            if (const auto blocker =
-                    blockingEntityAt(registry, target, resources.player);
-                blocker.has_value()) {
+            const auto targetContent =
+                tileContentAt(registry, target, resources.player);
+            if (targetContent.blocker.has_value()) {
                 registry.emplace_or_replace<WantsToMelee>(
-                    resources.player, WantsToMelee{*blocker});
+                    resources.player, WantsToMelee{*targetContent.blocker});
                 return true;
             }
 

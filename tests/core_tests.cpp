@@ -13,6 +13,7 @@ int main()
     rl::test::runEquipmentTests(runner);
     rl::test::runLevelSnapshotTests(runner);
     rl::test::runSaveLoadTests(runner);
+    rl::test::runSpatialTests(runner);
     rl::test::runDescentAndSpawnTests(runner);
     rl::test::runRawsValidationTests(runner);
     rl::test::runRegionRoutingTests(runner);

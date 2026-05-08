@@ -9,7 +9,6 @@
 #include "raws/RawDatabase.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/SpawnTable.hpp"
-#include "systems/ItemSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
@@ -23,17 +22,12 @@ Point randomPointInRoom(const Rect& room, Rng& rng)
     };
 }
 
-[[nodiscard]] bool hasItemAt(const entt::registry& registry, Point point)
-{
-    return itemAtPosition(registry, point).has_value();
-}
-
 [[nodiscard]] bool
 canSpawnAt(const entt::registry& registry, Point point, Point playerStart)
 {
-    return point != playerStart &&
-           !blockingEntityAt(registry, point).has_value() &&
-           !hasItemAt(registry, point);
+    const auto tileContent = tileContentAt(registry, point);
+    return point != playerStart && !tileContent.blocker.has_value() &&
+           !tileContent.item.has_value();
 }
 
 [[nodiscard]] bool canSpawnAt(const entt::registry& registry,

@@ -12,6 +12,7 @@
 #include "systems/EquipmentSystem.hpp"
 #include "systems/HungerSystem.hpp"
 #include "systems/ParticleSystem.hpp"
+#include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
 namespace {
@@ -248,14 +249,7 @@ std::vector<entt::entity> inventoryItems(const entt::registry& registry,
 std::optional<entt::entity> itemAtPosition(const entt::registry& registry,
                                            Point position)
 {
-    const auto view = registry.view<const Item, const Position>();
-    for (const auto item : view) {
-        const auto& itemPosition = view.get<const Position>(item);
-        if (itemPosition.x == position.x && itemPosition.y == position.y) {
-            return item;
-        }
-    }
-    return std::nullopt;
+    return itemAt(registry, position);
 }
 
 bool queuePickupItemAtPlayer(entt::registry& registry, GameResources& resources)

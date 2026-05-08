@@ -7,7 +7,6 @@
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/TrapSpawner.hpp"
-#include "systems/ItemSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
@@ -19,10 +18,10 @@ namespace {
                                       Point playerStart,
                                       Point stairsPosition)
 {
+    const auto tileContent = tileContentAt(registry, point);
     return point != playerStart && point != stairsPosition &&
            map.isWalkable(point.x, point.y) &&
-           !blockingEntityAt(registry, point).has_value() &&
-           !itemAtPosition(registry, point).has_value();
+           !tileContent.blocker.has_value() && !tileContent.item.has_value();
 }
 
 } // namespace
