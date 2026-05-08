@@ -15,6 +15,7 @@ find_package(ZLIB REQUIRED)
 
 set(ROGUELIKE_CORE_SOURCES
     src/assets/RexPaintLoader.cpp
+    src/core/Dice.cpp
     src/core/GameLog.cpp
     src/core/Rng.cpp
     src/debug/MapgenPlayback.cpp
@@ -87,6 +88,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/asset_tests.cpp
     tests/core_tests.cpp
     tests/descent_spawn_tests.cpp
+    tests/dice_tests.cpp
     tests/equipment_tests.cpp
     tests/input_tests.cpp
     tests/inventory_tests.cpp
@@ -106,6 +108,7 @@ set(ROGUELIKE_TEST_HEADERS
 
 set(ROGUELIKE_HEADERS
     src/assets/RexPaintLoader.hpp
+    src/core/Dice.hpp
     src/core/Game.hpp
     src/core/GameLog.hpp
     src/core/GameResources.hpp
