@@ -14,6 +14,7 @@
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
+#include "progression/ExperienceSystem.hpp"
 #include "systems/ParticleSystem.hpp"
 
 namespace rl {
@@ -110,6 +111,7 @@ void applyDamageAndCleanup(entt::registry& registry,
 
         markBlood(map, registry, entity);
         resources.log.add(entityName(registry, entity) + " dies.");
+        awardExperienceForKill(registry, resources, entity);
         registry.destroy(entity);
     }
 }

@@ -26,7 +26,7 @@ namespace {
 
 using Json = nlohmann::json;
 using EntityId = std::uint32_t;
-constexpr int currentSaveVersion = 3;
+constexpr int currentSaveVersion = 4;
 
 [[nodiscard]] std::string tileToString(TileType tile)
 {
@@ -716,6 +716,9 @@ void loadResources(const Json& json,
         components["inflicts_damage"] =
             registry.get<InflictsDamage>(entity).amount;
     }
+    if (registry.all_of<XpReward>(entity)) {
+        components["xp_reward"] = registry.get<XpReward>(entity).amount;
+    }
     if (registry.all_of<ItemStats>(entity)) {
         const auto& component = registry.get<ItemStats>(entity);
         components["item_stats"] =
@@ -884,6 +887,10 @@ void loadEntityImmediateComponents(entt::registry& registry,
         registry.emplace<InflictsDamage>(
             entity,
             InflictsDamage{components.at("inflicts_damage").get<int>()});
+    }
+    if (components.contains("xp_reward")) {
+        registry.emplace<XpReward>(
+            entity, XpReward{components.at("xp_reward").get<int>()});
     }
     if (components.contains("item_stats")) {
         const auto& json = components.at("item_stats");

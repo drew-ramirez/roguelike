@@ -45,6 +45,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/corridors/CorridorBuilder.cpp
     src/map/prefabs/Prefab.cpp
     src/map/rooms/RoomCarver.cpp
+    src/progression/ExperienceSystem.cpp
     src/raws/RawDatabase.cpp
     src/render/Camera.cpp
     src/render/ConsoleBuffer.cpp
@@ -95,6 +96,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/level_snapshot_tests.cpp
     tests/mapgen_tests.cpp
     tests/polish_pressure_tests.cpp
+    tests/progression_tests.cpp
     tests/raws_validation_tests.cpp
     tests/region_routing_tests.cpp
     tests/save_load_tests.cpp
@@ -150,6 +152,7 @@ set(ROGUELIKE_HEADERS
     src/map/MasterDungeonMap.hpp
     src/map/Rect.hpp
     src/map/TileType.hpp
+    src/progression/ExperienceSystem.hpp
     src/raws/RawDatabase.hpp
     src/raws/RawTypes.hpp
     src/render/Color.hpp

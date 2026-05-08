@@ -111,11 +111,18 @@ void runSaveLoadTests(TestRunner& runner)
         "load restores raw equipment stat components");
 
     int monsterCount = 0;
+    bool loadedRewardedMonster = false;
     const auto monsters = loadedRegistry.view<const Monster>();
-    for ([[maybe_unused]] const auto entity : monsters) {
+    for (const auto entity : monsters) {
         ++monsterCount;
+        if (loadedRegistry.all_of<XpReward>(entity) &&
+            loadedRegistry.get<XpReward>(entity).amount == 100) {
+            loadedRewardedMonster = true;
+        }
     }
     runner.expect(monsterCount == 1, "load restores monsters");
+    runner.expect(loadedRewardedMonster,
+                  "load restores active monster XP rewards");
 }
 
 } // namespace rl::test
