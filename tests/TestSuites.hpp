@@ -12,6 +12,7 @@ void runEquipmentTests(TestRunner& runner);
 void runInputTests(TestRunner& runner);
 void runInventoryTests(TestRunner& runner);
 void runLevelSnapshotTests(TestRunner& runner);
+void runLogTests(TestRunner& runner);
 void runMapgenTests(TestRunner& runner);
 void runPolishPressureTests(TestRunner& runner);
 void runProgressionTests(TestRunner& runner);

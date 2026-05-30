@@ -12,6 +12,7 @@ int main()
     rl::test::runDiceTests(runner);
     rl::test::runEquipmentTests(runner);
     rl::test::runLevelSnapshotTests(runner);
+    rl::test::runLogTests(runner);
     rl::test::runSaveLoadTests(runner);
     rl::test::runSpatialTests(runner);
     rl::test::runVendorTests(runner);
