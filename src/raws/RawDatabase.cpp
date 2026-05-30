@@ -184,6 +184,14 @@ void parseEffectsObject(const Json& json, RawEffects& effects)
                          json.value("intelligence", 10)};
 }
 
+[[nodiscard]] RawAttributes parseAttributeBonus(const Json& json)
+{
+    return RawAttributes{json.value("might", 0),
+                         json.value("fitness", 0),
+                         json.value("quickness", 0),
+                         json.value("intelligence", 0)};
+}
+
 [[nodiscard]] RawPools parsePools(const Json& json)
 {
     return RawPools{json.value("hit_points", 1),
@@ -284,6 +292,9 @@ void parseStringList(const Json& json, std::vector<std::string>& out)
     }
     if (json.contains("defense_bonus")) {
         entity.defenseBonus = json.at("defense_bonus").get<int>();
+    }
+    if (json.contains("attribute_bonus")) {
+        entity.attributeBonus = parseAttributeBonus(json.at("attribute_bonus"));
     }
     if (json.contains("item_stats")) {
         entity.itemStats = parseItemStats(json.at("item_stats"));

@@ -33,6 +33,11 @@ bool equipOrUnequipItem(entt::registry& registry,
         if (equipped.owner != owner) {
             return false;
         }
+        if (registry.all_of<CursedItem>(item)) {
+            log.add("You cannot remove cursed " + entityName(registry, item) +
+                    ".");
+            return false;
+        }
 
         registry.remove<Equipped>(item);
         registry.emplace_or_replace<InBackpack>(item, InBackpack{owner});
@@ -52,6 +57,11 @@ bool equipOrUnequipItem(entt::registry& registry,
     for (const auto other : equippedView) {
         const auto& equipped = equippedView.get<Equipped>(other);
         if (equipped.owner == owner && equipped.slot == slot) {
+            if (registry.all_of<CursedItem>(other)) {
+                log.add("Cursed " + entityName(registry, other) +
+                        " refuses to come off.");
+                return false;
+            }
             registry.remove<Equipped>(other);
             registry.emplace_or_replace<InBackpack>(other, InBackpack{owner});
             log.add("You remove " + entityName(registry, other) + ".");
@@ -98,6 +108,30 @@ int defenseWithEquipment(const entt::registry& registry, entt::entity entity)
         }
     }
     return defense;
+}
+
+Attributes attributesWithEquipment(const entt::registry& registry,
+                                   entt::entity entity)
+{
+    if (entity == entt::null || !registry.valid(entity) ||
+        !registry.all_of<Attributes>(entity)) {
+        return {};
+    }
+
+    auto attributes = registry.get<Attributes>(entity);
+    const auto view = registry.view<const Equipped, const AttributeBonus>();
+    for (const auto item : view) {
+        const auto& equipped = view.get<const Equipped>(item);
+        if (equipped.owner != entity) {
+            continue;
+        }
+        const auto& bonus = view.get<const AttributeBonus>(item);
+        attributes.might += bonus.might;
+        attributes.fitness += bonus.fitness;
+        attributes.quickness += bonus.quickness;
+        attributes.intelligence += bonus.intelligence;
+    }
+    return attributes;
 }
 
 } // namespace rl

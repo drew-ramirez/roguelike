@@ -11,6 +11,7 @@
 
 namespace rl {
 
+struct Attributes;
 class GameLog;
 
 [[nodiscard]] bool equipOrUnequipItem(entt::registry& registry,
@@ -23,5 +24,8 @@ class GameLog;
 
 [[nodiscard]] int defenseWithEquipment(const entt::registry& registry,
                                        entt::entity entity);
+
+[[nodiscard]] Attributes attributesWithEquipment(const entt::registry& registry,
+                                                 entt::entity entity);
 
 } // namespace rl

@@ -219,6 +219,13 @@ struct DefenseBonus {
     int amount = 0;
 };
 
+struct AttributeBonus {
+    int might = 0;
+    int fitness = 0;
+    int quickness = 0;
+    int intelligence = 0;
+};
+
 struct WantsToPickupItem {
     entt::entity item = entt::null;
 };

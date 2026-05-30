@@ -299,6 +299,11 @@ bool dropItemAtOwner(entt::registry& registry,
     if (!ownerPosition.has_value() || !itemOwnedBy(registry, owner, item)) {
         return false;
     }
+    if (registry.all_of<Equipped>(item) && registry.all_of<CursedItem>(item)) {
+        resources.log.add("You cannot drop cursed " +
+                          entityName(registry, item) + ".");
+        return false;
+    }
 
     removeCarriedOwnership(registry, item);
     registry.emplace_or_replace<Position>(

@@ -59,7 +59,7 @@ std::string entityName(const entt::registry& registry, entt::entity entity)
         return 0;
     }
     return attributeModifier(
-        attributeValue(registry.get<Attributes>(attacker), attribute));
+        attributeValue(attributesWithEquipment(registry, attacker), attribute));
 }
 
 [[nodiscard]] std::optional<WeaponStats>
@@ -68,8 +68,7 @@ equippedMeleeWeapon(const entt::registry& registry, entt::entity owner)
     const auto view = registry.view<const Equipped, const WeaponStats>();
     for (const auto item : view) {
         const auto& equipped = view.get<const Equipped>(item);
-        if (equipped.owner == owner &&
-            equipped.slot == EquipmentSlot::Weapon) {
+        if (equipped.owner == owner && equipped.slot == EquipmentSlot::Weapon) {
             return view.get<const WeaponStats>(item);
         }
     }
@@ -108,10 +107,9 @@ void processMeleeCombat(entt::registry& registry, GameLog& log, Rng* rng)
             continue;
         }
 
-        const int attackPower = rng == nullptr
-                                    ? meleePowerWithEquipment(registry, attacker)
-                                    : statBasedAttackPower(
-                                          registry, attacker, *rng);
+        const int attackPower =
+            rng == nullptr ? meleePowerWithEquipment(registry, attacker)
+                           : statBasedAttackPower(registry, attacker, *rng);
         const int damage = std::max(
             0, attackPower - defenseWithEquipment(registry, melee.target));
         const std::string attackerName = entityName(registry, attacker);

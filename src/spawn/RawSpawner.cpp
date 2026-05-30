@@ -104,6 +104,14 @@ void applyEquipment(entt::registry& registry,
     if (raw.defenseBonus.has_value()) {
         registry.emplace<DefenseBonus>(entity, DefenseBonus{*raw.defenseBonus});
     }
+    if (raw.attributeBonus.has_value()) {
+        const auto& bonus = *raw.attributeBonus;
+        registry.emplace<AttributeBonus>(entity,
+                                         AttributeBonus{bonus.might,
+                                                        bonus.fitness,
+                                                        bonus.quickness,
+                                                        bonus.intelligence});
+    }
     if (raw.itemStats.has_value()) {
         const auto& stats = *raw.itemStats;
         registry.emplace<ItemStats>(entity,

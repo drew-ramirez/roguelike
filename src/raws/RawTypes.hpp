@@ -115,6 +115,7 @@ struct RawEntityTemplate {
     std::optional<EquipmentSlot> equippable;
     std::optional<int> meleePowerBonus;
     std::optional<int> defenseBonus;
+    std::optional<RawAttributes> attributeBonus;
     std::optional<RawItemStats> itemStats;
     std::optional<RawWeaponStats> weapon;
     std::optional<RawRangedWeaponStats> rangedWeapon;
