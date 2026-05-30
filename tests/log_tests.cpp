@@ -3,6 +3,7 @@
 #include "core/Achievements.hpp"
 #include "core/GameLog.hpp"
 #include "core/Morgue.hpp"
+#include "render/LayeredConsoleBuffer.hpp"
 
 namespace rl::test {
 namespace {
@@ -54,6 +55,23 @@ void runLogTests(TestRunner& runner)
     const auto achievements = achievementProgress(log);
     runner.expect(!achievements.empty() && achievements.front().unlocked,
                   "achievement summary derives progress from log counters");
+
+    LayeredConsoleBuffer layers{6, 2};
+    layers.layer(ConsoleLayer::Map).clear(Color::white(), Color::black(), U'.');
+    layers.layer(ConsoleLayer::Log)
+        .print(1, 0, "HP", Color::yellow(), Color::black());
+    layers.layer(ConsoleLayer::Modal)
+        .set(2, 0, U'!', Color::cyan(), Color::black());
+
+    const auto flattened = layers.flatten();
+    runner.expect(flattened.cellAt(0, 0).glyph == U'.' &&
+                      flattened.cellAt(1, 0).glyph == U'H' &&
+                      flattened.cellAt(3, 0).glyph == U'.',
+                  "transparent log layer does not corrupt map cells");
+    runner.expect(
+        flattened.cellAt(2, 0).glyph == U'!' &&
+            sameColor(flattened.cellAt(2, 0).foreground, Color::cyan()),
+        "higher console layers override lower text cells");
 }
 
 } // namespace rl::test

@@ -15,11 +15,18 @@
 
 namespace rl {
 
+inline constexpr char32_t transparentCellGlyph = U'\0';
+
 struct Cell {
     char32_t glyph = U' ';
     Color foreground = Color::white();
     Color background = Color::black();
 };
+
+[[nodiscard]] constexpr bool isTransparentCell(const Cell& cell) noexcept
+{
+    return cell.glyph == transparentCellGlyph;
+}
 
 class ConsoleBuffer {
   public:
@@ -31,6 +38,8 @@ class ConsoleBuffer {
     void clear(Color foreground = Color::white(),
                Color background = Color::black(),
                char32_t glyph = U' ');
+    void clearTransparent();
+    void setCell(int x, int y, const Cell& cell);
     void set(int x,
              int y,
              char32_t glyph,

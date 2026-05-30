@@ -51,6 +51,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/raws/RawDatabase.cpp
     src/render/Camera.cpp
     src/render/ConsoleBuffer.cpp
+    src/render/LayeredConsoleBuffer.cpp
     src/render/MapTheme.cpp
     src/render/WallGlyph.cpp
     src/save/SaveGame.cpp
@@ -168,7 +169,9 @@ set(ROGUELIKE_HEADERS
     src/render/Color.hpp
     src/render/Camera.hpp
     src/render/ConsoleBuffer.hpp
+    src/render/ConsoleLayer.hpp
     src/render/IRenderer.hpp
+    src/render/LayeredConsoleBuffer.hpp
     src/render/MapTheme.hpp
     src/render/SdlRenderer.hpp
     src/render/WallGlyph.hpp
