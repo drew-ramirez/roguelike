@@ -9,6 +9,7 @@
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
 #include "systems/DamageSystem.hpp"
+#include "systems/EffectSystem.hpp"
 #include "systems/EquipmentSystem.hpp"
 #include "systems/HungerSystem.hpp"
 #include "systems/ParticleSystem.hpp"
@@ -339,16 +340,8 @@ bool useInventoryItem(entt::registry& registry,
         return false;
     }
 
-    if (registry.all_of<ProvidesHealing>(item)) {
-        return healOwner(registry, resources, owner, item);
-    }
-
-    if (registry.all_of<ProvidesNutrition>(item)) {
-        return feedOwner(registry, resources, owner, item);
-    }
-
-    if (registry.all_of<MagicMapper>(item)) {
-        return applyMagicMapping(registry, resources, map, owner, item);
+    if (applyItemEffects(registry, resources, map, owner, item)) {
+        return true;
     }
 
     resources.log.add("Nothing happens.");
@@ -368,12 +361,12 @@ bool processItemUses(entt::registry& registry,
         }
 
         if (intent.target.has_value()) {
-            used = applyTargetedEffect(registry,
-                                       resources,
-                                       map,
-                                       user,
-                                       intent.item,
-                                       *intent.target) ||
+            used = applyItemEffects(registry,
+                                    resources,
+                                    map,
+                                    user,
+                                    intent.item,
+                                    *intent.target) ||
                    used;
             continue;
         }

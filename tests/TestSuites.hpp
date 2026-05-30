@@ -8,6 +8,7 @@ void runAiTests(TestRunner& runner);
 void runAssetTests(TestRunner& runner);
 void runDescentAndSpawnTests(TestRunner& runner);
 void runDiceTests(TestRunner& runner);
+void runEffectsTests(TestRunner& runner);
 void runEquipmentTests(TestRunner& runner);
 void runInputTests(TestRunner& runner);
 void runInventoryTests(TestRunner& runner);

@@ -63,6 +63,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/spawn/TrapSpawner.cpp
     src/systems/BystanderAI.cpp
     src/systems/DamageSystem.cpp
+    src/systems/EffectSystem.cpp
     src/systems/EquipmentSystem.cpp
     src/systems/HungerSystem.cpp
     src/systems/InputSystem.cpp
@@ -96,6 +97,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/core_tests.cpp
     tests/descent_spawn_tests.cpp
     tests/dice_tests.cpp
+    tests/effects_tests.cpp
     tests/equipment_tests.cpp
     tests/input_tests.cpp
     tests/inventory_tests.cpp
@@ -184,6 +186,7 @@ set(ROGUELIKE_HEADERS
     src/spawn/TrapSpawner.hpp
     src/systems/BystanderAI.hpp
     src/systems/DamageSystem.hpp
+    src/systems/EffectSystem.hpp
     src/systems/EquipmentSystem.hpp
     src/systems/HungerSystem.hpp
     src/systems/InputSystem.hpp
