@@ -84,6 +84,14 @@ void applyEffects(entt::registry& registry,
         registry.emplace_or_replace<Consumable>(entity);
         registry.emplace<TownPortal>(entity);
     }
+    if (effects.identify) {
+        registry.emplace_or_replace<Consumable>(entity);
+        registry.emplace<ProvidesIdentify>(entity);
+    }
+    if (effects.removeCurse) {
+        registry.emplace_or_replace<Consumable>(entity);
+        registry.emplace<ProvidesRemoveCurse>(entity);
+    }
     if (effects.confusionTurns.has_value()) {
         registry.emplace_or_replace<Consumable>(entity);
         registry.emplace<Confusion>(entity, Confusion{*effects.confusionTurns});

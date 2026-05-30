@@ -211,6 +211,22 @@
       "magic": {"tier": "rare", "unidentified_name": "Silver Scroll", "identified": false}
     },
     {
+      "id": "identify_scroll",
+      "name": "Identify Scroll",
+      "renderable": {"glyph": "?", "fg": "#FFFFA0", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 55, "category": "scrolls"},
+      "consumable": {"effects": {"identify": true}},
+      "magic": {"tier": "common", "unidentified_name": "Cream Scroll", "identified": false}
+    },
+    {
+      "id": "remove_curse_scroll",
+      "name": "Remove Curse Scroll",
+      "renderable": {"glyph": "?", "fg": "#D8D8FF", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 75, "category": "scrolls"},
+      "consumable": {"effects": {"remove_curse": true}},
+      "magic": {"tier": "rare", "unidentified_name": "Pale Scroll", "identified": false}
+    },
+    {
       "id": "dagger",
       "name": "Dagger",
       "renderable": {"glyph": "/", "fg": "#B4B4BE", "bg": "#000000", "order": 2},
@@ -307,6 +323,8 @@
     {"name": "fireball_scroll", "weight": 20, "min_depth": 1, "max_depth": 20},
     {"name": "magic_mapping_scroll", "weight": 12, "min_depth": 1, "max_depth": 20},
     {"name": "town_portal_scroll", "weight": 10, "min_depth": 3, "max_depth": 20},
+    {"name": "identify_scroll", "weight": 14, "min_depth": 2, "max_depth": 20},
+    {"name": "remove_curse_scroll", "weight": 8, "min_depth": 3, "max_depth": 20},
     {"name": "dagger", "weight": 20, "min_depth": 1, "max_depth": 20},
     {"name": "sword", "weight": 18, "min_depth": 2, "max_depth": 20},
     {"name": "shortbow", "weight": 12, "min_depth": 5, "max_depth": 20},

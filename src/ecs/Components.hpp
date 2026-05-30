@@ -170,6 +170,10 @@ struct CursedItem {};
 
 struct TownPortal {};
 
+struct ProvidesIdentify {};
+
+struct ProvidesRemoveCurse {};
+
 struct Confusion {
     int turns = 0;
 };

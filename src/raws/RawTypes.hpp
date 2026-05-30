@@ -59,6 +59,7 @@ struct RawEffects {
     bool townPortal = false;
     std::optional<int> confusionTurns;
     bool identify = false;
+    bool removeCurse = false;
 };
 
 struct RawItemStats {

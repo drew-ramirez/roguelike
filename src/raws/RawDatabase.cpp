@@ -126,6 +126,7 @@ void parseEffectsObject(const Json& json, RawEffects& effects)
         "town_portal",
         "confusion",
         "identify",
+        "remove_curse",
     };
 
     for (const auto& [key, value] : json.items()) {
@@ -149,6 +150,8 @@ void parseEffectsObject(const Json& json, RawEffects& effects)
             effects.confusionTurns = parseIntLike(value);
         } else if (key == "identify") {
             effects.identify = value.get<bool>();
+        } else if (key == "remove_curse") {
+            effects.removeCurse = value.get<bool>();
         }
     }
 }
