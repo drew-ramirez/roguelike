@@ -14,8 +14,13 @@
 
 namespace rl {
 
+enum class TargetingMode { Item, Spell };
+
 struct PendingTargeting {
+    TargetingMode mode = TargetingMode::Item;
     entt::entity item = entt::null;
+    std::string spellId;
+    int manaCost = 0;
     int range = 0;
     std::optional<int> radius;
     Point cursor;
@@ -46,6 +51,7 @@ struct GameResources {
     std::string mapBuilderId = "normal";
     MasterDungeonMap dungeon;
     int inventorySelection = 0;
+    int spellSelection = 0;
     int itemSelection = 0;
     std::optional<PendingTargeting> pendingTargeting;
     std::optional<PendingItemSelection> pendingItemSelection;

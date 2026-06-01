@@ -43,6 +43,7 @@
 #include "ui/InventoryMenu.hpp"
 #include "ui/ItemSelectionMenu.hpp"
 #include "ui/MainMenu.hpp"
+#include "ui/SpellMenu.hpp"
 #include "ui/Targeting.hpp"
 
 namespace rl {
@@ -264,6 +265,8 @@ void Game::tick(const std::vector<InputEvent>& events)
             resolvePlayerTurn();
         } else if (input == PlayerInputResult::OpenInventory) {
             state_ = RunState::ShowInventory;
+        } else if (input == PlayerInputResult::OpenSpellMenu) {
+            state_ = RunState::ShowSpellMenu;
         } else if (input == PlayerInputResult::Descend) {
             if (tryDescendToNextLevel(
                     registry_, resources_, map_, fovProvider_)) {
@@ -300,6 +303,16 @@ void Game::tick(const std::vector<InputEvent>& events)
         if (input == ItemSelectionInputResult::Close) {
             state_ = RunState::AwaitingInput;
         } else if (input == ItemSelectionInputResult::TookTurn) {
+            resolvePlayerTurn();
+        }
+    } else if (state_ == RunState::ShowSpellMenu) {
+        const auto input =
+            handleSpellInput(registry_, resources_, map_, events);
+        if (input == SpellInputResult::Close) {
+            state_ = RunState::AwaitingInput;
+        } else if (input == SpellInputResult::StartedTargeting) {
+            state_ = RunState::ShowTargeting;
+        } else if (input == SpellInputResult::TookTurn) {
             resolvePlayerTurn();
         }
     } else if (state_ == RunState::ShowTargeting) {
@@ -378,6 +391,8 @@ void Game::render()
         drawInventoryMenu(console_, registry_, resources_);
     } else if (state_ == RunState::ShowItemSelection) {
         drawItemSelectionMenu(console_, registry_, resources_);
+    } else if (state_ == RunState::ShowSpellMenu) {
+        drawSpellMenu(console_, registry_, resources_);
     }
 }
 

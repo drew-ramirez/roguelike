@@ -111,6 +111,10 @@ PlayerInputResult handleMapInput(entt::registry& registry,
             resources.inventorySelection = 0;
             return PlayerInputResult::OpenInventory;
         }
+        if (event.key == Key::C) {
+            resources.spellSelection = 0;
+            return PlayerInputResult::OpenSpellMenu;
+        }
         if (event.key == Key::G) {
             return queuePickupItemAtPlayer(registry, resources)
                        ? PlayerInputResult::TookTurn

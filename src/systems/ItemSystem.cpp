@@ -335,8 +335,13 @@ bool useInventoryItem(entt::registry& registry,
         if (registry.all_of<AreaOfEffect>(item)) {
             radius = registry.get<AreaOfEffect>(item).radius;
         }
-        resources.pendingTargeting =
-            PendingTargeting{item, ranged.range, radius, *ownerPosition};
+        resources.pendingTargeting = PendingTargeting{TargetingMode::Item,
+                                                      item,
+                                                      {},
+                                                      0,
+                                                      ranged.range,
+                                                      radius,
+                                                      *ownerPosition};
         resources.log.add("Choose a target.");
         return false;
     }
@@ -476,8 +481,14 @@ bool confirmPendingTarget(entt::registry& registry,
         return false;
     }
 
-    registry.emplace_or_replace<WantsToUseItem>(
-        resources.player, WantsToUseItem{pending.item, pending.cursor});
+    if (pending.mode == TargetingMode::Spell) {
+        registry.emplace_or_replace<WantsToCastSpell>(
+            resources.player,
+            WantsToCastSpell{pending.spellId, pending.cursor});
+    } else {
+        registry.emplace_or_replace<WantsToUseItem>(
+            resources.player, WantsToUseItem{pending.item, pending.cursor});
+    }
     resources.pendingTargeting.reset();
     return true;
 }
