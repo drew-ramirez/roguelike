@@ -73,6 +73,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/systems/MeleeCombatSystem.cpp
     src/systems/MonsterAI.cpp
     src/systems/ParticleSystem.cpp
+    src/systems/PortalSystem.cpp
     src/systems/RangedCombatSystem.cpp
     src/systems/RenderSystem.cpp
     src/systems/SpatialIndexSystem.cpp
@@ -111,6 +112,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/log_tests.cpp
     tests/mapgen_tests.cpp
     tests/polish_pressure_tests.cpp
+    tests/portal_tests.cpp
     tests/progression_tests.cpp
     tests/ranged_combat_tests.cpp
     tests/raws_validation_tests.cpp
@@ -204,6 +206,7 @@ set(ROGUELIKE_HEADERS
     src/systems/MeleeCombatSystem.hpp
     src/systems/MonsterAI.hpp
     src/systems/ParticleSystem.hpp
+    src/systems/PortalSystem.hpp
     src/systems/RangedCombatSystem.hpp
     src/systems/RenderSystem.hpp
     src/systems/SpatialIndexSystem.hpp

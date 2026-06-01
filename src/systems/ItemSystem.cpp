@@ -318,7 +318,8 @@ bool useInventoryItem(entt::registry& registry,
                       GameResources& resources,
                       Map& map,
                       entt::entity owner,
-                      entt::entity item)
+                      entt::entity item,
+                      IFovProvider* fovProvider)
 {
     if (!itemOwnedBy(registry, owner, item)) {
         return false;
@@ -361,7 +362,8 @@ bool useInventoryItem(entt::registry& registry,
         return true;
     }
 
-    if (applyItemEffects(registry, resources, map, owner, item)) {
+    if (applyItemEffects(
+            registry, resources, map, owner, item, std::nullopt, fovProvider)) {
         return true;
     }
 
@@ -397,7 +399,8 @@ bool useInventoryItemOnTargetItem(entt::registry& registry,
                                   Map& map,
                                   entt::entity owner,
                                   entt::entity source,
-                                  entt::entity target)
+                                  entt::entity target,
+                                  IFovProvider* fovProvider)
 {
     if (!itemOwnedBy(registry, owner, source) ||
         !itemOwnedBy(registry, owner, target)) {
@@ -410,7 +413,7 @@ bool useInventoryItemOnTargetItem(entt::registry& registry,
     }
     EffectsQueue queue;
     queue.enqueue(std::move(requests));
-    const bool resolved = queue.resolve(registry, resources, map);
+    const bool resolved = queue.resolve(registry, resources, map, fovProvider);
     if (resolved) {
         consumeIfNeeded(registry, source);
     }
@@ -419,7 +422,8 @@ bool useInventoryItemOnTargetItem(entt::registry& registry,
 
 bool processItemUses(entt::registry& registry,
                      GameResources& resources,
-                     Map& map)
+                     Map& map,
+                     IFovProvider* fovProvider)
 {
     bool used = false;
     const auto view = registry.view<const WantsToUseItem>();
@@ -435,12 +439,14 @@ bool processItemUses(entt::registry& registry,
                                     map,
                                     user,
                                     intent.item,
-                                    *intent.target) ||
+                                    *intent.target,
+                                    fovProvider) ||
                    used;
             continue;
         }
 
-        used = useInventoryItem(registry, resources, map, user, intent.item) ||
+        used = useInventoryItem(
+                   registry, resources, map, user, intent.item, fovProvider) ||
                used;
     }
     registry.clear<WantsToUseItem>();

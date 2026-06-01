@@ -13,10 +13,12 @@
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
+#include "fov/IFovProvider.hpp"
 #include "map/Map.hpp"
 #include "systems/DamageSystem.hpp"
 #include "systems/HungerSystem.hpp"
 #include "systems/ParticleSystem.hpp"
+#include "systems/PortalSystem.hpp"
 
 namespace rl {
 namespace {
@@ -297,10 +299,11 @@ const std::vector<EffectRequest>& EffectsQueue::requests() const noexcept
 
 bool EffectsQueue::resolve(entt::registry& registry,
                            GameResources& resources,
-                           Map& map)
+                           Map& map,
+                           IFovProvider* fovProvider)
 {
     const bool resolved =
-        resolveEffectRequests(registry, resources, map, requests_);
+        resolveEffectRequests(registry, resources, map, requests_, fovProvider);
     requests_.clear();
     return resolved;
 }
@@ -313,8 +316,12 @@ effectRequestsForRawEffects(const RawEffects& effects,
 {
     std::vector<EffectRequest> requests;
     if (effects.providesHealing.has_value()) {
-        requests.push_back(EffectRequest{
-            EffectKind::Heal, actor, target, *effects.providesHealing, 0, source});
+        requests.push_back(EffectRequest{EffectKind::Heal,
+                                         actor,
+                                         target,
+                                         *effects.providesHealing,
+                                         0,
+                                         source});
     }
     if (effects.providesNutrition.has_value()) {
         requests.push_back(EffectRequest{EffectKind::Nutrition,
@@ -343,6 +350,10 @@ effectRequestsForRawEffects(const RawEffects& effects,
     if (effects.removeCurse) {
         requests.push_back(EffectRequest{
             EffectKind::RemoveCurse, actor, target, 0, 0, source});
+    }
+    if (effects.townPortal) {
+        requests.push_back(
+            EffectRequest{EffectKind::TownPortal, actor, target, 0, 0, source});
     }
     if (effects.confusionTurns.has_value()) {
         requests.push_back(EffectRequest{EffectKind::Confusion,
@@ -410,6 +421,9 @@ std::vector<EffectRequest> effectRequestsForItem(const entt::registry& registry,
         requests.push_back(
             {EffectKind::RemoveCurse, actor, target, 0, 0, item});
     }
+    if (registry.all_of<TownPortal>(item) && registry.all_of<Item>(item)) {
+        requests.push_back({EffectKind::TownPortal, actor, target, 0, 0, item});
+    }
     if (registry.all_of<Confusion>(item) && registry.all_of<Item>(item)) {
         requests.push_back({EffectKind::Confusion,
                             actor,
@@ -432,7 +446,8 @@ EffectsQueue effectsQueueForItem(const entt::registry& registry,
 bool resolveEffectRequests(entt::registry& registry,
                            GameResources& resources,
                            Map& map,
-                           const std::vector<EffectRequest>& requests)
+                           const std::vector<EffectRequest>& requests,
+                           IFovProvider* fovProvider)
 {
     bool anyResolved = false;
     for (const auto& request : requests) {
@@ -469,6 +484,14 @@ bool resolveEffectRequests(entt::registry& registry,
             resolved = removeCurse(
                 registry, resources, request.actor, request.targetEntity);
             break;
+        case EffectKind::TownPortal:
+            if (fovProvider != nullptr) {
+                resolved = tryUseTownPortal(
+                    registry, resources, map, *fovProvider, request.actor);
+            } else {
+                resources.log.add("The portal magic fizzles.");
+            }
+            break;
         case EffectKind::Confusion:
             if (request.target.has_value()) {
                 resolved = confuseTargets(
@@ -484,9 +507,11 @@ bool resolveEffectRequests(entt::registry& registry,
 bool resolveEffectsQueue(entt::registry& registry,
                          GameResources& resources,
                          Map& map,
-                         const EffectsQueue& queue)
+                         const EffectsQueue& queue,
+                         IFovProvider* fovProvider)
 {
-    return resolveEffectRequests(registry, resources, map, queue.requests());
+    return resolveEffectRequests(
+        registry, resources, map, queue.requests(), fovProvider);
 }
 
 bool applyItemEffects(entt::registry& registry,
@@ -494,10 +519,11 @@ bool applyItemEffects(entt::registry& registry,
                       Map& map,
                       entt::entity actor,
                       entt::entity item,
-                      std::optional<Point> target)
+                      std::optional<Point> target,
+                      IFovProvider* fovProvider)
 {
     auto queue = effectsQueueForItem(registry, actor, item, target);
-    const bool resolved = queue.resolve(registry, resources, map);
+    const bool resolved = queue.resolve(registry, resources, map, fovProvider);
     if (resolved) {
         consumeIfNeeded(registry, item);
     }

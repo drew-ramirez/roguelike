@@ -60,6 +60,10 @@ struct GameResources {
     std::optional<PendingTargeting> pendingTargeting;
     std::optional<PendingItemSelection> pendingItemSelection;
     GameProgress progress;
+    bool townPortalActive = false;
+    int townPortalReturnDepth = 1;
+    std::optional<Point> townPortalReturnPosition;
+    std::optional<Point> townPortalPosition;
     std::vector<ParticleRequest> particleRequests;
 };
 

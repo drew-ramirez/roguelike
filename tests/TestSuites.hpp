@@ -19,6 +19,7 @@ void runLevelSnapshotTests(TestRunner& runner);
 void runLogTests(TestRunner& runner);
 void runMapgenTests(TestRunner& runner);
 void runPolishPressureTests(TestRunner& runner);
+void runPortalTests(TestRunner& runner);
 void runProgressionTests(TestRunner& runner);
 void runRangedCombatTests(TestRunner& runner);
 void runRawsValidationTests(TestRunner& runner);

@@ -35,6 +35,7 @@
 #include "systems/MeleeCombatSystem.hpp"
 #include "systems/MonsterAI.hpp"
 #include "systems/ParticleSystem.hpp"
+#include "systems/PortalSystem.hpp"
 #include "systems/RangedCombatSystem.hpp"
 #include "systems/RenderSystem.hpp"
 #include "systems/SpellSystem.hpp"
@@ -268,6 +269,10 @@ void Game::tick(const std::vector<InputEvent>& events)
             state_ = RunState::ShowInventory;
         } else if (input == PlayerInputResult::OpenSpellMenu) {
             state_ = RunState::ShowSpellMenu;
+        } else if (input == PlayerInputResult::UsePortal) {
+            if (tryUseReturnPortal(registry_, resources_, map_, fovProvider_)) {
+                state_ = RunState::AwaitingInput;
+            }
         } else if (input == PlayerInputResult::Descend) {
             if (tryDescendToNextLevel(
                     registry_, resources_, map_, fovProvider_)) {
@@ -334,7 +339,7 @@ void Game::resolvePlayerTurn(bool runMonsters)
     state_ = RunState::PlayerTurn;
     processPickupItems(registry_, resources_);
     [[maybe_unused]] const bool usedItem =
-        processItemUses(registry_, resources_, map_);
+        processItemUses(registry_, resources_, map_, &fovProvider_);
     [[maybe_unused]] const bool castSpell =
         processSpellCasts(registry_, resources_, map_);
     [[maybe_unused]] const bool firedRanged =

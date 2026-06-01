@@ -15,6 +15,7 @@ int main()
     rl::test::runDragonTests(runner);
     rl::test::runEquipmentTests(runner);
     rl::test::runFactionTests(runner);
+    rl::test::runPortalTests(runner);
     rl::test::runLevelSnapshotTests(runner);
     rl::test::runLogTests(runner);
     rl::test::runSaveLoadTests(runner);

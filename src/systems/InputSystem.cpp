@@ -131,6 +131,9 @@ PlayerInputResult handleMapInput(entt::registry& registry,
             resources.spellSelection = 0;
             return PlayerInputResult::OpenSpellMenu;
         }
+        if (event.key == Key::Enter) {
+            return PlayerInputResult::UsePortal;
+        }
         if (event.key == Key::F) {
             const auto weapon =
                 equippedRangedWeapon(registry, resources.player);

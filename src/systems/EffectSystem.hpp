@@ -19,6 +19,7 @@
 namespace rl {
 
 struct GameResources;
+class IFovProvider;
 class Map;
 
 enum class EffectKind {
@@ -28,6 +29,7 @@ enum class EffectKind {
     RevealMap,
     Identify,
     RemoveCurse,
+    TownPortal,
     Confusion
 };
 
@@ -55,7 +57,8 @@ class EffectsQueue {
     [[nodiscard]] const std::vector<EffectRequest>& requests() const noexcept;
     [[nodiscard]] bool resolve(entt::registry& registry,
                                GameResources& resources,
-                               Map& map);
+                               Map& map,
+                               IFovProvider* fovProvider = nullptr);
 
   private:
     std::vector<EffectRequest> requests_;
@@ -89,18 +92,21 @@ effectsQueueForRawEffects(const RawEffects& effects,
 resolveEffectRequests(entt::registry& registry,
                       GameResources& resources,
                       Map& map,
-                      const std::vector<EffectRequest>& requests);
+                      const std::vector<EffectRequest>& requests,
+                      IFovProvider* fovProvider = nullptr);
 
 [[nodiscard]] bool resolveEffectsQueue(entt::registry& registry,
                                        GameResources& resources,
                                        Map& map,
-                                       const EffectsQueue& queue);
+                                       const EffectsQueue& queue,
+                                       IFovProvider* fovProvider = nullptr);
 
 [[nodiscard]] bool applyItemEffects(entt::registry& registry,
                                     GameResources& resources,
                                     Map& map,
                                     entt::entity actor,
                                     entt::entity item,
-                                    std::optional<Point> target = std::nullopt);
+                                    std::optional<Point> target = std::nullopt,
+                                    IFovProvider* fovProvider = nullptr);
 
 } // namespace rl
