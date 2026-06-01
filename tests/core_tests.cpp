@@ -8,6 +8,7 @@ int main()
     rl::test::runInputTests(runner);
     rl::test::runInventoryTests(runner);
     rl::test::runEffectsTests(runner);
+    rl::test::runSpellTests(runner);
     rl::test::runTargetingTests(runner);
     rl::test::runUiTests(runner);
     rl::test::runDiceTests(runner);

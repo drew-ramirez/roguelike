@@ -243,6 +243,11 @@ struct WantsToDropItem {
     entt::entity item = entt::null;
 };
 
+struct WantsToCastSpell {
+    std::string spellId;
+    std::optional<Point> target;
+};
+
 struct Trap {
     int damage = 3;
     bool triggered = false;

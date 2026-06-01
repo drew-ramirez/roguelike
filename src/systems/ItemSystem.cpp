@@ -341,6 +341,21 @@ bool useInventoryItem(entt::registry& registry,
         return false;
     }
 
+    if (registry.all_of<Spellbook>(item)) {
+        const auto spellId = registry.get<Spellbook>(item).spellId;
+        auto& known = registry.all_of<KnownSpells>(owner)
+                          ? registry.get<KnownSpells>(owner)
+                          : registry.emplace<KnownSpells>(owner);
+        if (std::find(known.ids.begin(), known.ids.end(), spellId) !=
+            known.ids.end()) {
+            resources.log.add("You already know that spell.");
+            return false;
+        }
+        known.ids.push_back(spellId);
+        resources.log.add("You learn " + spellId + ".");
+        return true;
+    }
+
     if (applyItemEffects(registry, resources, map, owner, item)) {
         return true;
     }
