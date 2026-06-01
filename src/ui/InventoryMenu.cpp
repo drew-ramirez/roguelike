@@ -24,6 +24,12 @@ std::string itemLabel(const entt::registry& registry, entt::entity item)
     std::string label = registry.all_of<Name>(item)
                             ? registry.get<Name>(item).value
                             : "Unnamed item";
+    if (registry.all_of<MagicItem>(item)) {
+        const auto& magic = registry.get<MagicItem>(item);
+        if (!magic.identified && !magic.unidentifiedName.empty()) {
+            label = magic.unidentifiedName;
+        }
+    }
     if (registry.all_of<Equipped>(item)) {
         label += " (equipped)";
     }
@@ -99,6 +105,26 @@ InventoryInputResult handleInventoryInput(entt::registry& registry,
                        : InventoryInputResult::None;
         }
         if (event.key == Key::U || event.key == Key::Enter) {
+            if (registry.all_of<ProvidesIdentify>(selected) ||
+                registry.all_of<ProvidesRemoveCurse>(selected)) {
+                const auto targets =
+                    itemEffectTargets(registry, resources.player, selected);
+                if (targets.empty()) {
+                    resources.log.add(
+                        registry.all_of<ProvidesIdentify>(selected)
+                            ? "You have nothing unidentified."
+                            : "No curses respond.");
+                    return InventoryInputResult::None;
+                }
+                resources.pendingItemSelection = PendingItemSelection{
+                    registry.all_of<ProvidesIdentify>(selected)
+                        ? ItemSelectionMode::Identify
+                        : ItemSelectionMode::RemoveCurse,
+                    selected};
+                resources.itemSelection = 0;
+                return InventoryInputResult::StartedItemSelection;
+            }
+
             const bool consumedTurn = useInventoryItem(
                 registry, resources, map, resources.player, selected);
             if (resources.pendingTargeting.has_value()) {

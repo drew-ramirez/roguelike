@@ -41,6 +41,16 @@ void processPickupItems(entt::registry& registry, GameResources& resources);
                                     entt::entity owner,
                                     entt::entity item);
 
+[[nodiscard]] std::vector<entt::entity> itemEffectTargets(
+    const entt::registry& registry, entt::entity owner, entt::entity source);
+
+[[nodiscard]] bool useInventoryItemOnTargetItem(entt::registry& registry,
+                                                GameResources& resources,
+                                                Map& map,
+                                                entt::entity owner,
+                                                entt::entity source,
+                                                entt::entity target);
+
 [[nodiscard]] bool
 processItemUses(entt::registry& registry, GameResources& resources, Map& map);
 

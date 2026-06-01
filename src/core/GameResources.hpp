@@ -21,6 +21,13 @@ struct PendingTargeting {
     Point cursor;
 };
 
+enum class ItemSelectionMode { Identify, RemoveCurse };
+
+struct PendingItemSelection {
+    ItemSelectionMode mode = ItemSelectionMode::Identify;
+    entt::entity source = entt::null;
+};
+
 struct ParticleRequest {
     Point position;
     char32_t glyph = U'*';
@@ -39,7 +46,9 @@ struct GameResources {
     std::string mapBuilderId = "normal";
     MasterDungeonMap dungeon;
     int inventorySelection = 0;
+    int itemSelection = 0;
     std::optional<PendingTargeting> pendingTargeting;
+    std::optional<PendingItemSelection> pendingItemSelection;
     std::vector<ParticleRequest> particleRequests;
 };
 

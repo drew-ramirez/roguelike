@@ -40,6 +40,7 @@
 #include "systems/VisibilitySystem.hpp"
 #include "ui/Hud.hpp"
 #include "ui/InventoryMenu.hpp"
+#include "ui/ItemSelectionMenu.hpp"
 #include "ui/MainMenu.hpp"
 #include "ui/Targeting.hpp"
 
@@ -287,7 +288,17 @@ void Game::tick(const std::vector<InputEvent>& events)
             state_ = RunState::AwaitingInput;
         } else if (input == InventoryInputResult::StartedTargeting) {
             state_ = RunState::ShowTargeting;
+        } else if (input == InventoryInputResult::StartedItemSelection) {
+            state_ = RunState::ShowItemSelection;
         } else if (input == InventoryInputResult::TookTurn) {
+            resolvePlayerTurn();
+        }
+    } else if (state_ == RunState::ShowItemSelection) {
+        const auto input =
+            handleItemSelectionInput(registry_, resources_, map_, events);
+        if (input == ItemSelectionInputResult::Close) {
+            state_ = RunState::AwaitingInput;
+        } else if (input == ItemSelectionInputResult::TookTurn) {
             resolvePlayerTurn();
         }
     } else if (state_ == RunState::ShowTargeting) {
@@ -362,6 +373,8 @@ void Game::render()
     drawHud(console_, resources_, registry_, state_);
     if (state_ == RunState::ShowInventory) {
         drawInventoryMenu(console_, registry_, resources_);
+    } else if (state_ == RunState::ShowItemSelection) {
+        drawItemSelectionMenu(console_, registry_, resources_);
     }
 }
 

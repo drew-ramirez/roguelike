@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <utility>
 
 #include "core/GameLog.hpp"
 #include "core/GameResources.hpp"
@@ -346,6 +347,54 @@ bool useInventoryItem(entt::registry& registry,
 
     resources.log.add("Nothing happens.");
     return false;
+}
+
+std::vector<entt::entity> itemEffectTargets(const entt::registry& registry,
+                                            entt::entity owner,
+                                            entt::entity source)
+{
+    std::vector<entt::entity> targets;
+    const bool identify =
+        registry.valid(source) && registry.all_of<ProvidesIdentify>(source);
+    const bool removeCurse =
+        registry.valid(source) && registry.all_of<ProvidesRemoveCurse>(source);
+    for (const auto item : inventoryItems(registry, owner)) {
+        if (item == source) {
+            continue;
+        }
+        if (identify && registry.all_of<MagicItem>(item) &&
+            !registry.get<MagicItem>(item).identified) {
+            targets.push_back(item);
+        } else if (removeCurse && registry.all_of<CursedItem>(item)) {
+            targets.push_back(item);
+        }
+    }
+    return targets;
+}
+
+bool useInventoryItemOnTargetItem(entt::registry& registry,
+                                  GameResources& resources,
+                                  Map& map,
+                                  entt::entity owner,
+                                  entt::entity source,
+                                  entt::entity target)
+{
+    if (!itemOwnedBy(registry, owner, source) ||
+        !itemOwnedBy(registry, owner, target)) {
+        return false;
+    }
+
+    auto requests = effectRequestsForItem(registry, owner, source);
+    for (auto& request : requests) {
+        request.targetEntity = target;
+    }
+    EffectsQueue queue;
+    queue.enqueue(std::move(requests));
+    const bool resolved = queue.resolve(registry, resources, map);
+    if (resolved) {
+        consumeIfNeeded(registry, source);
+    }
+    return resolved;
 }
 
 bool processItemUses(entt::registry& registry,
