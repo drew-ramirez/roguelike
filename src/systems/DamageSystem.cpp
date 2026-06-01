@@ -53,6 +53,11 @@ void requestDamageAt(GameResources& resources,
     requestDamageParticle(resources, Point{position.x, position.y});
 }
 
+void claimArtifact(GameResources& resources)
+{
+    resources.progress.artifactClaimed = true;
+}
+
 } // namespace
 
 void queueDamage(entt::registry& registry, entt::entity target, int amount)
@@ -111,6 +116,13 @@ void applyDamageAndCleanup(entt::registry& registry,
 
         markBlood(map, registry, entity);
         resources.log.add(entityName(registry, entity) + " dies.");
+        resources.log.incrementCounter("kills");
+        if (registry.all_of<GrantsWin>(entity)) {
+            claimArtifact(resources);
+            resources.log.add("The artifact is claimed.");
+            resources.log.incrementCounter("artifact_claimed");
+            state = RunState::GameOver;
+        }
         awardExperienceForKill(registry, resources, entity);
         registry.destroy(entity);
     }

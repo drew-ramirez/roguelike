@@ -12,7 +12,9 @@ int main()
     rl::test::runTargetingTests(runner);
     rl::test::runUiTests(runner);
     rl::test::runDiceTests(runner);
+    rl::test::runDragonTests(runner);
     rl::test::runEquipmentTests(runner);
+    rl::test::runFactionTests(runner);
     rl::test::runLevelSnapshotTests(runner);
     rl::test::runLogTests(runner);
     rl::test::runSaveLoadTests(runner);

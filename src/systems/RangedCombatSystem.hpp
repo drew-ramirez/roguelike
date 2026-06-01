@@ -1,7 +1,7 @@
 /**
  * **************************************************************************
  * @file     RangedCombatSystem.hpp
- * @brief    Declares no-ammo ranged attacks
+ * @brief    Declares no-ammo ranged attacks and breath powers
  * **************************************************************************
  */
 

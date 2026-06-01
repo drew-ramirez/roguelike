@@ -251,6 +251,9 @@ struct WantsToCastSpell {
 struct WantsToShoot {
     entt::entity weapon = entt::null;
     std::optional<Point> target;
+    bool breath = false;
+    int damage = 0;
+    int radius = 0;
 };
 
 struct Trap {

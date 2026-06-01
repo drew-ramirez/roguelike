@@ -101,8 +101,10 @@ set(ROGUELIKE_TEST_SOURCES
     tests/core_tests.cpp
     tests/descent_spawn_tests.cpp
     tests/dice_tests.cpp
+    tests/dragon_tests.cpp
     tests/effects_tests.cpp
     tests/equipment_tests.cpp
+    tests/faction_tests.cpp
     tests/input_tests.cpp
     tests/inventory_tests.cpp
     tests/level_snapshot_tests.cpp

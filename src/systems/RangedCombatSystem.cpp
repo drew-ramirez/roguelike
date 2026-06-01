@@ -1,7 +1,7 @@
 /**
  * **************************************************************************
  * @file     RangedCombatSystem.cpp
- * @brief    Resolves line-of-sight ranged weapon attacks
+ * @brief    Resolves line-of-sight ranged weapon and breath attacks
  * **************************************************************************
  */
 
@@ -84,10 +84,23 @@ entityPosition(const entt::registry& registry, entt::entity entity)
         attributeValue(attributesWithEquipment(registry, attacker), attribute));
 }
 
+[[nodiscard]] std::optional<RangedWeapon> rangedWeaponForIntent(
+    const entt::registry& registry, entt::entity shooter, entt::entity weapon)
+{
+    if (registry.valid(weapon) && registry.all_of<RangedWeapon>(weapon)) {
+        return registry.get<RangedWeapon>(weapon);
+    }
+    if (registry.valid(shooter) && registry.all_of<RangedWeapon>(shooter)) {
+        return registry.get<RangedWeapon>(shooter);
+    }
+    return std::nullopt;
+}
+
 [[nodiscard]] bool hasLineOfSight(const Map& map, Point from, Point to)
 {
     const auto line = bresenhamLine(from, to, LineStartPolicy::ExcludeStart);
-    for (const auto point : line) {
+    for (std::size_t index = 0; index < line.size(); ++index) {
+        const Point point = line[index];
         if (point == to) {
             return true;
         }
@@ -120,15 +133,36 @@ bool processRangedCombat(entt::registry& registry,
     for (const auto shooter : view) {
         const auto& intent = view.get<const WantsToShoot>(shooter);
         const auto shooterPosition = entityPosition(registry, shooter);
-        if (!shooterPosition.has_value() || !intent.target.has_value() ||
-            !registry.valid(intent.weapon) ||
-            !registry.all_of<RangedWeapon>(intent.weapon)) {
+        if (!shooterPosition.has_value() || !intent.target.has_value()) {
             continue;
         }
 
-        const auto& weapon = registry.get<RangedWeapon>(intent.weapon);
-        if (distanceSquared(*shooterPosition, *intent.target) >
-                weapon.range * weapon.range ||
+        if (intent.breath) {
+            const int range = registry.all_of<BreathWeapon>(shooter)
+                                  ? registry.get<BreathWeapon>(shooter).range
+                                  : 0;
+            if (range <= 0 ||
+                distanceSquared(*shooterPosition, *intent.target) >
+                    range * range ||
+                !hasLineOfSight(map, *shooterPosition, *intent.target)) {
+                continue;
+            }
+            if (const auto target =
+                    combatTargetAt(registry, *intent.target, shooter)) {
+                queueDamage(registry, *target, intent.damage);
+                resources.log.add(entityName(registry, shooter) +
+                                  " breathes fire at " +
+                                  entityName(registry, *target) + ".");
+                fired = true;
+            }
+            continue;
+        }
+
+        const auto weapon =
+            rangedWeaponForIntent(registry, shooter, intent.weapon);
+        if (!weapon.has_value() ||
+            distanceSquared(*shooterPosition, *intent.target) >
+                weapon->range * weapon->range ||
             !map.isVisible(intent.target->x, intent.target->y) ||
             !hasLineOfSight(map, *shooterPosition, *intent.target)) {
             resources.log.add("No clear shot.");
@@ -141,9 +175,10 @@ bool processRangedCombat(entt::registry& registry,
             continue;
         }
 
-        const int attack = rollDice(parseDice(weapon.damage), resources.rng) +
-                           weapon.hitBonus +
-                           attackerModifier(registry, shooter, weapon.attribute);
+        const int attack =
+            rollDice(parseDice(weapon->damage), resources.rng) +
+            weapon->hitBonus +
+            attackerModifier(registry, shooter, weapon->attribute);
         const int damage =
             std::max(0, attack - defenseWithEquipment(registry, *target));
         if (damage <= 0) {

@@ -33,6 +33,10 @@ struct PendingItemSelection {
     entt::entity source = entt::null;
 };
 
+struct GameProgress {
+    bool artifactClaimed = false;
+};
+
 struct ParticleRequest {
     Point position;
     char32_t glyph = U'*';
@@ -55,6 +59,7 @@ struct GameResources {
     int itemSelection = 0;
     std::optional<PendingTargeting> pendingTargeting;
     std::optional<PendingItemSelection> pendingItemSelection;
+    GameProgress progress;
     std::vector<ParticleRequest> particleRequests;
 };
 
