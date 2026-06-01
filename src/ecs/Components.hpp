@@ -248,6 +248,11 @@ struct WantsToCastSpell {
     std::optional<Point> target;
 };
 
+struct WantsToShoot {
+    entt::entity weapon = entt::null;
+    std::optional<Point> target;
+};
+
 struct Trap {
     int damage = 3;
     bool triggered = false;

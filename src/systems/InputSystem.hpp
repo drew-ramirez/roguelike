@@ -25,6 +25,7 @@ enum class PlayerInputResult {
     TookTurn,
     OpenInventory,
     OpenSpellMenu,
+    StartedTargeting,
     Descend,
     Ascend,
     Save

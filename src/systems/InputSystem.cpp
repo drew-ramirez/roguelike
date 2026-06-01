@@ -9,6 +9,22 @@
 #include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
+namespace {
+
+[[nodiscard]] std::optional<entt::entity>
+equippedRangedWeapon(const entt::registry& registry, entt::entity owner)
+{
+    const auto view = registry.view<const Equipped, const RangedWeapon>();
+    for (const auto item : view) {
+        const auto& equipped = view.get<const Equipped>(item);
+        if (equipped.owner == owner && equipped.slot == EquipmentSlot::Weapon) {
+            return item;
+        }
+    }
+    return std::nullopt;
+}
+
+} // namespace
 
 std::optional<Point> movementDeltaForKey(Key key)
 {
@@ -114,6 +130,33 @@ PlayerInputResult handleMapInput(entt::registry& registry,
         if (event.key == Key::C) {
             resources.spellSelection = 0;
             return PlayerInputResult::OpenSpellMenu;
+        }
+        if (event.key == Key::F) {
+            const auto weapon =
+                equippedRangedWeapon(registry, resources.player);
+            if (!weapon.has_value()) {
+                resources.log.add("You have no ranged weapon equipped.");
+                return PlayerInputResult::None;
+            }
+            const auto ownerPosition =
+                registry.all_of<Position>(resources.player)
+                    ? std::optional<Point>{Point{
+                          registry.get<Position>(resources.player).x,
+                          registry.get<Position>(resources.player).y}}
+                    : std::nullopt;
+            if (!ownerPosition.has_value()) {
+                return PlayerInputResult::None;
+            }
+            const auto& ranged = registry.get<RangedWeapon>(*weapon);
+            resources.pendingTargeting = PendingTargeting{TargetingMode::Shoot,
+                                                          *weapon,
+                                                          {},
+                                                          0,
+                                                          ranged.range,
+                                                          std::nullopt,
+                                                          *ownerPosition};
+            resources.log.add("Choose a target.");
+            return PlayerInputResult::StartedTargeting;
         }
         if (event.key == Key::G) {
             return queuePickupItemAtPlayer(registry, resources)

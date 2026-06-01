@@ -35,6 +35,7 @@
 #include "systems/MeleeCombatSystem.hpp"
 #include "systems/MonsterAI.hpp"
 #include "systems/ParticleSystem.hpp"
+#include "systems/RangedCombatSystem.hpp"
 #include "systems/RenderSystem.hpp"
 #include "systems/SpellSystem.hpp"
 #include "systems/TrapSystem.hpp"
@@ -336,6 +337,8 @@ void Game::resolvePlayerTurn(bool runMonsters)
         processItemUses(registry_, resources_, map_);
     [[maybe_unused]] const bool castSpell =
         processSpellCasts(registry_, resources_, map_);
+    [[maybe_unused]] const bool firedRanged =
+        processRangedCombat(registry_, resources_, map_);
     processMeleeCombat(registry_, resources_.log, &resources_.rng);
     processPlayerTraps(registry_, resources_);
     processHunger(registry_, resources_);

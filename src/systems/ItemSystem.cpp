@@ -485,6 +485,9 @@ bool confirmPendingTarget(entt::registry& registry,
         registry.emplace_or_replace<WantsToCastSpell>(
             resources.player,
             WantsToCastSpell{pending.spellId, pending.cursor});
+    } else if (pending.mode == TargetingMode::Shoot) {
+        registry.emplace_or_replace<WantsToShoot>(
+            resources.player, WantsToShoot{pending.item, pending.cursor});
     } else {
         registry.emplace_or_replace<WantsToUseItem>(
             resources.player, WantsToUseItem{pending.item, pending.cursor});

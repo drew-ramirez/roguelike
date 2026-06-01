@@ -14,7 +14,7 @@
 
 namespace rl {
 
-enum class TargetingMode { Item, Spell };
+enum class TargetingMode { Item, Spell, Shoot };
 
 struct PendingTargeting {
     TargetingMode mode = TargetingMode::Item;
