@@ -40,6 +40,7 @@
 #include "systems/RangedCombatSystem.hpp"
 #include "systems/RenderSystem.hpp"
 #include "systems/SpellSystem.hpp"
+#include "systems/SystemScheduler.hpp"
 #include "systems/TrapSystem.hpp"
 #include "systems/VendorSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
@@ -349,33 +350,8 @@ void Game::tick(const std::vector<InputEvent>& events)
 
 void Game::resolvePlayerTurn(bool runMonsters)
 {
-    state_ = RunState::PlayerTurn;
-    processPickupItems(registry_, resources_);
-    [[maybe_unused]] const bool usedItem =
-        processItemUses(registry_, resources_, map_, &fovProvider_);
-    [[maybe_unused]] const bool castSpell =
-        processSpellCasts(registry_, resources_, map_);
-    [[maybe_unused]] const bool firedRanged =
-        processRangedCombat(registry_, resources_, map_);
-    processMeleeCombat(registry_, resources_.log, &resources_.rng);
-    processPlayerTraps(registry_, resources_);
-    processHunger(registry_, resources_);
-    applyDamageAndCleanup(registry_, resources_, state_, &map_);
-    updateVisibility(registry_, map_, resources_.player, fovProvider_);
-
-    if (state_ != RunState::GameOver && runMonsters) {
-        state_ = RunState::MonsterTurn;
-        runBystanderAi(registry_, resources_, map_);
-        runHostileMonsterAi(registry_, resources_, map_);
-        processMeleeCombat(registry_, resources_.log, &resources_.rng);
-        applyDamageAndCleanup(registry_, resources_, state_, &map_);
-    }
-
-    flushParticleRequests(registry_, resources_);
-
-    if (state_ != RunState::GameOver) {
-        state_ = RunState::AwaitingInput;
-    }
+    resolveTurnSystems(
+        registry_, resources_, map_, fovProvider_, state_, runMonsters);
 }
 
 void Game::render()

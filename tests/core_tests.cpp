@@ -18,6 +18,7 @@ int main()
     rl::test::runPortalTests(runner);
     rl::test::runLevelSnapshotTests(runner);
     rl::test::runLogTests(runner);
+    rl::test::runSchedulerTests(runner);
     rl::test::runSaveLoadTests(runner);
     rl::test::runSpatialTests(runner);
     rl::test::runVendorTests(runner);
