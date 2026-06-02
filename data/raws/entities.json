@@ -4,6 +4,8 @@
     {"id": "goblins", "hostile_to": ["player", "town"]},
     {"id": "kobolds", "hostile_to": ["player", "town", "goblins"]},
     {"id": "orcs", "hostile_to": ["player", "town"]},
+    {"id": "dwarves", "hostile_to": ["player", "kobolds", "orcs"]},
+    {"id": "fungi", "hostile_to": ["player"]},
     {"id": "wildlife", "hostile_to": ["player"]},
     {"id": "dark_elf_clan_a", "hostile_to": ["player", "dark_elf_clan_b", "dark_elf_clan_c"]},
     {"id": "dark_elf_clan_b", "hostile_to": ["player", "dark_elf_clan_a", "dark_elf_clan_c"]},
@@ -156,6 +158,130 @@
       "xp_reward": 500
     },
     {
+      "id": "deep_kobold",
+      "name": "Deep Kobold",
+      "renderable": {"glyph": "k", "fg": "#A0A870", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 8,
+      "faction": "kobolds",
+      "combat": {"max_hp": 12, "hp": 12, "defense": 2, "power": 5},
+      "attributes": {"might": 10, "fitness": 11, "quickness": 12, "intelligence": 9},
+      "pools": {"hit_points": 12, "max_hit_points": 12, "level": 3},
+      "xp_reward": 250
+    },
+    {
+      "id": "stone_golem",
+      "name": "Stone Golem",
+      "renderable": {"glyph": "G", "fg": "#A8A8A8", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 6,
+      "faction": "dwarves",
+      "combat": {"max_hp": 26, "hp": 26, "defense": 5, "power": 7},
+      "attributes": {"might": 16, "fitness": 16, "quickness": 5, "intelligence": 3},
+      "pools": {"hit_points": 26, "max_hit_points": 26, "level": 4},
+      "xp_reward": 450
+    },
+    {
+      "id": "dwarf_sentry",
+      "name": "Dwarf Sentry",
+      "renderable": {"glyph": "d", "fg": "#D0B070", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 8,
+      "faction": "dwarves",
+      "combat": {"max_hp": 18, "hp": 18, "defense": 3, "power": 6},
+      "attributes": {"might": 13, "fitness": 13, "quickness": 8, "intelligence": 9},
+      "pools": {"hit_points": 18, "max_hit_points": 18, "level": 4},
+      "equipped": ["scimitar", "buckler"],
+      "xp_reward": 425
+    },
+    {
+      "id": "sporeling",
+      "name": "Sporeling",
+      "renderable": {"glyph": "s", "fg": "#C8E878", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 7,
+      "faction": "fungi",
+      "combat": {"max_hp": 11, "hp": 11, "defense": 1, "power": 4},
+      "attributes": {"might": 9, "fitness": 10, "quickness": 10, "intelligence": 4},
+      "pools": {"hit_points": 11, "max_hit_points": 11, "level": 4},
+      "xp_reward": 325
+    },
+    {
+      "id": "fungal_giant",
+      "name": "Fungal Giant",
+      "renderable": {"glyph": "F", "fg": "#9CD068", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 8,
+      "faction": "fungi",
+      "combat": {"max_hp": 30, "hp": 30, "defense": 3, "power": 8},
+      "attributes": {"might": 16, "fitness": 14, "quickness": 6, "intelligence": 5},
+      "pools": {"hit_points": 30, "max_hit_points": 30, "level": 5},
+      "xp_reward": 575
+    },
+    {
+      "id": "dark_elf_scout_a",
+      "name": "Dark Elf Scout",
+      "renderable": {"glyph": "d", "fg": "#A8A0FF", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 9,
+      "faction": "dark_elf_clan_a",
+      "combat": {"max_hp": 12, "hp": 12, "defense": 2, "power": 4},
+      "pools": {"hit_points": 12, "max_hit_points": 12, "level": 5},
+      "equipped": ["hand_crossbow"],
+      "ranged_weapon": {"range": 6, "damage": "1d6", "hit_bonus": 1, "attribute": "quickness"},
+      "xp_reward": 450
+    },
+    {
+      "id": "dark_elf_blade_b",
+      "name": "Dark Elf Blade B",
+      "renderable": {"glyph": "d", "fg": "#FF90D0", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 9,
+      "faction": "dark_elf_clan_b",
+      "combat": {"max_hp": 18, "hp": 18, "defense": 3, "power": 6},
+      "pools": {"hit_points": 18, "max_hit_points": 18, "level": 6},
+      "equipped": ["scimitar", "buckler"],
+      "xp_reward": 575
+    },
+    {
+      "id": "dark_elf_blade_c",
+      "name": "Dark Elf Blade C",
+      "renderable": {"glyph": "d", "fg": "#80D8FF", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 9,
+      "faction": "dark_elf_clan_c",
+      "combat": {"max_hp": 18, "hp": 18, "defense": 3, "power": 6},
+      "pools": {"hit_points": 18, "max_hit_points": 18, "level": 6},
+      "equipped": ["scimitar", "buckler"],
+      "xp_reward": 575
+    },
+    {
+      "id": "dark_elf_marksman_a",
+      "name": "Dark Elf Marksman A",
+      "renderable": {"glyph": "d", "fg": "#B0A0FF", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 10,
+      "faction": "dark_elf_clan_a",
+      "combat": {"max_hp": 15, "hp": 15, "defense": 2, "power": 4},
+      "pools": {"hit_points": 15, "max_hit_points": 15, "level": 6},
+      "equipped": ["hand_crossbow", "drow_chain_boots"],
+      "ranged_weapon": {"range": 8, "damage": "1d6+2", "hit_bonus": 2, "attribute": "quickness"},
+      "xp_reward": 625
+    },
+    {
+      "id": "dark_elf_marksman_c",
+      "name": "Dark Elf Marksman C",
+      "renderable": {"glyph": "d", "fg": "#80D8FF", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "vision_range": 10,
+      "faction": "dark_elf_clan_c",
+      "combat": {"max_hp": 15, "hp": 15, "defense": 2, "power": 4},
+      "pools": {"hit_points": 15, "max_hit_points": 15, "level": 6},
+      "equipped": ["hand_crossbow", "drow_chain_boots"],
+      "ranged_weapon": {"range": 8, "damage": "1d6+2", "hit_bonus": 2, "attribute": "quickness"},
+      "xp_reward": 625
+    },
+    {
       "id": "dragon",
       "name": "Dragon",
       "renderable": {"glyph": "D", "fg": "#FF6040", "bg": "#000000", "order": 5},
@@ -183,7 +309,7 @@
       "name": "Food Ration",
       "renderable": {"glyph": "%", "fg": "#BE9646", "bg": "#000000", "order": 2},
       "item_stats": {"weight": 1, "base_value": 5, "category": "food"},
-      "consumable": {"effects": {"provides_nutrition": 350}}
+      "consumable": {"effects": {"provides_nutrition": 600}}
     },
     {
       "id": "fireball_scroll",
@@ -254,12 +380,65 @@
       "item_stats": {"weight": 2, "base_value": 55, "category": "weapons"}
     },
     {
+      "id": "hand_crossbow",
+      "name": "Hand Crossbow",
+      "renderable": {"glyph": "}", "fg": "#8E70C8", "bg": "#000000", "order": 2},
+      "equippable": "weapon",
+      "ranged_weapon": {"range": 8, "damage": "1d6+1", "hit_bonus": 2, "attribute": "quickness"},
+      "item_stats": {"weight": 2, "base_value": 95, "category": "weapons"}
+    },
+    {
+      "id": "scimitar",
+      "name": "Scimitar",
+      "renderable": {"glyph": "/", "fg": "#D8D0E8", "bg": "#000000", "order": 2},
+      "equippable": "weapon",
+      "melee_power_bonus": 5,
+      "weapon": {"damage": "1d8+2", "hit_bonus": 2, "attribute": "quickness"},
+      "item_stats": {"weight": 3, "base_value": 90, "category": "weapons"}
+    },
+    {
+      "id": "buckler",
+      "name": "Buckler",
+      "renderable": {"glyph": "[", "fg": "#C0B8D8", "bg": "#000000", "order": 2},
+      "equippable": "armor",
+      "defense_bonus": 1,
+      "item_stats": {"weight": 2, "base_value": 40, "category": "armor"}
+    },
+    {
       "id": "chain_mail",
       "name": "Chain Mail",
       "renderable": {"glyph": "[", "fg": "#82AAD2", "bg": "#000000", "order": 2},
       "equippable": "armor",
       "defense_bonus": 2,
       "item_stats": {"weight": 7, "base_value": 80, "initiative_penalty": 1, "category": "armor"}
+    },
+    {
+      "id": "drow_chain_boots",
+      "name": "Drow Chain Boots",
+      "renderable": {"glyph": "[", "fg": "#7068A0", "bg": "#000000", "order": 2},
+      "equippable": "armor",
+      "defense_bonus": 1,
+      "attribute_bonus": {"quickness": 1},
+      "item_stats": {"weight": 2, "base_value": 70, "category": "armor"},
+      "magic": {"tier": "rare", "unidentified_name": "Black Boots", "identified": false}
+    },
+    {
+      "id": "gauntlets_of_might",
+      "name": "Gauntlets of Might",
+      "renderable": {"glyph": "[", "fg": "#F0B860", "bg": "#000000", "order": 2},
+      "equippable": "armor",
+      "attribute_bonus": {"might": 2},
+      "item_stats": {"weight": 2, "base_value": 140, "category": "armor"},
+      "magic": {"tier": "rare", "unidentified_name": "Heavy Gauntlets", "identified": false}
+    },
+    {
+      "id": "circlet_of_focus",
+      "name": "Circlet of Focus",
+      "renderable": {"glyph": "[", "fg": "#80D8FF", "bg": "#000000", "order": 2},
+      "equippable": "armor",
+      "attribute_bonus": {"intelligence": 2},
+      "item_stats": {"weight": 1, "base_value": 150, "category": "armor"},
+      "magic": {"tier": "rare", "unidentified_name": "Silver Circlet", "identified": false}
     },
     {
       "id": "cursed_dagger",
@@ -270,6 +449,16 @@
       "weapon": {"damage": "1d4-1", "hit_bonus": -1, "attribute": "might"},
       "item_stats": {"weight": 1, "base_value": 5, "category": "weapons"},
       "magic": {"tier": "common", "unidentified_name": "Old Dagger", "identified": false},
+      "cursed": true
+    },
+    {
+      "id": "cursed_gauntlets_of_weakness",
+      "name": "Cursed Gauntlets of Weakness",
+      "renderable": {"glyph": "[", "fg": "#8060A0", "bg": "#000000", "order": 2},
+      "equippable": "armor",
+      "attribute_bonus": {"might": -2, "quickness": -1},
+      "item_stats": {"weight": 2, "base_value": 15, "category": "armor"},
+      "magic": {"tier": "common", "unidentified_name": "Tarnished Gauntlets", "identified": false},
       "cursed": true
     },
     {
@@ -294,6 +483,31 @@
       "blocks_tile": true
     },
     {
+      "id": "deep_limestone_column",
+      "name": "Deep Limestone Column",
+      "renderable": {"glyph": "^", "fg": "#909080", "bg": "#000000", "order": 1},
+      "blocks_tile": true
+    },
+    {
+      "id": "dwarf_rubble",
+      "name": "Dwarf Rubble",
+      "renderable": {"glyph": "*", "fg": "#8A8068", "bg": "#000000", "order": 1},
+      "blocks_tile": true
+    },
+    {
+      "id": "mushroom_patch",
+      "name": "Mushroom Patch",
+      "renderable": {"glyph": "\"", "fg": "#C8E878", "bg": "#000000", "order": 1},
+      "blocks_tile": false
+    },
+    {
+      "id": "confusion_spore",
+      "name": "Confusion Spore",
+      "renderable": {"glyph": "*", "fg": "#E8A0FF", "bg": "#000000", "order": 1},
+      "effects": {"confusion": 3},
+      "hidden": true
+    },
+    {
       "id": "chair",
       "name": "Chair",
       "renderable": {"glyph": "h", "fg": "#B08050", "bg": "#000000", "order": 1},
@@ -308,32 +522,53 @@
     }
   ],
   "monster_spawn_table": [
-    {"name": "goblin", "weight": 80, "min_depth": 1, "max_depth": 5},
-    {"name": "wolf", "weight": 45, "min_depth": 2, "max_depth": 4},
-    {"name": "wild_boar", "weight": 25, "min_depth": 2, "max_depth": 5},
-    {"name": "cave_bat", "weight": 45, "min_depth": 3, "max_depth": 5},
-    {"name": "kobold", "weight": 55, "min_depth": 3, "max_depth": 6},
-    {"name": "orc", "weight": 30, "min_depth": 2, "max_depth": 8},
-    {"name": "troll", "weight": 12, "min_depth": 3, "max_depth": 20, "add_map_depth_to_weight": 1},
-    {"name": "dark_elf_archer", "weight": 20, "min_depth": 8, "max_depth": 20}
+    {"name": "goblin", "weight": 70, "min_depth": 1, "max_depth": 3},
+    {"name": "wolf", "weight": 45, "min_depth": 2, "max_depth": 2},
+    {"name": "wild_boar", "weight": 25, "min_depth": 2, "max_depth": 3},
+    {"name": "cave_bat", "weight": 45, "min_depth": 3, "max_depth": 4},
+    {"name": "kobold", "weight": 55, "min_depth": 3, "max_depth": 4},
+    {"name": "deep_kobold", "weight": 45, "min_depth": 4, "max_depth": 5},
+    {"name": "stone_golem", "weight": 18, "min_depth": 4, "max_depth": 5},
+    {"name": "dwarf_sentry", "weight": 24, "min_depth": 5, "max_depth": 6},
+    {"name": "orc", "weight": 30, "min_depth": 3, "max_depth": 6},
+    {"name": "troll", "weight": 12, "min_depth": 4, "max_depth": 9, "add_map_depth_to_weight": 1},
+    {"name": "sporeling", "weight": 45, "min_depth": 7, "max_depth": 9},
+    {"name": "fungal_giant", "weight": 18, "min_depth": 8, "max_depth": 9},
+    {"name": "dark_elf_scout_a", "weight": 20, "min_depth": 9, "max_depth": 10},
+    {"name": "dark_elf_archer", "weight": 10, "min_depth": 10, "max_depth": 20},
+    {"name": "dark_elf_blade_b", "weight": 18, "min_depth": 10, "max_depth": 20},
+    {"name": "dark_elf_blade_c", "weight": 18, "min_depth": 10, "max_depth": 20},
+    {"name": "dark_elf_marksman_a", "weight": 18, "min_depth": 10, "max_depth": 20},
+    {"name": "dark_elf_marksman_c", "weight": 18, "min_depth": 10, "max_depth": 20}
   ],
   "item_spawn_table": [
     {"name": "healing_potion", "weight": 70, "min_depth": 1, "max_depth": 20},
     {"name": "food_ration", "weight": 45, "min_depth": 1, "max_depth": 20},
     {"name": "fireball_scroll", "weight": 20, "min_depth": 1, "max_depth": 20},
     {"name": "magic_mapping_scroll", "weight": 12, "min_depth": 1, "max_depth": 20},
-    {"name": "town_portal_scroll", "weight": 10, "min_depth": 3, "max_depth": 20},
+    {"name": "town_portal_scroll", "weight": 10, "min_depth": 3, "max_depth": 9},
     {"name": "identify_scroll", "weight": 14, "min_depth": 2, "max_depth": 20},
     {"name": "remove_curse_scroll", "weight": 8, "min_depth": 3, "max_depth": 20},
     {"name": "dagger", "weight": 20, "min_depth": 1, "max_depth": 20},
     {"name": "sword", "weight": 18, "min_depth": 2, "max_depth": 20},
     {"name": "shortbow", "weight": 12, "min_depth": 5, "max_depth": 20},
+    {"name": "hand_crossbow", "weight": 8, "min_depth": 9, "max_depth": 20},
+    {"name": "scimitar", "weight": 10, "min_depth": 6, "max_depth": 20},
+    {"name": "buckler", "weight": 10, "min_depth": 5, "max_depth": 20},
     {"name": "chain_mail", "weight": 12, "min_depth": 2, "max_depth": 20},
+    {"name": "gauntlets_of_might", "weight": 4, "min_depth": 5, "max_depth": 20},
+    {"name": "circlet_of_focus", "weight": 4, "min_depth": 6, "max_depth": 20},
+    {"name": "drow_chain_boots", "weight": 6, "min_depth": 10, "max_depth": 20},
     {"name": "cursed_dagger", "weight": 5, "min_depth": 3, "max_depth": 20},
+    {"name": "cursed_gauntlets_of_weakness", "weight": 3, "min_depth": 4, "max_depth": 20},
     {"name": "spark_spellbook", "weight": 6, "min_depth": 4, "max_depth": 20}
   ],
   "prop_spawn_table": [
     {"name": "chair", "weight": 10, "min_depth": 1, "max_depth": 1},
-    {"name": "limestone_column", "weight": 20, "min_depth": 3, "max_depth": 4}
+    {"name": "limestone_column", "weight": 20, "min_depth": 3, "max_depth": 3},
+    {"name": "deep_limestone_column", "weight": 20, "min_depth": 4, "max_depth": 4},
+    {"name": "dwarf_rubble", "weight": 16, "min_depth": 5, "max_depth": 6},
+    {"name": "mushroom_patch", "weight": 24, "min_depth": 7, "max_depth": 9},
+    {"name": "confusion_spore", "weight": 8, "min_depth": 8, "max_depth": 9}
   ]
 }

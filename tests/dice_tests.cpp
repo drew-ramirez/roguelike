@@ -11,15 +11,14 @@ void runDiceTests(TestRunner& runner)
 {
     {
         const auto dice = parseDice("1d6+2");
-        runner.expect(dice.count == 1 && dice.sides == 6 &&
-                          dice.modifier == 2,
+        runner.expect(dice.count == 1 && dice.sides == 6 && dice.modifier == 2,
                       "dice parser reads positive modifiers");
     }
     {
         const auto dice = parseDice("3D4 - 1");
-        runner.expect(dice.count == 3 && dice.sides == 4 &&
-                          dice.modifier == -1,
-                      "dice parser reads uppercase dice and negative modifiers");
+        runner.expect(
+            dice.count == 3 && dice.sides == 4 && dice.modifier == -1,
+            "dice parser reads uppercase dice and negative modifiers");
     }
     {
         const auto dice = parseDice("d8");

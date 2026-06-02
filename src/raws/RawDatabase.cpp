@@ -17,6 +17,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include "core/Dice.hpp"
+
 namespace rl {
 namespace {
 
@@ -539,6 +541,7 @@ RawDatabase::itemIdsForCategory(std::string_view category) const
     std::sort(ids.begin(), ids.end());
     return ids;
 }
+
 const std::vector<SpawnEntry>& RawDatabase::monsterSpawnTable() const
 {
     return monsterSpawnTable_;
@@ -599,6 +602,33 @@ std::vector<std::string> RawDatabase::validate() const
             errors.push_back(name + " references unknown faction: " +
                              entityTemplate.faction);
         }
+        if (entityTemplate.spellbook.has_value() &&
+            spell(*entityTemplate.spellbook) == nullptr) {
+            errors.push_back(
+                name + " teaches unknown spell: " + *entityTemplate.spellbook);
+        }
+        if (entityTemplate.weapon.has_value() &&
+            !tryParseDice(entityTemplate.weapon->damage).has_value()) {
+            errors.push_back(name + " has invalid weapon dice: " +
+                             entityTemplate.weapon->damage);
+        }
+        if (entityTemplate.rangedWeapon.has_value()) {
+            if (entityTemplate.rangedWeapon->range <= 0) {
+                errors.push_back(name + " has non-positive ranged range");
+            }
+            if (!tryParseDice(entityTemplate.rangedWeapon->damage)
+                     .has_value()) {
+                errors.push_back(name + " has invalid ranged dice: " +
+                                 entityTemplate.rangedWeapon->damage);
+            }
+        }
+        if (entityTemplate.breathDamage.has_value() ||
+            entityTemplate.breathRange.has_value()) {
+            if (entityTemplate.breathDamage.value_or(0) <= 0 ||
+                entityTemplate.breathRange.value_or(0) <= 0) {
+                errors.push_back(name + " has invalid breath weapon fields");
+            }
+        }
     }
 
     for (const auto& [id, factionTemplate] : factions_) {
@@ -607,6 +637,15 @@ std::vector<std::string> RawDatabase::validate() const
                 errors.push_back(id +
                                  " is hostile to unknown faction: " + target);
             }
+        }
+    }
+    for (const auto& [id, spellTemplate] : spells_) {
+        if (spellTemplate.range.has_value() && *spellTemplate.range <= 0) {
+            errors.push_back(id + " spell has non-positive range");
+        }
+        if (spellTemplate.effects.inflictsDamage.has_value() &&
+            *spellTemplate.effects.inflictsDamage <= 0) {
+            errors.push_back(id + " spell has non-positive damage");
         }
     }
 

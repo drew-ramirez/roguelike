@@ -20,8 +20,7 @@ struct DiceExpression {
     int modifier = 0;
 };
 
-[[nodiscard]] std::optional<DiceExpression>
-tryParseDice(std::string_view text);
+[[nodiscard]] std::optional<DiceExpression> tryParseDice(std::string_view text);
 
 [[nodiscard]] DiceExpression parseDice(std::string_view text);
 

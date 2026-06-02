@@ -7,8 +7,8 @@
 
 #include "core/Dice.hpp"
 
-#include <charconv>
 #include <cctype>
+#include <charconv>
 #include <stdexcept>
 
 #include "core/Rng.hpp"
@@ -80,8 +80,8 @@ std::optional<DiceExpression> tryParseDice(std::string_view text)
     }
 
     const auto countText = trim(text.substr(0, separator));
-    const auto count = countText.empty() ? std::optional<int>{1}
-                                         : parseInt(countText);
+    const auto count =
+        countText.empty() ? std::optional<int>{1} : parseInt(countText);
     if (!count.has_value() || *count <= 0) {
         return std::nullopt;
     }
