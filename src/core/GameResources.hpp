@@ -26,6 +26,13 @@ struct PendingTargeting {
     Point cursor;
 };
 
+enum class VendorMode { Buy, Sell };
+
+struct PendingVendor {
+    entt::entity vendor = entt::null;
+    VendorMode mode = VendorMode::Buy;
+};
+
 enum class ItemSelectionMode { Identify, RemoveCurse };
 
 struct PendingItemSelection {
@@ -55,9 +62,11 @@ struct GameResources {
     std::string mapBuilderId = "normal";
     MasterDungeonMap dungeon;
     int inventorySelection = 0;
+    int vendorSelection = 0;
     int spellSelection = 0;
     int itemSelection = 0;
     std::optional<PendingTargeting> pendingTargeting;
+    std::optional<PendingVendor> pendingVendor;
     std::optional<PendingItemSelection> pendingItemSelection;
     GameProgress progress;
     bool townPortalActive = false;

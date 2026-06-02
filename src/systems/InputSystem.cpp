@@ -202,8 +202,13 @@ PlayerInputResult handleMapInput(entt::registry& registry,
                 tileContentAt(registry, target, resources.player);
             if (targetContent.blocker.has_value()) {
                 const auto blocker = *targetContent.blocker;
-                if (registry.all_of<Neutral>(blocker) ||
-                    registry.all_of<Vendor>(blocker)) {
+                if (registry.all_of<Vendor>(blocker)) {
+                    resources.pendingVendor =
+                        PendingVendor{blocker, VendorMode::Buy};
+                    resources.vendorSelection = 0;
+                    return PlayerInputResult::OpenVendor;
+                }
+                if (registry.all_of<Neutral>(blocker)) {
                     const auto name = registry.all_of<Name>(blocker)
                                           ? registry.get<Name>(blocker).value
                                           : std::string{"Someone"};

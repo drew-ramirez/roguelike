@@ -87,6 +87,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/ui/MainMenu.cpp
     src/ui/SpellMenu.cpp
     src/ui/Targeting.cpp
+    src/ui/VendorMenu.cpp
     src/ui/Widgets.cpp
 )
 
@@ -221,6 +222,7 @@ set(ROGUELIKE_HEADERS
     src/ui/MenuResult.hpp
     src/ui/SpellMenu.hpp
     src/ui/Targeting.hpp
+    src/ui/VendorMenu.hpp
     src/ui/Widgets.hpp
 )
 

@@ -82,22 +82,20 @@ void runInputTests(TestRunner& runner)
         neutralRegistry.emplace<Neutral>(vendor);
         neutralRegistry.emplace<Vendor>(vendor, Vendor{"weapons", 250});
 
-        runner.expect(handleMapInput(neutralRegistry,
-                                     neutralResources,
-                                     neutralMap,
-                                     moveRight) == PlayerInputResult::TookTurn,
-                      "bumping a vendor consumes a turn");
-        runner.expect(!neutralRegistry.all_of<WantsToMelee>(
-                          neutralResources.player),
-                      "bumping a vendor does not queue melee");
-        runner.expect(neutralRegistry.get<Position>(neutralResources.player).x ==
-                          2,
-                      "bumping a vendor does not move the player");
-        const auto recent = neutralResources.log.recent(1);
-        runner.expect(!recent.empty() &&
-                          recent.front().find("Blacksmith") !=
-                              std::string_view::npos,
-                      "bumping a vendor logs a neutral response");
+        runner.expect(
+            handleMapInput(
+                neutralRegistry, neutralResources, neutralMap, moveRight) ==
+                PlayerInputResult::OpenVendor,
+            "bumping a vendor opens the vendor menu");
+        runner.expect(
+            !neutralRegistry.all_of<WantsToMelee>(neutralResources.player),
+            "bumping a vendor does not queue melee");
+        runner.expect(
+            neutralRegistry.get<Position>(neutralResources.player).x == 2,
+            "bumping a vendor does not move the player");
+        runner.expect(neutralResources.pendingVendor.has_value() &&
+                          neutralResources.pendingVendor->vendor == vendor,
+                      "bumping a vendor records the active vendor");
     }
 
     {
@@ -112,11 +110,10 @@ void runInputTests(TestRunner& runner)
         propRegistry.emplace<BlocksTile>(prop);
         propRegistry.emplace<Prop>(prop);
 
-        runner.expect(handleMapInput(propRegistry,
-                                     propResources,
-                                     propMap,
-                                     moveRight) == PlayerInputResult::None,
-                      "bumping a prop does not consume a turn");
+        runner.expect(
+            handleMapInput(propRegistry, propResources, propMap, moveRight) ==
+                PlayerInputResult::None,
+            "bumping a prop does not consume a turn");
         runner.expect(!propRegistry.all_of<WantsToMelee>(propResources.player),
                       "bumping a prop does not queue melee");
     }

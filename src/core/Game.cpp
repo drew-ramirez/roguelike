@@ -47,6 +47,7 @@
 #include "ui/MainMenu.hpp"
 #include "ui/SpellMenu.hpp"
 #include "ui/Targeting.hpp"
+#include "ui/VendorMenu.hpp"
 
 namespace rl {
 namespace {
@@ -267,6 +268,8 @@ void Game::tick(const std::vector<InputEvent>& events)
             resolvePlayerTurn();
         } else if (input == PlayerInputResult::OpenInventory) {
             state_ = RunState::ShowInventory;
+        } else if (input == PlayerInputResult::OpenVendor) {
+            state_ = RunState::ShowVendor;
         } else if (input == PlayerInputResult::OpenSpellMenu) {
             state_ = RunState::ShowSpellMenu;
         } else if (input == PlayerInputResult::UsePortal) {
@@ -310,6 +313,13 @@ void Game::tick(const std::vector<InputEvent>& events)
             state_ = RunState::AwaitingInput;
         } else if (input == ItemSelectionInputResult::TookTurn) {
             resolvePlayerTurn();
+        }
+    } else if (state_ == RunState::ShowVendor) {
+        const auto input = handleVendorInput(registry_, resources_, events);
+        if (input == VendorInputResult::Close) {
+            state_ = RunState::AwaitingInput;
+        } else if (input == VendorInputResult::TookTurn) {
+            resolvePlayerTurn(false);
         }
     } else if (state_ == RunState::ShowSpellMenu) {
         const auto input =
@@ -399,6 +409,8 @@ void Game::render()
         drawInventoryMenu(console_, registry_, resources_);
     } else if (state_ == RunState::ShowItemSelection) {
         drawItemSelectionMenu(console_, registry_, resources_);
+    } else if (state_ == RunState::ShowVendor) {
+        drawVendorMenu(console_, registry_, resources_);
     } else if (state_ == RunState::ShowSpellMenu) {
         drawSpellMenu(console_, registry_, resources_);
     }

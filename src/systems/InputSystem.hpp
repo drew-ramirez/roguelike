@@ -24,6 +24,7 @@ enum class PlayerInputResult {
     None,
     TookTurn,
     OpenInventory,
+    OpenVendor,
     OpenSpellMenu,
     StartedTargeting,
     UsePortal,
