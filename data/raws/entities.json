@@ -139,7 +139,7 @@
       "blocks_tile": true,
       "neutral": true,
       "faction": "town",
-      "vendor": {"category": "potions", "gold": 250},
+      "vendor": {"category": "alchemy", "gold": 250},
       "combat": {"max_hp": 10, "hp": 10, "defense": 0, "power": 2},
       "pools": {"hit_points": 10, "max_hit_points": 10, "level": 2, "mana": 8, "max_mana": 8, "gold": 250}
     },

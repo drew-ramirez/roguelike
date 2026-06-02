@@ -14,6 +14,7 @@
 namespace rl {
 
 struct GameResources;
+class RawDatabase;
 
 [[nodiscard]] bool vendorTradesItem(const entt::registry& registry,
                                     entt::entity vendor,
@@ -27,6 +28,12 @@ struct GameResources;
 
 [[nodiscard]] std::vector<entt::entity>
 vendorStock(const entt::registry& registry, entt::entity vendor);
+
+void populateVendorStock(entt::registry& registry,
+                         const RawDatabase& raws,
+                         entt::entity vendor);
+
+void populateAllVendorStock(entt::registry& registry, const RawDatabase& raws);
 
 [[nodiscard]] bool buyItemFromVendor(entt::registry& registry,
                                      GameResources& resources,

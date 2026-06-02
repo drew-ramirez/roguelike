@@ -8,6 +8,7 @@
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
+#include "raws/RawDatabase.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/VendorSystem.hpp"
@@ -147,6 +148,21 @@ void runVendorTests(TestRunner& runner)
             "sale fails when vendor lacks gold");
         runner.expect(isOwnedBy(registry, dagger, resources.player),
                       "failed sale keeps player item");
+    }
+
+    {
+        entt::registry registry;
+        const auto vendor = makeVendor(registry, "alchemy", 250);
+        populateVendorStock(registry, defaultRawDatabase(), vendor);
+        const auto stock = vendorStock(registry, vendor);
+        runner.expect(std::any_of(stock.begin(),
+                                  stock.end(),
+                                  [&](entt::entity item) {
+                                      return registry.all_of<Name>(item) &&
+                                             registry.get<Name>(item).value ==
+                                                 "Food Ration";
+                                  }),
+                      "alchemy vendors stock food rations");
     }
 }
 

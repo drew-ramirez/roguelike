@@ -19,6 +19,7 @@
 
 #include "ecs/Components.hpp"
 #include "map/MapBuilderRegistry.hpp"
+#include "raws/RawDatabase.hpp"
 #include "render/SdlRenderer.hpp"
 #include "save/SaveGame.hpp"
 #include "spawn/ItemSpawner.hpp"
@@ -40,6 +41,7 @@
 #include "systems/RenderSystem.hpp"
 #include "systems/SpellSystem.hpp"
 #include "systems/TrapSystem.hpp"
+#include "systems/VendorSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
 #include "ui/Hud.hpp"
 #include "ui/InventoryMenu.hpp"
@@ -157,6 +159,7 @@ void Game::commitGeneratedMap(MapBuildResult build)
                                map_,
                                build.playerStart,
                                build.stairsPosition);
+    populateAllVendorStock(registry_, defaultRawDatabase());
     const bool townStart =
         resources_.mapBuilderId == "normal" && resources_.depth == 1;
     resources_.log.add(townStart ? "Entered the town."

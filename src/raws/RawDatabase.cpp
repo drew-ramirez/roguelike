@@ -516,6 +516,29 @@ const RawFaction* RawDatabase::faction(std::string_view id) const noexcept
     return found == factions_.end() ? nullptr : &found->second;
 }
 
+std::vector<std::string>
+RawDatabase::itemIdsForCategory(std::string_view category) const
+{
+    std::vector<std::string> ids;
+    for (const auto& [id, entityTemplate] : entities_) {
+        if (entityTemplate.kind != RawEntityKind::Item ||
+            !entityTemplate.itemStats.has_value()) {
+            continue;
+        }
+
+        const auto& itemCategory = entityTemplate.itemStats->category;
+        const bool alchemyMatch =
+            category == "alchemy" &&
+            (itemCategory == "potions" || itemCategory == "scrolls" ||
+             itemCategory == "food" || itemCategory == "books");
+        if (category.empty() || category == "all" || itemCategory == category ||
+            alchemyMatch) {
+            ids.push_back(id);
+        }
+    }
+    std::sort(ids.begin(), ids.end());
+    return ids;
+}
 const std::vector<SpawnEntry>& RawDatabase::monsterSpawnTable() const
 {
     return monsterSpawnTable_;
@@ -553,6 +576,14 @@ std::vector<std::string> RawDatabase::validate() const
     validateSpawnTable(propSpawnTable_, "prop spawn table");
 
     for (const auto& [name, entityTemplate] : entities_) {
+        if (entityTemplate.vendor.has_value()) {
+            const auto stock =
+                itemIdsForCategory(entityTemplate.vendor->category);
+            if (stock.empty()) {
+                errors.push_back(name + " vendor category has no stock: " +
+                                 entityTemplate.vendor->category);
+            }
+        }
         for (const auto& item : entityTemplate.equipped) {
             if (entity(item) == nullptr) {
                 errors.push_back(name + " equips unknown item: " + item);

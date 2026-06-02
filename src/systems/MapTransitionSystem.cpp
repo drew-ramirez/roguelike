@@ -11,10 +11,12 @@
 #include "map/MapBuilderRegistry.hpp"
 #include "map/MasterDungeonMap.hpp"
 #include "map/TileType.hpp"
+#include "raws/RawDatabase.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "spawn/TrapSpawner.hpp"
+#include "systems/VendorSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
 
 namespace rl {
@@ -74,6 +76,7 @@ void spawnGeneratedLevelEntities(entt::registry& registry,
                                map,
                                build.playerStart,
                                build.stairsPosition);
+    populateAllVendorStock(registry, defaultRawDatabase());
     if (resources.mapBuilderId == "normal" && resources.depth == 1) {
         return;
     }

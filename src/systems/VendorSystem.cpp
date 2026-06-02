@@ -9,9 +9,12 @@
 
 #include <algorithm>
 #include <string>
+#include <string_view>
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
+#include "raws/RawDatabase.hpp"
+#include "spawn/RawSpawner.hpp"
 
 namespace rl {
 namespace {
@@ -58,6 +61,18 @@ std::string entityName(const entt::registry& registry, entt::entity entity)
     return 0;
 }
 
+[[nodiscard]] bool categoryMatches(std::string_view vendorCategory,
+                                   std::string_view itemCategory)
+{
+    if (vendorCategory.empty() || vendorCategory == "all" ||
+        vendorCategory == itemCategory) {
+        return true;
+    }
+    return vendorCategory == "alchemy" &&
+           (itemCategory == "potions" || itemCategory == "scrolls" ||
+            itemCategory == "food" || itemCategory == "books");
+}
+
 void setGold(entt::registry& registry, entt::entity entity, int amount)
 {
     if (registry.valid(entity) && registry.all_of<Pools>(entity)) {
@@ -90,6 +105,16 @@ void moveItemToOwner(entt::registry& registry,
     registry.emplace_or_replace<InBackpack>(item, InBackpack{owner});
 }
 
+void putInBackpack(entt::registry& registry,
+                   entt::entity item,
+                   entt::entity owner)
+{
+    if (registry.all_of<Position>(item)) {
+        registry.remove<Position>(item);
+    }
+    registry.emplace_or_replace<InBackpack>(item, InBackpack{owner});
+}
+
 } // namespace
 
 bool vendorTradesItem(const entt::registry& registry,
@@ -103,8 +128,7 @@ bool vendorTradesItem(const entt::registry& registry,
 
     const auto& vendorData = registry.get<Vendor>(vendor);
     const auto& stats = registry.get<ItemStats>(item);
-    return vendorData.category.empty() || vendorData.category == "all" ||
-           vendorData.category == stats.category;
+    return categoryMatches(vendorData.category, stats.category);
 }
 
 int itemBuyPrice(const entt::registry& registry, entt::entity item)
@@ -140,6 +164,40 @@ std::vector<entt::entity> vendorStock(const entt::registry& registry,
             return entt::to_integral(left) < entt::to_integral(right);
         });
     return stock;
+}
+
+void populateVendorStock(entt::registry& registry,
+                         const RawDatabase& raws,
+                         entt::entity vendor)
+{
+    if (!registry.valid(vendor) || !registry.all_of<Vendor>(vendor) ||
+        !vendorStock(registry, vendor).empty()) {
+        return;
+    }
+
+    const auto& vendorData = registry.get<Vendor>(vendor);
+    const auto ids = raws.itemIdsForCategory(vendorData.category);
+    constexpr std::size_t maximumStock = 6;
+    std::size_t stocked = 0;
+    for (const auto& id : ids) {
+        if (stocked >= maximumStock) {
+            break;
+        }
+        const auto item = spawnRawEntity(registry, raws, id, Point{0, 0});
+        if (!item.has_value() || !vendorTradesItem(registry, vendor, *item)) {
+            continue;
+        }
+        putInBackpack(registry, *item, vendor);
+        ++stocked;
+    }
+}
+
+void populateAllVendorStock(entt::registry& registry, const RawDatabase& raws)
+{
+    const auto view = registry.view<const Vendor>();
+    for (const auto vendor : view) {
+        populateVendorStock(registry, raws, vendor);
+    }
 }
 
 bool buyItemFromVendor(entt::registry& registry,

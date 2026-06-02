@@ -29,6 +29,8 @@ class RawDatabase {
     entity(std::string_view name) const noexcept;
     [[nodiscard]] const RawSpell* spell(std::string_view id) const noexcept;
     [[nodiscard]] const RawFaction* faction(std::string_view id) const noexcept;
+    [[nodiscard]] std::vector<std::string>
+    itemIdsForCategory(std::string_view category) const;
 
     [[nodiscard]] const std::vector<SpawnEntry>& monsterSpawnTable() const;
     [[nodiscard]] const std::vector<SpawnEntry>& itemSpawnTable() const;
