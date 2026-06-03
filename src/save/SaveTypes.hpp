@@ -33,7 +33,5 @@ void putBool(Json& json, const char* key, bool value);
 [[nodiscard]] LogCategory logCategoryFromString(const std::string& value);
 [[nodiscard]] Json logEntryToJson(const LogEntry& entry);
 [[nodiscard]] LogEntry logEntryFromJson(const Json& json);
-[[nodiscard]] EntityId entityId(const entt::registry& registry,
-                                entt::entity entity);
 
 } // namespace rl::save

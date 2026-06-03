@@ -9,6 +9,16 @@
 
 namespace rl::save {
 
+[[nodiscard]] EntityId entityId(const entt::registry& registry,
+                                entt::entity entity)
+{
+    if (entity == entt::null || !registry.valid(entity) ||
+        !registry.all_of<SaveEntityId>(entity)) {
+        return 0;
+    }
+    return registry.get<SaveEntityId>(entity).value;
+}
+
 void ensureSaveIds(entt::registry& registry)
 {
     EntityId next = 1;
