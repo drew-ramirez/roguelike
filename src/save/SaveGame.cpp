@@ -1,11 +1,7 @@
 #include "save/SaveGame.hpp"
 
-#include <algorithm>
-#include <cstdint>
 #include <fstream>
 #include <iterator>
-#include <limits>
-#include <map>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -13,13 +9,9 @@
 #include <utility>
 #include <vector>
 
-#include <nlohmann/json.hpp>
-
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
-#include "map/MasterDungeonMap.hpp"
-#include "map/TileType.hpp"
 #include "save/SaveArchive.hpp"
 #include "save/SaveDungeon.hpp"
 #include "save/SaveEntities.hpp"
@@ -28,30 +20,6 @@
 #include "save/SaveTypes.hpp"
 
 namespace rl {
-namespace {
-
-using save::archiveToJson;
-using save::colorFromJson;
-using save::colorToJson;
-using save::currentSaveVersion;
-using save::dungeonFromJson;
-using save::dungeonToJson;
-using save::ensureSaveIds;
-using save::EntityId;
-using save::entityId;
-using save::entityToJson;
-using save::hungerStateToString;
-using save::isSupportedArchiveVersion;
-using save::Json;
-using save::loadEntityImmediateComponents;
-using save::loadEntityReferences;
-using save::loadResources;
-using save::mapFromJson;
-using save::mapToJson;
-using save::pointToJson;
-using save::resourcesToJson;
-using save::slotToString;
-} // namespace
 
 std::filesystem::path defaultSavePath()
 {
@@ -62,15 +30,16 @@ std::string serializeGame(entt::registry& registry,
                           const GameResources& resources,
                           const Map& map)
 {
-    ensureSaveIds(registry);
+    save::ensureSaveIds(registry);
 
-    Json entities = Json::array();
+    save::Json entities = save::Json::array();
     const auto named = registry.view<const Name>();
     for (const auto entity : named) {
-        entities.push_back(entityToJson(registry, entity));
+        entities.push_back(save::entityToJson(registry, entity));
     }
 
-    return archiveToJson(registry, resources, map, std::move(entities)).dump(2);
+    return save::archiveToJson(registry, resources, map, std::move(entities))
+        .dump(2);
 }
 
 bool deserializeGame(std::string_view text,
@@ -79,37 +48,38 @@ bool deserializeGame(std::string_view text,
                      Map& map)
 {
     try {
-        const Json root = Json::parse(text);
-        if (!isSupportedArchiveVersion(root)) {
+        const save::Json root = save::Json::parse(text);
+        if (!save::isSupportedArchiveVersion(root)) {
             return false;
         }
 
-        Map loadedMap = mapFromJson(root.at("map"));
+        Map loadedMap = save::mapFromJson(root.at("map"));
         entt::registry loadedRegistry;
-        std::unordered_map<EntityId, entt::entity> entityMap;
-        std::vector<std::pair<entt::entity, Json>> pendingReferences;
+        std::unordered_map<save::EntityId, entt::entity> entityMap;
+        std::vector<std::pair<entt::entity, save::Json>> pendingReferences;
 
         for (const auto& saved : root.at("entities")) {
-            const auto id = saved.at("id").get<EntityId>();
+            const auto id = saved.at("id").get<save::EntityId>();
             if (id == 0 || entityMap.contains(id)) {
                 return false;
             }
             const auto entity = loadedRegistry.create();
             const auto& components = saved.at("components");
-            loadEntityImmediateComponents(
+            save::loadEntityImmediateComponents(
                 loadedRegistry, entity, id, components);
             pendingReferences.emplace_back(entity, components);
             entityMap.emplace(id, entity);
         }
 
         for (const auto& [entity, components] : pendingReferences) {
-            loadEntityReferences(loadedRegistry, entity, components, entityMap);
+            save::loadEntityReferences(
+                loadedRegistry, entity, components, entityMap);
         }
 
         GameResources loadedResources;
-        loadResources(root.at("resources"), entityMap, loadedResources);
+        save::loadResources(root.at("resources"), entityMap, loadedResources);
         loadedResources.dungeon.replaceLevels(
-            dungeonFromJson(root.value("dungeon", Json::array())));
+            save::dungeonFromJson(root.value("dungeon", save::Json::array())));
 
         map = std::move(loadedMap);
         registry = std::move(loadedRegistry);
