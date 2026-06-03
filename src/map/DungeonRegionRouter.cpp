@@ -24,28 +24,28 @@ DungeonRoute routeForDepth(int depth)
         return DungeonRoute{
             depth, DungeonRegion::Woods, "woods", "woods", true};
     }
-    if (depth <= 4) {
+    if (depth == 3) {
         return DungeonRoute{depth,
                             DungeonRegion::LimestoneCaverns,
                             "limestone",
                             "limestone-caverns",
                             true};
     }
-    if (depth <= 6) {
+    if (depth == 4) {
         return DungeonRoute{depth,
                             DungeonRegion::DeepCaverns,
                             "deep_caverns",
-                            "cavern-vaults",
+                            "deep-caverns",
                             true};
     }
-    if (depth == 7) {
+    if (depth == 5) {
         return DungeonRoute{depth,
                             DungeonRegion::DwarfFortTransition,
                             "dwarf_transition",
-                            "ruined-rooms",
+                            "dwarf-transition",
                             true};
     }
-    if (depth == 8) {
+    if (depth == 6) {
         return DungeonRoute{depth,
                             DungeonRegion::DragonLair,
                             "dragon_lair",

@@ -20,6 +20,10 @@ struct Section4Builders {
     buildWoods(int width, int height, Rng& rng, MapBuildOptions options = {});
     [[nodiscard]] static MapBuildResult buildLimestoneCaverns(
         int width, int height, Rng& rng, MapBuildOptions options = {});
+    [[nodiscard]] static MapBuildResult buildDeepCaverns(
+        int width, int height, Rng& rng, MapBuildOptions options = {});
+    [[nodiscard]] static MapBuildResult buildDwarfTransition(
+        int width, int height, Rng& rng, MapBuildOptions options = {});
     [[nodiscard]] static MapBuildResult buildDragonLair(
         int width, int height, Rng& rng, MapBuildOptions options = {});
     [[nodiscard]] static MapBuildResult buildMushroomForest(

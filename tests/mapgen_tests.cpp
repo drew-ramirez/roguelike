@@ -459,21 +459,68 @@ void runMapgenTests(TestRunner& runner)
         const auto validation = validateMapBuild(
             result.map, result.playerStart, result.stairsPosition);
         const auto hasSpawn = [&](std::string_view id) {
-            return std::any_of(result.spawnRequests.begin(),
-                               result.spawnRequests.end(),
-                               [id](const auto& request) {
-                                   return request.id == id;
-                               });
+            return std::any_of(
+                result.spawnRequests.begin(),
+                result.spawnRequests.end(),
+                [id](const auto& request) { return request.id == id; });
         };
 
         runner.expect(result.builderName == "town",
                       "town builder reports its id");
         runner.expect(validation.valid,
                       "town builder output validates through pipeline");
-        runner.expect(hasSpawn("blacksmith") && hasSpawn("alchemist") &&
-                          hasSpawn("townsfolk") && hasSpawn("chair"),
-                      "town builder requests vendor, bystander, and prop spawns");
+        runner.expect(
+            hasSpawn("blacksmith") && hasSpawn("alchemist") &&
+                hasSpawn("townsfolk") && hasSpawn("chair"),
+            "town builder requests vendor, bystander, and prop spawns");
     }
+
+    {
+        struct RegionContent {
+            std::string id;
+            std::string buildStep;
+            std::string firstSpawn;
+            std::string secondSpawn;
+        };
+        const std::vector<RegionContent> regions{
+            {"deep-caverns",
+             "theme: deep caverns",
+             "deep_kobold",
+             "stone_golem"},
+            {"dwarf-transition",
+             "theme: cavern to dwarf fort transition",
+             "dwarf_sentry",
+             "dwarf_rubble"},
+            {"dragon-lair",
+             "content: dragon and dwarf fortress treasure",
+             "dragon",
+             "gauntlets_of_might"},
+        };
+
+        for (std::size_t index = 0; index < regions.size(); ++index) {
+            Rng rng{static_cast<Rng::Seed>(700U + index)};
+            const auto result = buildMapById(
+                regions[index].id, 40, 25, rng, MapBuildOptions{true});
+            const auto validation = validateMapBuild(
+                result.map, result.playerStart, result.stairsPosition);
+            const auto hasRegionSpawn = [&](std::string_view id) {
+                return std::any_of(
+                    result.spawnRequests.begin(),
+                    result.spawnRequests.end(),
+                    [id](const auto& request) { return request.id == id; });
+            };
+            runner.expect(validation.valid,
+                          regions[index].id + " region validates");
+            runner.expect(
+                hasBuildStepContaining(result, regions[index].buildStep),
+                regions[index].id + " records authored theme");
+            runner.expect(hasRegionSpawn(regions[index].firstSpawn) &&
+                              hasRegionSpawn(regions[index].secondSpawn),
+                          regions[index].id +
+                              " requests authored region content");
+        }
+    }
+
     {
         Rng rng{222U};
         const auto result =
@@ -594,10 +641,9 @@ void runMapgenTests(TestRunner& runner)
             "drunkard-open-area", 40, 25, openAreaRng, MapBuildOptions{true});
         runner.expect(openArea.builderName == "drunkard-open-area",
                       "drunkard open-area variant reports its id");
-        runner.expect(
-            hasBuildStepContaining(openArea, "starting-point") &&
-                hasBuildStepContaining(openArea, "lifetime 400"),
-            "drunkard open-area uses starting-point settings");
+        runner.expect(hasBuildStepContaining(openArea, "starting-point") &&
+                          hasBuildStepContaining(openArea, "lifetime 400"),
+                      "drunkard open-area uses starting-point settings");
 
         Rng fatPassagesRng{82U};
         const auto fatPassages = buildMapById("drunkard-fat-passages",
@@ -735,6 +781,9 @@ void runMapgenTests(TestRunner& runner)
                           isKnownMapBuilder("voronoi-chebyshev") &&
                           isKnownMapBuilder("wfc") &&
                           isKnownMapBuilder("limestone-caverns") &&
+                          isKnownMapBuilder("deep-caverns") &&
+                          isKnownMapBuilder("dwarf-transition") &&
+                          isKnownMapBuilder("dragon-lair") &&
                           isKnownMapBuilder("cavern-vaults") &&
                           isKnownMapBuilder("ruined-rooms"),
                       "mapgen viewer exposes all implemented builders");
@@ -760,6 +809,9 @@ void runMapgenTests(TestRunner& runner)
                                            "voronoi",
                                            "wfc",
                                            "limestone-caverns",
+                                           "deep-caverns",
+                                           "dwarf-transition",
+                                           "dragon-lair",
                                            "cavern-vaults",
                                            "ruined-rooms"};
         const std::array<Rng::Seed, 2> seeds{1U, 4242U};

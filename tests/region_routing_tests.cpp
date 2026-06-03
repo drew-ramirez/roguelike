@@ -15,21 +15,19 @@ namespace {
 [[nodiscard]] bool hasBuildStep(const MapBuildResult& result,
                                 std::string_view step)
 {
-    return std::any_of(result.buildSteps.begin(),
-                       result.buildSteps.end(),
-                       [step](const std::string& candidate) {
-                           return candidate == step;
-                       });
+    return std::any_of(
+        result.buildSteps.begin(),
+        result.buildSteps.end(),
+        [step](const std::string& candidate) { return candidate == step; });
 }
 
 [[nodiscard]] bool hasSpawnRequest(const MapBuildResult& result,
                                    std::string_view id)
 {
-    return std::any_of(result.spawnRequests.begin(),
-                       result.spawnRequests.end(),
-                       [id](const SpawnRequest& request) {
-                           return request.id == id;
-                       });
+    return std::any_of(
+        result.spawnRequests.begin(),
+        result.spawnRequests.end(),
+        [id](const SpawnRequest& request) { return request.id == id; });
 }
 
 } // namespace
@@ -42,10 +40,16 @@ void runRegionRoutingTests(TestRunner& runner)
                   "depth 2 routes to woods");
     runner.expect(routeForDepth(3).region == DungeonRegion::LimestoneCaverns,
                   "depth 3 routes to limestone caverns");
-    runner.expect(routeForDepth(4).builderId == "limestone-caverns",
-                  "depth 4 still routes to limestone caverns");
-    runner.expect(routeForDepth(8).region == DungeonRegion::DragonLair,
-                  "depth 8 routes to dragon lair");
+    runner.expect(routeForDepth(4).region == DungeonRegion::DeepCaverns &&
+                      routeForDepth(4).builderId == "deep-caverns",
+                  "depth 4 routes to deep caverns");
+    runner.expect(routeForDepth(5).region ==
+                          DungeonRegion::DwarfFortTransition &&
+                      routeForDepth(5).builderId == "dwarf-transition",
+                  "depth 5 routes to dwarf transition");
+    runner.expect(routeForDepth(6).region == DungeonRegion::DragonLair &&
+                      routeForDepth(6).builderId == "dragon-lair",
+                  "depth 6 routes to dragon fort");
     runner.expect(routeForDepth(11).region == DungeonRegion::DarkElfCity,
                   "deep routes reach dark elf city");
 
@@ -62,8 +66,7 @@ void runRegionRoutingTests(TestRunner& runner)
     Rng woodsRng{100U};
     const auto woods = buildLevelForDepth(2, 40, 25, woodsRng, {});
     runner.expect(woods.builderName == "woods", "depth 2 builds woods");
-    runner.expect(!woods.spawnRegions.empty(),
-                  "woods provides spawn regions");
+    runner.expect(!woods.spawnRegions.empty(), "woods provides spawn regions");
     runner.expect(hasSpawnRequest(woods, "wolf") &&
                       hasSpawnRequest(woods, "wild_boar") &&
                       hasSpawnRequest(woods, "food_ration") &&
@@ -94,16 +97,36 @@ void runRegionRoutingTests(TestRunner& runner)
         "limestone caverns connect backtracking exits");
 
     Rng deepRng{102U};
-    const auto deep = buildLevelForDepth(5, 40, 25, deepRng, {});
-    runner.expect(deep.builderName == "cavern-vaults",
-                  "deep depths use cavern vaults");
+    const auto deep = buildLevelForDepth(4, 40, 25, deepRng, {});
+    runner.expect(deep.builderName == "deep-caverns",
+                  "depth 4 builds deep caverns");
+    runner.expect(hasBuildStep(deep, "region:deep_caverns") &&
+                      hasBuildStep(deep, "theme: deep caverns"),
+                  "deep caverns record route and theme");
+    runner.expect(hasSpawnRequest(deep, "deep_kobold") &&
+                      hasSpawnRequest(deep, "stone_golem") &&
+                      hasSpawnRequest(deep, "deep_limestone_column") &&
+                      hasSpawnRequest(deep, "town_portal_scroll") &&
+                      hasSpawnRequest(deep, "food_ration"),
+                  "deep caverns request themed encounters and supplies");
 
-    Rng dragonRng{103U};
-    const auto dragon = buildLevelForDepth(8, 40, 25, dragonRng, {});
+    Rng dwarfRng{103U};
+    const auto dwarf = buildLevelForDepth(5, 40, 25, dwarfRng, {});
+    runner.expect(dwarf.builderName == "dwarf-transition",
+                  "depth 5 builds the dwarf transition");
+    runner.expect(hasSpawnRequest(dwarf, "dwarf_sentry") &&
+                      hasSpawnRequest(dwarf, "dwarf_rubble") &&
+                      hasSpawnRequest(dwarf, "food_ration"),
+                  "dwarf transition requests fortress content");
+
+    Rng dragonRng{104U};
+    const auto dragon = buildLevelForDepth(6, 40, 25, dragonRng, {});
     runner.expect(dragon.builderName == "dragon-lair",
-                  "depth 8 builds the dragon lair");
-    runner.expect(hasSpawnRequest(dragon, "dragon"),
-                  "dragon lair requests its boss spawn");
+                  "depth 6 builds the dragon fort");
+    runner.expect(hasSpawnRequest(dragon, "dragon") &&
+                      hasSpawnRequest(dragon, "gauntlets_of_might") &&
+                      hasSpawnRequest(dragon, "food_ration"),
+                  "dragon fort requests boss and treasure spawns");
 
     Rng cityRng{104U};
     const auto city = buildLevelForDepth(11, 40, 25, cityRng, {});
@@ -111,11 +134,11 @@ void runRegionRoutingTests(TestRunner& runner)
                   "deep final depths build the dark elf city");
     runner.expect(city.stairsPosition == city.playerStart,
                   "final city does not place a deeper exit");
-    runner.expect(city.upStairsPosition == city.playerStart &&
-                      city.map.tileAt(city.upStairsPosition.x,
-                                      city.upStairsPosition.y) ==
-                          TileType::UpStairs,
-                  "final city places an up exit at the arrival point");
+    runner.expect(
+        city.upStairsPosition == city.playerStart &&
+            city.map.tileAt(city.upStairsPosition.x, city.upStairsPosition.y) ==
+                TileType::UpStairs,
+        "final city places an up exit at the arrival point");
     runner.expect(hasSpawnRequest(city, "dark_elf_archer"),
                   "dark elf city requests guard spawns");
 }

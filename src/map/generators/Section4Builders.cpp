@@ -19,6 +19,7 @@
 #include "map/MapConnectivity.hpp"
 #include "map/Rect.hpp"
 #include "map/TileType.hpp"
+#include "map/generators/BuilderChain.hpp"
 #include "map/generators/CellularAutomataBuilder.hpp"
 
 namespace rl {
@@ -287,6 +288,54 @@ MapBuildResult Section4Builders::buildLimestoneCaverns(int width,
     return result;
 }
 
+MapBuildResult Section4Builders::buildDeepCaverns(int width,
+                                                  int height,
+                                                  Rng& rng,
+                                                  MapBuildOptions options)
+{
+    auto result = BuilderChain::buildCavernVaults(width, height, rng, options);
+    result.builderName = "deep-caverns";
+    result.spawnRegions = partitionCavernSpawnRegions(
+        result.map, result.playerStart, result.stairsPosition);
+    addSpawnRequestFromDistantFloor(result, "deep_kobold", 0);
+    addSpawnRequestFromDistantFloor(result, "stone_golem", 6);
+    addSpawnRequestFromDistantFloor(result, "deep_limestone_column", 12);
+    addSpawnRequestFromDistantFloor(result, "town_portal_scroll", 18);
+    addSpawnRequestFromDistantFloor(result, "food_ration", 24);
+    addBuildStep(result, "theme: deep caverns");
+    addBuildStep(result, "content: deep denizens and portal supplies");
+    recordSnapshot(result.snapshots,
+                   result.map,
+                   "deep cavern region",
+                   options.recordSnapshots);
+    validateBuildOrThrow(result,
+                         "Deep cavern generation produced an invalid map");
+    return result;
+}
+
+MapBuildResult Section4Builders::buildDwarfTransition(int width,
+                                                      int height,
+                                                      Rng& rng,
+                                                      MapBuildOptions options)
+{
+    auto result = BuilderChain::buildRuinedRooms(width, height, rng, options);
+    result.builderName = "dwarf-transition";
+    addSpawnRequestFromDistantFloor(result, "dwarf_sentry", 0);
+    addSpawnRequestFromDistantFloor(result, "dwarf_rubble", 5);
+    addSpawnRequestFromDistantFloor(result, "chain_mail", 10);
+    addSpawnRequestFromDistantFloor(result, "remove_curse_scroll", 15);
+    addSpawnRequestFromDistantFloor(result, "food_ration", 20);
+    addBuildStep(result, "theme: cavern to dwarf fort transition");
+    addBuildStep(result, "content: ruined dwarf defenses");
+    recordSnapshot(result.snapshots,
+                   result.map,
+                   "dwarf transition region",
+                   options.recordSnapshots);
+    validateBuildOrThrow(result,
+                         "Dwarf transition generation produced an invalid map");
+    return result;
+}
+
 MapBuildResult Section4Builders::buildDragonLair(int width,
                                                  int height,
                                                  Rng& rng,
@@ -298,12 +347,18 @@ MapBuildResult Section4Builders::buildDragonLair(int width,
     carveVertical(result.map, width / 2, 2, height - 6);
     carveRect(result.map,
               Rect{width / 2 - 8, height - 12, width / 2 + 9, height - 3});
-    addScatterFloors(result.map, rng, (width * height) / 12, 'p');
+    addScatterFloors(result.map, rng, (width * height) / 18, 'p');
     repairConnectivity(result.map, result.playerStart, rng);
     cullUnreachable(result.map, result.playerStart);
     result.spawnRequests.push_back(
         SpawnRequest{"dragon", Point{width / 2, height - 8}});
+    addSpawnRequestIfOpen(
+        result, "dwarf_rubble", Point{width / 2 - 4, height - 8});
+    addSpawnRequestIfOpen(
+        result, "gauntlets_of_might", Point{width / 2 + 4, height - 8});
+    addSpawnRequestIfOpen(result, "food_ration", Point{width / 2, height - 5});
     finalizeRegion(result, "dragon-lair", options.recordSnapshots);
+    addBuildStep(result, "content: dragon and dwarf fortress treasure");
     return result;
 }
 

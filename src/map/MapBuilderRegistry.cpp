@@ -61,6 +61,8 @@ std::vector<std::string> availableMapBuilders()
             "town",
             "woods",
             "limestone-caverns",
+            "deep-caverns",
+            "dwarf-transition",
             "dragon-lair",
             "mushroom-forest",
             "dark-elf-city",
@@ -222,6 +224,13 @@ MapBuildResult buildMapById(std::string_view builderId,
     }
     if (builderId == "limestone-caverns") {
         return Section4Builders::buildLimestoneCaverns(
+            width, height, rng, options);
+    }
+    if (builderId == "deep-caverns") {
+        return Section4Builders::buildDeepCaverns(width, height, rng, options);
+    }
+    if (builderId == "dwarf-transition") {
+        return Section4Builders::buildDwarfTransition(
             width, height, rng, options);
     }
     if (builderId == "dragon-lair") {
