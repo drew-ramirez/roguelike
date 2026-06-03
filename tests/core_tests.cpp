@@ -52,6 +52,8 @@ int main()
     runSuite(runner, "region_routing_tests", rl::test::runRegionRoutingTests);
     runSuite(runner, "polish_pressure_tests", rl::test::runPolishPressureTests);
     runSuite(runner, "progression_tests", rl::test::runProgressionTests);
+    runSuite(
+        runner, "world_generation_tests", rl::test::runWorldGenerationTests);
     runSuite(runner, "mapgen_tests", rl::test::runMapgenTests);
     return runner.failures == 0 ? 0 : 1;
 }

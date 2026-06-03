@@ -133,6 +133,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/targeting_tests.cpp
     tests/ui_tests.cpp
     tests/vendor_tests.cpp
+    tests/world_generation_tests.cpp
 )
 
 set(ROGUELIKE_TEST_HEADERS

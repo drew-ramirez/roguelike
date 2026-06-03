@@ -30,5 +30,6 @@ void runSpatialTests(TestRunner& runner);
 void runTargetingTests(TestRunner& runner);
 void runUiTests(TestRunner& runner);
 void runVendorTests(TestRunner& runner);
+void runWorldGenerationTests(TestRunner& runner);
 
 } // namespace rl::test
