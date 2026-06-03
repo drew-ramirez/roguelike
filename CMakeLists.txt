@@ -54,6 +54,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/render/LayeredConsoleBuffer.cpp
     src/render/MapTheme.cpp
     src/render/WallGlyph.cpp
+    src/save/SaveDungeon.cpp
     src/save/SaveGame.cpp
     src/save/SaveMap.cpp
     src/save/SavePrimitives.cpp
@@ -193,6 +194,7 @@ set(ROGUELIKE_HEADERS
     src/render/MapTheme.hpp
     src/render/SdlRenderer.hpp
     src/render/WallGlyph.hpp
+    src/save/SaveDungeon.hpp
     src/save/SaveGame.hpp
     src/save/SaveMap.hpp
     src/save/SaveResources.hpp
