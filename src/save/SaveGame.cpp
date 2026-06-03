@@ -20,114 +20,26 @@
 #include "map/Map.hpp"
 #include "map/MasterDungeonMap.hpp"
 #include "map/TileType.hpp"
+#include "save/SaveMap.hpp"
+#include "save/SaveTypes.hpp"
 
 namespace rl {
 namespace {
 
-using Json = nlohmann::json;
-using EntityId = std::uint32_t;
-constexpr int currentSaveVersion = 4;
-
-[[nodiscard]] std::string tileToString(TileType tile)
-{
-    switch (tile) {
-    case TileType::Wall:
-        return "wall";
-    case TileType::Floor:
-        return "floor";
-    case TileType::DownStairs:
-        return "down_stairs";
-    case TileType::UpStairs:
-        return "up_stairs";
-    case TileType::ClosedDoor:
-        return "closed_door";
-    case TileType::OpenDoor:
-        return "open_door";
-    }
-    return "wall";
-}
-
-[[nodiscard]] TileType tileFromString(const std::string& value)
-{
-    if (value == "floor") {
-        return TileType::Floor;
-    }
-    if (value == "down_stairs") {
-        return TileType::DownStairs;
-    }
-    if (value == "up_stairs") {
-        return TileType::UpStairs;
-    }
-    if (value == "closed_door") {
-        return TileType::ClosedDoor;
-    }
-    if (value == "open_door") {
-        return TileType::OpenDoor;
-    }
-    return TileType::Wall;
-}
-
-[[nodiscard]] std::string slotToString(EquipmentSlot slot)
-{
-    switch (slot) {
-    case EquipmentSlot::Weapon:
-        return "weapon";
-    case EquipmentSlot::Armor:
-        return "armor";
-    }
-    return "weapon";
-}
-
-[[nodiscard]] EquipmentSlot slotFromString(const std::string& value)
-{
-    if (value == "armor") {
-        return EquipmentSlot::Armor;
-    }
-    return EquipmentSlot::Weapon;
-}
-
-[[nodiscard]] std::string hungerStateToString(HungerState state)
-{
-    switch (state) {
-    case HungerState::WellFed:
-        return "well_fed";
-    case HungerState::Normal:
-        return "normal";
-    case HungerState::Hungry:
-        return "hungry";
-    case HungerState::Starving:
-        return "starving";
-    }
-    return "normal";
-}
-
-[[nodiscard]] HungerState hungerStateFromString(const std::string& value)
-{
-    if (value == "well_fed") {
-        return HungerState::WellFed;
-    }
-    if (value == "hungry") {
-        return HungerState::Hungry;
-    }
-    if (value == "starving") {
-        return HungerState::Starving;
-    }
-    return HungerState::Normal;
-}
-
-[[nodiscard]] Json colorToJson(Color color)
-{
-    return Json{{"r", color.r}, {"g", color.g}, {"b", color.b}, {"a", color.a}};
-}
-
-[[nodiscard]] Color colorFromJson(const Json& json)
-{
-    return Color{static_cast<std::uint8_t>(json.at("r").get<int>()),
-                 static_cast<std::uint8_t>(json.at("g").get<int>()),
-                 static_cast<std::uint8_t>(json.at("b").get<int>()),
-                 static_cast<std::uint8_t>(json.at("a").get<int>())};
-}
-
+using save::colorFromJson;
+using save::colorToJson;
+using save::currentSaveVersion;
+using save::EntityId;
+using save::hungerStateFromString;
+using save::hungerStateToString;
+using save::Json;
+using save::mapFromJson;
+using save::mapToJson;
+using save::pointFromJson;
+using save::pointToJson;
+using save::putBool;
+using save::slotFromString;
+using save::slotToString;
 [[nodiscard]] EntityId entityId(const entt::registry& registry,
                                 entt::entity entity)
 {
@@ -156,79 +68,6 @@ void ensureSaveIds(entt::registry& registry)
     }
 }
 
-[[nodiscard]] Json mapToJson(const Map& map)
-{
-    Json tiles = Json::array();
-    Json revealed = Json::array();
-    Json blood = Json::array();
-    for (int y = 0; y < map.height(); ++y) {
-        for (int x = 0; x < map.width(); ++x) {
-            tiles.push_back(tileToString(map.tileAt(x, y)));
-            revealed.push_back(map.isRevealed(x, y));
-            blood.push_back(map.hasBloodstain(x, y));
-        }
-    }
-
-    return Json{{"width", map.width()},
-                {"height", map.height()},
-                {"tiles", std::move(tiles)},
-                {"blood", std::move(blood)},
-                {"revealed", std::move(revealed)}};
-}
-
-[[nodiscard]] Map mapFromJson(const Json& json)
-{
-    const int width = json.at("width").get<int>();
-    const int height = json.at("height").get<int>();
-    if (width <= 0 || height <= 0 ||
-        width > std::numeric_limits<int>::max() / height) {
-        throw std::runtime_error("Invalid saved map dimensions");
-    }
-
-    const auto& tiles = json.at("tiles");
-    const auto& revealed = json.at("revealed");
-    const auto blood = json.value("blood", Json::array());
-    const auto expected = static_cast<std::size_t>(width * height);
-    if (!tiles.is_array() || tiles.size() != expected || !revealed.is_array() ||
-        revealed.size() != expected) {
-        throw std::runtime_error("Invalid saved map tile data");
-    }
-    if (!blood.empty() && (!blood.is_array() || blood.size() != expected)) {
-        throw std::runtime_error("Invalid saved map blood data");
-    }
-
-    Map map{width, height, TileType::Wall};
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            const auto index = static_cast<std::size_t>(y * width + x);
-            map.setTile(
-                x, y, tileFromString(tiles.at(index).get<std::string>()));
-            map.setRevealed(x, y, revealed.at(index).get<bool>());
-            if (!blood.empty()) {
-                map.setBloodstain(x, y, blood.at(index).get<bool>());
-            }
-        }
-    }
-    return map;
-}
-
-void putBool(Json& json, const char* key, bool value)
-{
-    if (value) {
-        json[key] = true;
-    }
-}
-
-[[nodiscard]] Json pointToJson(Point point)
-{
-    return Json{{"x", point.x}, {"y", point.y}};
-}
-
-[[nodiscard]] Point pointFromJson(const Json& json)
-{
-    return Point{json.at("x").get<int>(), json.at("y").get<int>()};
-}
-
 [[nodiscard]] Json storedEntityToJson(const StoredEntity& entity)
 {
     Json json = Json::object();
@@ -236,15 +75,15 @@ void putBool(Json& json, const char* key, bool value)
         json["raw_identity"] = entity.rawIdentity->templateName;
     }
     if (entity.position.has_value()) {
-        json["position"] = pointToJson(
-            Point{entity.position->x, entity.position->y});
+        json["position"] =
+            pointToJson(Point{entity.position->x, entity.position->y});
     }
     if (entity.renderable.has_value()) {
-        json["renderable"] =
-            Json{{"glyph", static_cast<std::uint32_t>(entity.renderable->glyph)},
-                 {"foreground", colorToJson(entity.renderable->foreground)},
-                 {"background", colorToJson(entity.renderable->background)},
-                 {"order", entity.renderable->order}};
+        json["renderable"] = Json{
+            {"glyph", static_cast<std::uint32_t>(entity.renderable->glyph)},
+            {"foreground", colorToJson(entity.renderable->foreground)},
+            {"background", colorToJson(entity.renderable->background)},
+            {"order", entity.renderable->order}};
     }
     if (entity.name.has_value()) {
         json["name"] = entity.name->value;
@@ -275,11 +114,11 @@ void putBool(Json& json, const char* key, bool value)
                                     {"power", entity.combatStats->power}};
     }
     if (entity.attributes.has_value()) {
-        json["attributes"] = Json{
-            {"might", entity.attributes->might},
-            {"fitness", entity.attributes->fitness},
-            {"quickness", entity.attributes->quickness},
-            {"intelligence", entity.attributes->intelligence}};
+        json["attributes"] =
+            Json{{"might", entity.attributes->might},
+                 {"fitness", entity.attributes->fitness},
+                 {"quickness", entity.attributes->quickness},
+                 {"intelligence", entity.attributes->intelligence}};
     }
     if (entity.pools.has_value()) {
         json["pools"] = Json{{"hit_points", entity.pools->hitPoints},
@@ -425,11 +264,10 @@ void putBool(Json& json, const char* key, bool value)
     }
     if (json.contains("attributes")) {
         const auto& attributes = json.at("attributes");
-        entity.attributes =
-            Attributes{attributes.value("might", 10),
-                       attributes.value("fitness", 10),
-                       attributes.value("quickness", 10),
-                       attributes.value("intelligence", 10)};
+        entity.attributes = Attributes{attributes.value("might", 10),
+                                       attributes.value("fitness", 10),
+                                       attributes.value("quickness", 10),
+                                       attributes.value("intelligence", 10)};
     }
     if (json.contains("pools")) {
         const auto& pools = json.at("pools");
@@ -481,11 +319,10 @@ void putBool(Json& json, const char* key, bool value)
     }
     if (json.contains("item_stats")) {
         const auto& item = json.at("item_stats");
-        entity.itemStats =
-            ItemStats{item.value("weight", 0),
-                      item.value("base_value", 0),
-                      item.value("initiative_penalty", 0),
-                      item.value("category", std::string{})};
+        entity.itemStats = ItemStats{item.value("weight", 0),
+                                     item.value("base_value", 0),
+                                     item.value("initiative_penalty", 0),
+                                     item.value("category", std::string{})};
     }
     if (json.contains("weapon_stats")) {
         const auto& weapon = json.at("weapon_stats");
@@ -521,13 +358,11 @@ void putBool(Json& json, const char* key, bool value)
         entity.confusion = Confusion{json.at("confusion").get<int>()};
     }
     if (json.contains("known_spells")) {
-        entity.knownSpells =
-            KnownSpells{
-                json.at("known_spells").get<std::vector<std::string>>()};
+        entity.knownSpells = KnownSpells{
+            json.at("known_spells").get<std::vector<std::string>>()};
     }
     if (json.contains("spellbook")) {
-        entity.spellbook =
-            Spellbook{json.at("spellbook").get<std::string>()};
+        entity.spellbook = Spellbook{json.at("spellbook").get<std::string>()};
     }
     if (json.contains("mana_cost")) {
         entity.manaCost = ManaCost{json.at("mana_cost").get<int>()};
@@ -735,11 +570,10 @@ void loadResources(const Json& json,
     }
     if (registry.all_of<RangedWeapon>(entity)) {
         const auto& component = registry.get<RangedWeapon>(entity);
-        components["ranged_weapon"] = Json{
-            {"range", component.range},
-            {"damage", component.damage},
-            {"hit_bonus", component.hitBonus},
-            {"attribute", component.attribute}};
+        components["ranged_weapon"] = Json{{"range", component.range},
+                                           {"damage", component.damage},
+                                           {"hit_bonus", component.hitBonus},
+                                           {"attribute", component.attribute}};
     }
     if (registry.all_of<Equippable>(entity)) {
         components["equippable"] =
@@ -841,15 +675,14 @@ void loadEntityImmediateComponents(entt::registry& registry,
     }
     if (components.contains("pools")) {
         const auto& json = components.at("pools");
-        registry.emplace<Pools>(
-            entity,
-            Pools{json.value("hit_points", 1),
-                  json.value("max_hit_points", 1),
-                  json.value("mana", 0),
-                  json.value("max_mana", 0),
-                  json.value("level", 1),
-                  json.value("xp", 0),
-                  json.value("gold", 0)});
+        registry.emplace<Pools>(entity,
+                                Pools{json.value("hit_points", 1),
+                                      json.value("max_hit_points", 1),
+                                      json.value("mana", 0),
+                                      json.value("max_mana", 0),
+                                      json.value("level", 1),
+                                      json.value("xp", 0),
+                                      json.value("gold", 0)});
     }
     if (components.contains("consumable")) {
         registry.emplace<Consumable>(entity);
