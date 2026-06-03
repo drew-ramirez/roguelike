@@ -52,11 +52,25 @@ DungeonRoute routeForDepth(int depth)
                             "dragon-lair",
                             true};
     }
-    if (depth <= 10) {
+    if (depth == 7) {
+        return DungeonRoute{depth,
+                            DungeonRegion::MushroomEntrance,
+                            "mushroom_entrance",
+                            "mushroom-entrance",
+                            true};
+    }
+    if (depth == 8) {
         return DungeonRoute{depth,
                             DungeonRegion::MushroomForest,
                             "mushroom_forest",
                             "mushroom-forest",
+                            true};
+    }
+    if (depth == 9) {
+        return DungeonRoute{depth,
+                            DungeonRegion::MushroomExit,
+                            "mushroom_exit",
+                            "mushroom-exit",
                             true};
     }
     return DungeonRoute{depth,
@@ -82,8 +96,12 @@ std::string_view regionName(DungeonRegion region) noexcept
         return "Dwarf Fort Transition";
     case DungeonRegion::DragonLair:
         return "Dragon Lair";
+    case DungeonRegion::MushroomEntrance:
+        return "Mushroom Entrance";
     case DungeonRegion::MushroomForest:
         return "Mushroom Forest";
+    case DungeonRegion::MushroomExit:
+        return "Mushroom Exit";
     case DungeonRegion::DarkElfCity:
         return "Dark Elf City";
     }

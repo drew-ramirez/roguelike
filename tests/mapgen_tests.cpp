@@ -495,6 +495,22 @@ void runMapgenTests(TestRunner& runner)
              "content: dragon and dwarf fortress treasure",
              "dragon",
              "gauntlets_of_might"},
+            {"mushroom-entrance",
+             "theme: mushroom entrance",
+             "mushroom_patch",
+             "sporeling"},
+            {"mushroom-forest",
+             "content: fungal forest encounters",
+             "sporeling",
+             "fungal_giant"},
+            {"mushroom-exit",
+             "theme: mushroom exit toward dark elf city",
+             "dark_elf_scout_a",
+             "hand_crossbow"},
+            {"dark-elf-city",
+             "content: rival dark elf clans",
+             "dark_elf_marksman_a",
+             "dark_elf_blade_b"},
         };
 
         for (std::size_t index = 0; index < regions.size(); ++index) {
@@ -784,6 +800,10 @@ void runMapgenTests(TestRunner& runner)
                           isKnownMapBuilder("deep-caverns") &&
                           isKnownMapBuilder("dwarf-transition") &&
                           isKnownMapBuilder("dragon-lair") &&
+                          isKnownMapBuilder("mushroom-entrance") &&
+                          isKnownMapBuilder("mushroom-forest") &&
+                          isKnownMapBuilder("mushroom-exit") &&
+                          isKnownMapBuilder("dark-elf-city") &&
                           isKnownMapBuilder("cavern-vaults") &&
                           isKnownMapBuilder("ruined-rooms"),
                       "mapgen viewer exposes all implemented builders");
@@ -812,6 +832,10 @@ void runMapgenTests(TestRunner& runner)
                                            "deep-caverns",
                                            "dwarf-transition",
                                            "dragon-lair",
+                                           "mushroom-entrance",
+                                           "mushroom-forest",
+                                           "mushroom-exit",
+                                           "dark-elf-city",
                                            "cavern-vaults",
                                            "ruined-rooms"};
         const std::array<Rng::Seed, 2> seeds{1U, 4242U};
@@ -874,6 +898,9 @@ void runMapgenTests(TestRunner& runner)
             {"cellular", 72.0, 82.0},
             {"limestone-caverns", 72.0, 82.0},
             {"cavern-vaults", 75.0, 84.0},
+            {"mushroom-entrance", 62.0, 76.0},
+            {"mushroom-forest", 62.0, 76.0},
+            {"mushroom-exit", 62.0, 76.0},
             {"drunkard", 48.0, 66.0},
             {"dla", 34.0, 36.0},
             {"voronoi", 78.0, 68.0},

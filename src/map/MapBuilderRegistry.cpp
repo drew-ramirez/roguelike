@@ -64,7 +64,9 @@ std::vector<std::string> availableMapBuilders()
             "deep-caverns",
             "dwarf-transition",
             "dragon-lair",
+            "mushroom-entrance",
             "mushroom-forest",
+            "mushroom-exit",
             "dark-elf-city",
             "cavern-vaults",
             "ruined-rooms"};
@@ -236,9 +238,16 @@ MapBuildResult buildMapById(std::string_view builderId,
     if (builderId == "dragon-lair") {
         return Section4Builders::buildDragonLair(width, height, rng, options);
     }
+    if (builderId == "mushroom-entrance") {
+        return Section4Builders::buildMushroomEntrance(
+            width, height, rng, options);
+    }
     if (builderId == "mushroom-forest") {
         return Section4Builders::buildMushroomForest(
             width, height, rng, options);
+    }
+    if (builderId == "mushroom-exit") {
+        return Section4Builders::buildMushroomExit(width, height, rng, options);
     }
     if (builderId == "dark-elf-city") {
         return Section4Builders::buildDarkElfCity(width, height, rng, options);

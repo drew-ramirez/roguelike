@@ -50,8 +50,14 @@ void runRegionRoutingTests(TestRunner& runner)
     runner.expect(routeForDepth(6).region == DungeonRegion::DragonLair &&
                       routeForDepth(6).builderId == "dragon-lair",
                   "depth 6 routes to dragon fort");
-    runner.expect(routeForDepth(11).region == DungeonRegion::DarkElfCity,
-                  "deep routes reach dark elf city");
+    runner.expect(routeForDepth(7).region == DungeonRegion::MushroomEntrance,
+                  "depth 7 routes to mushroom entrance");
+    runner.expect(routeForDepth(8).region == DungeonRegion::MushroomForest,
+                  "depth 8 routes to mushroom forest");
+    runner.expect(routeForDepth(9).region == DungeonRegion::MushroomExit,
+                  "depth 9 routes to mushroom exit");
+    runner.expect(routeForDepth(10).region == DungeonRegion::DarkElfCity,
+                  "depth 10 routes to dark elf city");
 
     Rng townRng{99U};
     const auto town = buildLevelForDepth(1, 40, 25, townRng, {});
@@ -128,10 +134,38 @@ void runRegionRoutingTests(TestRunner& runner)
                       hasSpawnRequest(dragon, "food_ration"),
                   "dragon fort requests boss and treasure spawns");
 
-    Rng cityRng{104U};
-    const auto city = buildLevelForDepth(11, 40, 25, cityRng, {});
+    Rng entranceRng{105U};
+    const auto entrance = buildLevelForDepth(7, 40, 25, entranceRng, {});
+    runner.expect(entrance.builderName == "mushroom-entrance",
+                  "depth 7 builds the mushroom entrance");
+    runner.expect(hasSpawnRequest(entrance, "mushroom_patch") &&
+                      hasSpawnRequest(entrance, "sporeling") &&
+                      hasSpawnRequest(entrance, "food_ration"),
+                  "mushroom entrance requests first fungal content");
+
+    Rng mushroomRng{106U};
+    const auto mushroom = buildLevelForDepth(8, 40, 25, mushroomRng, {});
+    runner.expect(mushroom.builderName == "mushroom-forest",
+                  "depth 8 builds the mushroom forest");
+    runner.expect(hasSpawnRequest(mushroom, "sporeling") &&
+                      hasSpawnRequest(mushroom, "fungal_giant") &&
+                      hasSpawnRequest(mushroom, "confusion_spore") &&
+                      hasSpawnRequest(mushroom, "food_ration"),
+                  "mushroom forest requests fungal encounters");
+
+    Rng exitRng{107U};
+    const auto exit = buildLevelForDepth(9, 40, 25, exitRng, {});
+    runner.expect(exit.builderName == "mushroom-exit",
+                  "depth 9 builds the mushroom exit");
+    runner.expect(hasSpawnRequest(exit, "dark_elf_scout_a") &&
+                      hasSpawnRequest(exit, "hand_crossbow") &&
+                      hasSpawnRequest(exit, "food_ration"),
+                  "mushroom exit requests dark elf foreshadowing");
+
+    Rng cityRng{108U};
+    const auto city = buildLevelForDepth(10, 40, 25, cityRng, {});
     runner.expect(city.builderName == "dark-elf-city",
-                  "deep final depths build the dark elf city");
+                  "depth 10 builds the dark elf city");
     runner.expect(city.stairsPosition == city.playerStart,
                   "final city does not place a deeper exit");
     runner.expect(
@@ -139,8 +173,9 @@ void runRegionRoutingTests(TestRunner& runner)
             city.map.tileAt(city.upStairsPosition.x, city.upStairsPosition.y) ==
                 TileType::UpStairs,
         "final city places an up exit at the arrival point");
-    runner.expect(hasSpawnRequest(city, "dark_elf_archer"),
-                  "dark elf city requests guard spawns");
+    runner.expect(hasSpawnRequest(city, "dark_elf_marksman_a") &&
+                      hasSpawnRequest(city, "dark_elf_blade_b"),
+                  "dark elf city requests rival clan spawns");
 }
 
 } // namespace rl::test

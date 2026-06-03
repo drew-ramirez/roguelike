@@ -19,7 +19,9 @@ enum class DungeonRegion {
     DeepCaverns,
     DwarfFortTransition,
     DragonLair,
+    MushroomEntrance,
     MushroomForest,
+    MushroomExit,
     DarkElfCity
 };
 

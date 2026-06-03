@@ -362,6 +362,31 @@ MapBuildResult Section4Builders::buildDragonLair(int width,
     return result;
 }
 
+MapBuildResult Section4Builders::buildMushroomEntrance(int width,
+                                                       int height,
+                                                       Rng& rng,
+                                                       MapBuildOptions options)
+{
+    validateBuilderDimensions("mushroom-entrance", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    result.playerStart = Point{width / 2, 2};
+    carveVertical(result.map, width / 2, 2, height - 3);
+    carveHorizontal(result.map, height / 2, width / 2 - 10, width / 2 + 10);
+    addScatterFloors(result.map, rng, (width * height) / 18, 'c');
+    repairConnectivity(result.map, result.playerStart, rng);
+    cullUnreachable(result.map, result.playerStart);
+    finalizeRegion(result, "mushroom-entrance", options.recordSnapshots);
+    addSpawnRequestIfOpen(
+        result, "mushroom_patch", Point{width / 2 - 6, height / 2});
+    addSpawnRequestIfOpen(
+        result, "sporeling", Point{width / 2 + 6, height / 2});
+    addSpawnRequestIfOpen(
+        result, "food_ration", Point{width / 2, height / 2 + 2});
+    addBuildStep(result, "theme: mushroom entrance");
+    addBuildStep(result, "content: first fungal growths");
+    return result;
+}
+
 MapBuildResult Section4Builders::buildMushroomForest(int width,
                                                      int height,
                                                      Rng& rng,
@@ -371,10 +396,45 @@ MapBuildResult Section4Builders::buildMushroomForest(int width,
     MapBuildResult result{Map{width, height, TileType::Wall}};
     result.playerStart = Point{width / 2, 2};
     carveVertical(result.map, width / 2, 2, height - 3);
-    addScatterFloors(result.map, rng, (width * height) / 4, 'c');
+    addScatterFloors(result.map, rng, (width * height) / 20, 'c');
     repairConnectivity(result.map, result.playerStart, rng);
     cullUnreachable(result.map, result.playerStart);
     finalizeRegion(result, "mushroom-forest", options.recordSnapshots);
+    result.spawnRegions = partitionCavernSpawnRegions(
+        result.map, result.playerStart, result.stairsPosition);
+    addSpawnRequestFromDistantFloor(result, "sporeling", 0);
+    addSpawnRequestFromDistantFloor(result, "fungal_giant", 6);
+    addSpawnRequestFromDistantFloor(result, "mushroom_patch", 12);
+    addSpawnRequestFromDistantFloor(result, "confusion_spore", 18);
+    addSpawnRequestFromDistantFloor(result, "food_ration", 24);
+    addBuildStep(result, "content: fungal forest encounters");
+    return result;
+}
+
+MapBuildResult Section4Builders::buildMushroomExit(int width,
+                                                   int height,
+                                                   Rng& rng,
+                                                   MapBuildOptions options)
+{
+    validateBuilderDimensions("mushroom-exit", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    result.playerStart = Point{width / 2, 2};
+    carveVertical(result.map, width / 2, 2, height - 3);
+    carveHorizontal(result.map, height - 7, width / 2 - 12, width / 2 + 12);
+    carveRect(result.map,
+              Rect{width / 2 - 6, height - 11, width / 2 + 7, height - 4});
+    addScatterFloors(result.map, rng, (width * height) / 18, 'c');
+    repairConnectivity(result.map, result.playerStart, rng);
+    cullUnreachable(result.map, result.playerStart);
+    finalizeRegion(result, "mushroom-exit", options.recordSnapshots);
+    addSpawnRequestIfOpen(
+        result, "dark_elf_scout_a", Point{width / 2 - 5, height - 8});
+    addSpawnRequestIfOpen(
+        result, "sporeling", Point{width / 2 + 5, height - 8});
+    addSpawnRequestIfOpen(
+        result, "hand_crossbow", Point{width / 2, height - 8});
+    addSpawnRequestIfOpen(result, "food_ration", Point{width / 2, height - 6});
+    addBuildStep(result, "theme: mushroom exit toward dark elf city");
     return result;
 }
 
@@ -396,12 +456,13 @@ MapBuildResult Section4Builders::buildDarkElfCity(int width,
         }
     }
     result.playerStart = Point{midX, 2};
-    result.spawnRequests.push_back(
-        SpawnRequest{"dark_elf_archer", Point{midX - 5, midY}});
-    result.spawnRequests.push_back(
-        SpawnRequest{"dark_elf_archer", Point{midX + 5, midY}});
+    addSpawnRequestIfOpen(result, "dark_elf_marksman_a", Point{midX - 6, midY});
+    addSpawnRequestIfOpen(result, "dark_elf_blade_b", Point{midX + 6, midY});
+    addSpawnRequestIfOpen(result, "dark_elf_marksman_c", Point{midX, midY + 4});
+    addSpawnRequestIfOpen(result, "scimitar", Point{midX - 4, midY + 2});
+    addSpawnRequestIfOpen(result, "buckler", Point{midX + 4, midY + 2});
     finalizeRegion(result, "dark-elf-city", options.recordSnapshots, false);
+    addBuildStep(result, "content: rival dark elf clans");
     return result;
 }
-
 } // namespace rl
