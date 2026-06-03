@@ -20,6 +20,7 @@
 #include "map/Map.hpp"
 #include "map/MasterDungeonMap.hpp"
 #include "map/TileType.hpp"
+#include "save/SaveArchive.hpp"
 #include "save/SaveDungeon.hpp"
 #include "save/SaveEntities.hpp"
 #include "save/SaveMap.hpp"
@@ -29,6 +30,7 @@
 namespace rl {
 namespace {
 
+using save::archiveToJson;
 using save::colorFromJson;
 using save::colorToJson;
 using save::currentSaveVersion;
@@ -39,6 +41,7 @@ using save::EntityId;
 using save::entityId;
 using save::entityToJson;
 using save::hungerStateToString;
+using save::isSupportedArchiveVersion;
 using save::Json;
 using save::loadEntityImmediateComponents;
 using save::loadEntityReferences;
@@ -67,12 +70,7 @@ std::string serializeGame(entt::registry& registry,
         entities.push_back(entityToJson(registry, entity));
     }
 
-    Json root{{"version", currentSaveVersion},
-              {"map", mapToJson(map)},
-              {"resources", resourcesToJson(registry, resources)},
-              {"dungeon", dungeonToJson(resources.dungeon)},
-              {"entities", std::move(entities)}};
-    return root.dump(2);
+    return archiveToJson(registry, resources, map, std::move(entities)).dump(2);
 }
 
 bool deserializeGame(std::string_view text,
@@ -82,8 +80,7 @@ bool deserializeGame(std::string_view text,
 {
     try {
         const Json root = Json::parse(text);
-        const int version = root.value("version", 0);
-        if (version < 1 || version > currentSaveVersion) {
+        if (!isSupportedArchiveVersion(root)) {
             return false;
         }
 
