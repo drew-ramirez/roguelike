@@ -118,8 +118,9 @@ std::size_t spawnItems(entt::registry& registry,
             }
 
             const auto id =
-                forceEarlyItems && spawned == 0
-                    ? std::string{"healing_potion"}
+                forceEarlyItems
+                    ? (spawned == 0 ? std::string{"healing_potion"}
+                                    : std::string{"food_ration"})
                     : rollSpawn(
                           defaultRawDatabase().itemSpawnTable(), depth, rng);
             [[maybe_unused]] const auto item =
@@ -171,8 +172,9 @@ std::size_t spawnItems(entt::registry& registry,
             }
 
             const auto id =
-                forceEarlyItems && spawned == 0
-                    ? std::string{"healing_potion"}
+                forceEarlyItems
+                    ? (spawned == 0 ? std::string{"healing_potion"}
+                                    : std::string{"food_ration"})
                     : rollSpawn(
                           defaultRawDatabase().itemSpawnTable(), depth, rng);
             [[maybe_unused]] const auto item =

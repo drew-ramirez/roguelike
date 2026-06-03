@@ -89,6 +89,23 @@ void runDescentAndSpawnTests(TestRunner& runner)
                     monsterSpawnTable().end(),
                     [](const SpawnEntry& entry) { return entry.minDepth > 1; }),
         "spawn table has depth-gated entries");
+
+    Rng itemRng{2222U};
+    const auto itemBuild = SimpleMapBuilder::build(40, 25, itemRng);
+    entt::registry itemRegistry;
+    const auto itemPlayer = spawnPlayer(itemRegistry, itemBuild.playerStart);
+    const auto itemCount = spawnItems(itemRegistry,
+                                      itemBuild.spawnRegions,
+                                      itemBuild.map,
+                                      itemRng,
+                                      itemBuild.playerStart,
+                                      1);
+    runner.expect(itemCount >= 2 &&
+                      countNamed(itemRegistry, "Healing Potion") >= 1 &&
+                      countNamed(itemRegistry, "Food Ration") >= 1,
+                  "early item spawning guarantees healing and food");
+    runner.expect(itemRegistry.valid(itemPlayer),
+                  "supply spawn keeps the player entity valid");
 }
 
 } // namespace rl::test
