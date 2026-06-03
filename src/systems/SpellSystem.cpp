@@ -111,9 +111,8 @@ bool castKnownSpell(entt::registry& registry,
 
     const auto requests =
         effectRequestsForRawEffects(spell->effects, caster, entt::null, target);
-    (void)fovProvider;
     const bool resolved =
-        resolveEffectRequests(registry, resources, map, requests);
+        resolveEffectRequests(registry, resources, map, requests, fovProvider);
     if (!resolved) {
         return false;
     }

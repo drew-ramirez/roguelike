@@ -1,7 +1,7 @@
 /**
  * **************************************************************************
  * @file     EffectSystem.hpp
- * @brief    Declares generic item effect resolution
+ * @brief    Declares generic item and spell effect resolution
  * **************************************************************************
  */
 
@@ -36,10 +36,10 @@ enum class EffectKind {
 struct EffectRequest {
     EffectKind kind = EffectKind::Heal;
     entt::entity actor = entt::null;
+    entt::entity source = entt::null;
     std::optional<Point> target;
     int amount = 0;
     int radius = 0;
-    entt::entity source = entt::null;
     entt::entity targetEntity = entt::null;
 };
 

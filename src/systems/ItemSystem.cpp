@@ -439,7 +439,7 @@ bool processItemUses(entt::registry& registry,
                                     map,
                                     user,
                                     intent.item,
-                                    *intent.target,
+                                    intent.target,
                                     fovProvider) ||
                    used;
             continue;

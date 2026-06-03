@@ -1,13 +1,14 @@
 /**
  * **************************************************************************
  * @file     EffectSystem.cpp
- * @brief    Resolves generic gameplay effects from items
+ * @brief    Resolves generic gameplay effects from items, spells, and powers
  * **************************************************************************
  */
 
 #include "systems/EffectSystem.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <string>
 #include <utility>
 
@@ -93,7 +94,8 @@ void consumeIfNeeded(entt::registry& registry, entt::entity item)
         position.has_value()) {
         requestHealingParticle(resources, *position);
     }
-    resources.log.add("You recover " + std::to_string(amount) + " health.");
+    resources.log.add(entityName(registry, actor) + " recovers " +
+                      std::to_string(amount) + " health.");
     return true;
 }
 
@@ -110,7 +112,7 @@ void consumeIfNeeded(entt::registry& registry, entt::entity item)
     auto& clock = registry.get<HungerClock>(actor);
     clock.duration = std::min(maximumHunger, clock.duration + amount);
     clock.state = hungerStateForDuration(clock.duration);
-    resources.log.add("You eat.");
+    resources.log.add(entityName(registry, actor) + " eats.");
     return true;
 }
 
@@ -148,6 +150,8 @@ void consumeIfNeeded(entt::registry& registry, entt::entity item)
                              : point == target;
         if (hit && map.isVisible(point.x, point.y)) {
             queueDamage(registry, entity, amount);
+            resources.log.add(entityName(registry, entity) + " is hit for " +
+                              std::to_string(amount) + ".");
             ++affected;
         }
     }
@@ -316,52 +320,46 @@ effectRequestsForRawEffects(const RawEffects& effects,
 {
     std::vector<EffectRequest> requests;
     if (effects.providesHealing.has_value()) {
-        requests.push_back(EffectRequest{EffectKind::Heal,
-                                         actor,
-                                         target,
-                                         *effects.providesHealing,
-                                         0,
-                                         source});
+        requests.push_back(EffectRequest{
+            EffectKind::Heal, actor, source, target, *effects.providesHealing});
     }
     if (effects.providesNutrition.has_value()) {
         requests.push_back(EffectRequest{EffectKind::Nutrition,
                                          actor,
+                                         source,
                                          target,
-                                         *effects.providesNutrition,
-                                         0,
-                                         source});
+                                         *effects.providesNutrition});
     }
     if (effects.magicMapper) {
         requests.push_back(
-            EffectRequest{EffectKind::RevealMap, actor, target, 0, 0, source});
+            EffectRequest{EffectKind::RevealMap, actor, source, target});
     }
     if (effects.inflictsDamage.has_value()) {
         requests.push_back(EffectRequest{EffectKind::Damage,
                                          actor,
+                                         source,
                                          target,
                                          *effects.inflictsDamage,
-                                         effects.areaOfEffect.value_or(0),
-                                         source});
+                                         effects.areaOfEffect.value_or(0)});
     }
     if (effects.identify) {
         requests.push_back(
-            EffectRequest{EffectKind::Identify, actor, target, 0, 0, source});
+            EffectRequest{EffectKind::Identify, actor, source, target});
     }
     if (effects.removeCurse) {
-        requests.push_back(EffectRequest{
-            EffectKind::RemoveCurse, actor, target, 0, 0, source});
+        requests.push_back(
+            EffectRequest{EffectKind::RemoveCurse, actor, source, target});
     }
     if (effects.townPortal) {
         requests.push_back(
-            EffectRequest{EffectKind::TownPortal, actor, target, 0, 0, source});
+            EffectRequest{EffectKind::TownPortal, actor, source, target});
     }
     if (effects.confusionTurns.has_value()) {
         requests.push_back(EffectRequest{EffectKind::Confusion,
                                          actor,
+                                         source,
                                          target,
-                                         *effects.confusionTurns,
-                                         0,
-                                         source});
+                                         *effects.confusionTurns});
     }
     return requests;
 }
@@ -385,52 +383,55 @@ std::vector<EffectRequest> effectRequestsForItem(const entt::registry& registry,
         return requests;
     }
     if (registry.all_of<ProvidesHealing>(item)) {
-        requests.push_back({EffectKind::Heal,
-                            actor,
-                            target,
-                            registry.get<ProvidesHealing>(item).amount,
-                            0,
-                            item});
+        requests.push_back(
+            EffectRequest{EffectKind::Heal,
+                          actor,
+                          item,
+                          target,
+                          registry.get<ProvidesHealing>(item).amount});
     }
     if (registry.all_of<ProvidesNutrition>(item)) {
-        requests.push_back({EffectKind::Nutrition,
-                            actor,
-                            target,
-                            registry.get<ProvidesNutrition>(item).amount,
-                            0,
-                            item});
+        requests.push_back(
+            EffectRequest{EffectKind::Nutrition,
+                          actor,
+                          item,
+                          target,
+                          registry.get<ProvidesNutrition>(item).amount});
     }
     if (registry.all_of<MagicMapper>(item)) {
-        requests.push_back({EffectKind::RevealMap, actor, target, 0, 0, item});
+        requests.push_back(
+            EffectRequest{EffectKind::RevealMap, actor, item, target});
     }
     if (registry.all_of<InflictsDamage>(item)) {
         const int radius = registry.all_of<AreaOfEffect>(item)
                                ? registry.get<AreaOfEffect>(item).radius
                                : 0;
-        requests.push_back({EffectKind::Damage,
-                            actor,
-                            target,
-                            registry.get<InflictsDamage>(item).amount,
-                            radius,
-                            item});
+        requests.push_back(
+            EffectRequest{EffectKind::Damage,
+                          actor,
+                          item,
+                          target,
+                          registry.get<InflictsDamage>(item).amount,
+                          radius});
     }
     if (registry.all_of<ProvidesIdentify>(item)) {
-        requests.push_back({EffectKind::Identify, actor, target, 0, 0, item});
+        requests.push_back(
+            EffectRequest{EffectKind::Identify, actor, item, target});
     }
     if (registry.all_of<ProvidesRemoveCurse>(item)) {
         requests.push_back(
-            {EffectKind::RemoveCurse, actor, target, 0, 0, item});
+            EffectRequest{EffectKind::RemoveCurse, actor, item, target});
     }
     if (registry.all_of<TownPortal>(item) && registry.all_of<Item>(item)) {
-        requests.push_back({EffectKind::TownPortal, actor, target, 0, 0, item});
+        requests.push_back(
+            EffectRequest{EffectKind::TownPortal, actor, item, target});
     }
     if (registry.all_of<Confusion>(item) && registry.all_of<Item>(item)) {
-        requests.push_back({EffectKind::Confusion,
-                            actor,
-                            target,
-                            registry.get<Confusion>(item).turns,
-                            0,
-                            item});
+        requests.push_back(EffectRequest{EffectKind::Confusion,
+                                         actor,
+                                         item,
+                                         target,
+                                         registry.get<Confusion>(item).turns});
     }
     return requests;
 }

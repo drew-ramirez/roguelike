@@ -30,6 +30,21 @@ constexpr std::size_t visibleMessages = 3;
     return "None";
 }
 
+void printLogEntry(ConsoleBuffer& console, int x, int y, const LogEntry& entry)
+{
+    int column = x;
+    if (entry.fragments.empty()) {
+        console.print(
+            column, y, entry.message, defaultLogColor(entry.category));
+        return;
+    }
+
+    for (const auto& fragment : entry.fragments) {
+        console.print(column, y, fragment.text, fragment.foreground);
+        column += static_cast<int>(fragment.text.size());
+    }
+}
+
 [[nodiscard]] std::optional<entt::entity> equippedInSlot(
     const entt::registry& registry, entt::entity owner, EquipmentSlot slot)
 {
@@ -179,10 +194,10 @@ void drawHud(ConsoleBuffer& console,
         console.print(14, uiTop + 4, "g/i/>/F5", Color{130, 130, 130, 255});
     }
 
-    const auto messages = resources.log.recent(visibleMessages);
+    const auto entries = resources.log.recentEntries(visibleMessages);
     int row = uiTop + 4;
-    for (const auto message : messages) {
-        console.print(28, row, message, Color{190, 190, 190, 255});
+    for (const auto& entry : entries) {
+        printLogEntry(console, 28, row, entry);
         ++row;
     }
 }
