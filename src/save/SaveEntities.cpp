@@ -159,6 +159,14 @@ void ensureSaveIds(entt::registry& registry)
     if (registry.all_of<DefenseBonus>(entity)) {
         components["defense_bonus"] = registry.get<DefenseBonus>(entity).amount;
     }
+    if (registry.all_of<AttributeBonus>(entity)) {
+        const auto& component = registry.get<AttributeBonus>(entity);
+        components["attribute_bonus"] =
+            Json{{"might", component.might},
+                 {"fitness", component.fitness},
+                 {"quickness", component.quickness},
+                 {"intelligence", component.intelligence}};
+    }
     if (registry.all_of<InBackpack>(entity)) {
         components["in_backpack"] =
             entityId(registry, registry.get<InBackpack>(entity).owner);
@@ -176,6 +184,69 @@ void ensureSaveIds(entt::registry& registry)
     }
     if (registry.all_of<Hidden>(entity)) {
         components["hidden"] = true;
+    }
+    if (registry.all_of<Neutral>(entity)) {
+        components["neutral"] = true;
+    }
+    if (registry.all_of<Bystander>(entity)) {
+        components["bystander"] = true;
+    }
+    if (registry.all_of<Prop>(entity)) {
+        components["prop"] = true;
+    }
+    if (registry.all_of<Boss>(entity)) {
+        components["boss"] = true;
+    }
+    if (registry.all_of<GrantsWin>(entity)) {
+        components["grants_win"] = true;
+    }
+    if (registry.all_of<MagicItem>(entity)) {
+        const auto& magic = registry.get<MagicItem>(entity);
+        components["magic_item"] =
+            Json{{"tier", magic.tier},
+                 {"unidentified_name", magic.unidentifiedName},
+                 {"identified", magic.identified}};
+    }
+    if (registry.all_of<IdentifiedItem>(entity)) {
+        components["identified_item"] = true;
+    }
+    if (registry.all_of<CursedItem>(entity)) {
+        components["cursed_item"] = true;
+    }
+    if (registry.all_of<Vendor>(entity)) {
+        const auto& vendor = registry.get<Vendor>(entity);
+        components["vendor"] =
+            Json{{"category", vendor.category}, {"gold", vendor.gold}};
+    }
+    if (registry.all_of<Faction>(entity)) {
+        components["faction"] = registry.get<Faction>(entity).id;
+    }
+    if (registry.all_of<TownPortal>(entity)) {
+        components["town_portal"] = true;
+    }
+    if (registry.all_of<ProvidesIdentify>(entity)) {
+        components["provides_identify"] = true;
+    }
+    if (registry.all_of<ProvidesRemoveCurse>(entity)) {
+        components["provides_remove_curse"] = true;
+    }
+    if (registry.all_of<Confusion>(entity)) {
+        components["confusion"] = registry.get<Confusion>(entity).turns;
+    }
+    if (registry.all_of<KnownSpells>(entity)) {
+        components["known_spells"] = registry.get<KnownSpells>(entity).ids;
+    }
+    if (registry.all_of<Spellbook>(entity)) {
+        components["spellbook"] = registry.get<Spellbook>(entity).spellId;
+    }
+    if (registry.all_of<ManaCost>(entity)) {
+        components["mana_cost"] = registry.get<ManaCost>(entity).amount;
+    }
+    if (registry.all_of<BreathWeapon>(entity)) {
+        const auto& breath = registry.get<BreathWeapon>(entity);
+        components["breath_weapon"] = Json{{"range", breath.range},
+                                           {"damage", breath.damage},
+                                           {"cooldown", breath.cooldown}};
     }
 
     return Json{{"id", entityId(registry, entity)},
@@ -339,6 +410,15 @@ void loadEntityImmediateComponents(entt::registry& registry,
         registry.emplace<DefenseBonus>(
             entity, DefenseBonus{components.at("defense_bonus").get<int>()});
     }
+    if (components.contains("attribute_bonus")) {
+        const auto& json = components.at("attribute_bonus");
+        registry.emplace<AttributeBonus>(
+            entity,
+            AttributeBonus{json.value("might", 0),
+                           json.value("fitness", 0),
+                           json.value("quickness", 0),
+                           json.value("intelligence", 0)});
+    }
     if (components.contains("trap")) {
         const auto& json = components.at("trap");
         registry.emplace<Trap>(entity,
@@ -347,6 +427,79 @@ void loadEntityImmediateComponents(entt::registry& registry,
     }
     if (components.contains("hidden")) {
         registry.emplace<Hidden>(entity);
+    }
+    if (components.contains("neutral")) {
+        registry.emplace<Neutral>(entity);
+    }
+    if (components.contains("bystander")) {
+        registry.emplace<Bystander>(entity);
+    }
+    if (components.contains("prop")) {
+        registry.emplace<Prop>(entity);
+    }
+    if (components.contains("boss")) {
+        registry.emplace<Boss>(entity);
+    }
+    if (components.contains("grants_win")) {
+        registry.emplace<GrantsWin>(entity);
+    }
+    if (components.contains("magic_item")) {
+        const auto& json = components.at("magic_item");
+        registry.emplace<MagicItem>(
+            entity,
+            MagicItem{json.value("tier", std::string{"common"}),
+                      json.value("unidentified_name", std::string{}),
+                      json.value("identified", true)});
+    }
+    if (components.contains("identified_item")) {
+        registry.emplace<IdentifiedItem>(entity);
+    }
+    if (components.contains("cursed_item")) {
+        registry.emplace<CursedItem>(entity);
+    }
+    if (components.contains("vendor")) {
+        const auto& json = components.at("vendor");
+        registry.emplace<Vendor>(entity,
+                                 Vendor{json.value("category", std::string{}),
+                                        json.value("gold", 0)});
+    }
+    if (components.contains("faction")) {
+        registry.emplace<Faction>(
+            entity, Faction{components.at("faction").get<std::string>()});
+    }
+    if (components.contains("town_portal")) {
+        registry.emplace<TownPortal>(entity);
+    }
+    if (components.contains("provides_identify")) {
+        registry.emplace<ProvidesIdentify>(entity);
+    }
+    if (components.contains("provides_remove_curse")) {
+        registry.emplace<ProvidesRemoveCurse>(entity);
+    }
+    if (components.contains("confusion")) {
+        registry.emplace<Confusion>(
+            entity, Confusion{components.at("confusion").get<int>()});
+    }
+    if (components.contains("known_spells")) {
+        registry.emplace<KnownSpells>(
+            entity,
+            KnownSpells{
+                components.at("known_spells").get<std::vector<std::string>>()});
+    }
+    if (components.contains("spellbook")) {
+        registry.emplace<Spellbook>(
+            entity, Spellbook{components.at("spellbook").get<std::string>()});
+    }
+    if (components.contains("mana_cost")) {
+        registry.emplace<ManaCost>(
+            entity, ManaCost{components.at("mana_cost").get<int>()});
+    }
+    if (components.contains("breath_weapon")) {
+        const auto& json = components.at("breath_weapon");
+        registry.emplace<BreathWeapon>(entity,
+                                       BreathWeapon{json.value("range", 0),
+                                                    json.value("damage", 0),
+                                                    json.value("cooldown", 0)});
     }
 }
 
@@ -375,4 +528,5 @@ void loadEntityReferences(
         }
     }
 }
+
 } // namespace rl::save

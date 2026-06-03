@@ -37,6 +37,8 @@ namespace rl::save {
     putBool(json, "hidden", entity.hidden);
     putBool(json, "consumable", entity.consumable);
     putBool(json, "magic_mapper", entity.magicMapper);
+    putBool(json, "provides_identify", entity.providesIdentify);
+    putBool(json, "provides_remove_curse", entity.providesRemoveCurse);
     putBool(json, "neutral", entity.neutral);
     putBool(json, "bystander", entity.bystander);
     putBool(json, "prop", entity.prop);
@@ -94,6 +96,13 @@ namespace rl::save {
     }
     if (entity.defenseBonus.has_value()) {
         json["defense_bonus"] = entity.defenseBonus->amount;
+    }
+    if (entity.attributeBonus.has_value()) {
+        json["attribute_bonus"] =
+            Json{{"might", entity.attributeBonus->might},
+                 {"fitness", entity.attributeBonus->fitness},
+                 {"quickness", entity.attributeBonus->quickness},
+                 {"intelligence", entity.attributeBonus->intelligence}};
     }
     if (entity.trap.has_value()) {
         json["trap"] = Json{{"damage", entity.trap->damage},
@@ -184,6 +193,8 @@ namespace rl::save {
     entity.hidden = json.value("hidden", false);
     entity.consumable = json.value("consumable", false);
     entity.magicMapper = json.value("magic_mapper", false);
+    entity.providesIdentify = json.value("provides_identify", false);
+    entity.providesRemoveCurse = json.value("provides_remove_curse", false);
     entity.neutral = json.value("neutral", false);
     entity.bystander = json.value("bystander", false);
     entity.prop = json.value("prop", false);
@@ -250,6 +261,13 @@ namespace rl::save {
     }
     if (json.contains("defense_bonus")) {
         entity.defenseBonus = DefenseBonus{json.at("defense_bonus").get<int>()};
+    }
+    if (json.contains("attribute_bonus")) {
+        const auto& bonus = json.at("attribute_bonus");
+        entity.attributeBonus = AttributeBonus{bonus.value("might", 0),
+                                               bonus.value("fitness", 0),
+                                               bonus.value("quickness", 0),
+                                               bonus.value("intelligence", 0)};
     }
     if (json.contains("trap")) {
         const auto& trap = json.at("trap");

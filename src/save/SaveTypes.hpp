@@ -16,7 +16,7 @@ namespace rl::save {
 
 using Json = nlohmann::json;
 using EntityId = std::uint32_t;
-inline constexpr int currentSaveVersion = 5;
+inline constexpr int currentSaveVersion = 6;
 
 [[nodiscard]] std::string tileToString(TileType tile);
 [[nodiscard]] TileType tileFromString(const std::string& value);

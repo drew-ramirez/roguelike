@@ -59,6 +59,8 @@ namespace {
     if (registry.all_of<ProvidesNutrition>(entity)) {
         stored.providesNutrition = registry.get<ProvidesNutrition>(entity);
     }
+    stored.providesIdentify = registry.all_of<ProvidesIdentify>(entity);
+    stored.providesRemoveCurse = registry.all_of<ProvidesRemoveCurse>(entity);
     if (registry.all_of<Ranged>(entity)) {
         stored.ranged = registry.get<Ranged>(entity);
     }
@@ -76,6 +78,9 @@ namespace {
     }
     if (registry.all_of<DefenseBonus>(entity)) {
         stored.defenseBonus = registry.get<DefenseBonus>(entity);
+    }
+    if (registry.all_of<AttributeBonus>(entity)) {
+        stored.attributeBonus = registry.get<AttributeBonus>(entity);
     }
     if (registry.all_of<Trap>(entity)) {
         stored.trap = registry.get<Trap>(entity);
@@ -188,6 +193,12 @@ void restoreEntity(entt::registry& registry, const StoredEntity& stored)
     if (stored.providesNutrition.has_value()) {
         registry.emplace<ProvidesNutrition>(entity, *stored.providesNutrition);
     }
+    if (stored.providesIdentify) {
+        registry.emplace<ProvidesIdentify>(entity);
+    }
+    if (stored.providesRemoveCurse) {
+        registry.emplace<ProvidesRemoveCurse>(entity);
+    }
     if (stored.ranged.has_value()) {
         registry.emplace<Ranged>(entity, *stored.ranged);
     }
@@ -205,6 +216,9 @@ void restoreEntity(entt::registry& registry, const StoredEntity& stored)
     }
     if (stored.defenseBonus.has_value()) {
         registry.emplace<DefenseBonus>(entity, *stored.defenseBonus);
+    }
+    if (stored.attributeBonus.has_value()) {
+        registry.emplace<AttributeBonus>(entity, *stored.attributeBonus);
     }
     if (stored.trap.has_value()) {
         registry.emplace<Trap>(entity, *stored.trap);

@@ -41,12 +41,15 @@ struct StoredEntity {
     std::optional<Pools> pools;
     std::optional<ProvidesHealing> providesHealing;
     std::optional<ProvidesNutrition> providesNutrition;
+    bool providesIdentify = false;
+    bool providesRemoveCurse = false;
     std::optional<Ranged> ranged;
     std::optional<AreaOfEffect> areaOfEffect;
     std::optional<InflictsDamage> inflictsDamage;
     std::optional<Equippable> equippable;
     std::optional<MeleePowerBonus> meleePowerBonus;
     std::optional<DefenseBonus> defenseBonus;
+    std::optional<AttributeBonus> attributeBonus;
     std::optional<Trap> trap;
     std::optional<XpReward> xpReward;
     std::optional<ItemStats> itemStats;
