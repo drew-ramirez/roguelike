@@ -77,6 +77,7 @@ std::optional<Point> movementDeltaForKey(Key key)
     case Key::Z:
     case Key::Escape:
     case Key::Enter:
+    case Key::Space:
     case Key::F5:
     case Key::Descend:
     case Key::Ascend:

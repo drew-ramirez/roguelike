@@ -124,7 +124,12 @@ InventoryInputResult handleInventoryInput(entt::registry& registry,
                 resources.itemSelection = 0;
                 return InventoryInputResult::StartedItemSelection;
             }
-
+            if (!registry.all_of<Ranged>(selected) &&
+                registry.all_of<TownPortal, Item>(selected)) {
+                registry.emplace_or_replace<WantsToUseItem>(
+                    resources.player, WantsToUseItem{selected});
+                return InventoryInputResult::TookTurn;
+            }
             const bool consumedTurn = useInventoryItem(
                 registry, resources, map, resources.player, selected);
             if (resources.pendingTargeting.has_value()) {

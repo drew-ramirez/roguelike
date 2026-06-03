@@ -37,9 +37,7 @@
 #include "systems/MonsterAI.hpp"
 #include "systems/ParticleSystem.hpp"
 #include "systems/PortalSystem.hpp"
-#include "systems/RangedCombatSystem.hpp"
 #include "systems/RenderSystem.hpp"
-#include "systems/SpellSystem.hpp"
 #include "systems/SystemScheduler.hpp"
 #include "systems/TrapSystem.hpp"
 #include "systems/VendorSystem.hpp"
@@ -276,6 +274,8 @@ void Game::tick(const std::vector<InputEvent>& events)
             state_ = RunState::ShowVendor;
         } else if (input == PlayerInputResult::OpenSpellMenu) {
             state_ = RunState::ShowSpellMenu;
+        } else if (input == PlayerInputResult::StartedTargeting) {
+            state_ = RunState::ShowTargeting;
         } else if (input == PlayerInputResult::UsePortal) {
             if (tryUseReturnPortal(registry_, resources_, map_, fovProvider_)) {
                 state_ = RunState::AwaitingInput;
