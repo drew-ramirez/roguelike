@@ -57,6 +57,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/save/SaveGame.cpp
     src/save/SaveMap.cpp
     src/save/SavePrimitives.cpp
+    src/save/SaveResources.cpp
     src/spawn/ItemSpawner.cpp
     src/spawn/MonsterSpawner.cpp
     src/spawn/RawSpawner.cpp
@@ -194,6 +195,7 @@ set(ROGUELIKE_HEADERS
     src/render/WallGlyph.hpp
     src/save/SaveGame.hpp
     src/save/SaveMap.hpp
+    src/save/SaveResources.hpp
     src/save/SaveTypes.hpp
     src/spawn/ItemSpawner.hpp
     src/spawn/MonsterSpawner.hpp

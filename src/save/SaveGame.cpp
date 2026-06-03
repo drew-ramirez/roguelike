@@ -21,6 +21,7 @@
 #include "map/MasterDungeonMap.hpp"
 #include "map/TileType.hpp"
 #include "save/SaveMap.hpp"
+#include "save/SaveResources.hpp"
 #include "save/SaveTypes.hpp"
 
 namespace rl {
@@ -30,26 +31,19 @@ using save::colorFromJson;
 using save::colorToJson;
 using save::currentSaveVersion;
 using save::EntityId;
+using save::entityId;
 using save::hungerStateFromString;
 using save::hungerStateToString;
 using save::Json;
+using save::loadResources;
 using save::mapFromJson;
 using save::mapToJson;
 using save::pointFromJson;
 using save::pointToJson;
 using save::putBool;
+using save::resourcesToJson;
 using save::slotFromString;
 using save::slotToString;
-[[nodiscard]] EntityId entityId(const entt::registry& registry,
-                                entt::entity entity)
-{
-    if (entity == entt::null || !registry.valid(entity) ||
-        !registry.all_of<SaveEntityId>(entity)) {
-        return 0;
-    }
-    return registry.get<SaveEntityId>(entity).value;
-}
-
 void ensureSaveIds(entt::registry& registry)
 {
     EntityId next = 1;
@@ -409,49 +403,6 @@ void ensureSaveIds(entt::registry& registry)
         levels.emplace(level.depth, std::move(level));
     }
     return levels;
-}
-
-[[nodiscard]] Json resourcesToJson(const entt::registry& registry,
-                                   const GameResources& resources)
-{
-    Json messages = Json::array();
-    for (const auto message : resources.log.messages()) {
-        messages.push_back(std::string{message});
-    }
-
-    return Json{{"depth", resources.depth},
-                {"player", entityId(registry, resources.player)},
-                {"map_builder", resources.mapBuilderId},
-                {"rng_seed", resources.rng.seed()},
-                {"rng_engine", resources.rng.engineState()},
-                {"log", std::move(messages)}};
-}
-
-void loadResources(const Json& json,
-                   const std::unordered_map<EntityId, entt::entity>& entities,
-                   GameResources& resources)
-{
-    GameResources loaded;
-    loaded.depth = json.at("depth").get<int>();
-    if (loaded.depth < 1) {
-        throw std::runtime_error("Invalid saved dungeon depth");
-    }
-
-    loaded.rng.reseed(json.at("rng_seed").get<Rng::Seed>());
-    loaded.mapBuilderId = json.value("map_builder", std::string{"simple"});
-    loaded.rng.restoreEngineState(json.at("rng_engine").get<std::string>());
-    const auto playerId = json.at("player").get<EntityId>();
-    const auto player = entities.find(playerId);
-    if (player == entities.end()) {
-        throw std::runtime_error("Saved player entity is missing");
-    }
-    loaded.player = player->second;
-
-    for (const auto& message : json.value("log", Json::array())) {
-        loaded.log.add(message.get<std::string>());
-    }
-
-    resources = std::move(loaded);
 }
 
 [[nodiscard]] Json entityToJson(const entt::registry& registry,

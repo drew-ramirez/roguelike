@@ -1,6 +1,8 @@
 #include "save/SaveTypes.hpp"
 
 #include <cstdint>
+#include <string>
+#include <utility>
 
 namespace rl::save {
 
@@ -119,6 +121,81 @@ void putBool(Json& json, const char* key, bool value)
 [[nodiscard]] Point pointFromJson(const Json& json)
 {
     return Point{json.at("x").get<int>(), json.at("y").get<int>()};
+}
+
+[[nodiscard]] std::string logCategoryToString(LogCategory category)
+{
+    switch (category) {
+    case LogCategory::Combat:
+        return "combat";
+    case LogCategory::Items:
+        return "items";
+    case LogCategory::Progression:
+        return "progression";
+    case LogCategory::System:
+        return "system";
+    case LogCategory::General:
+        return "general";
+    }
+    return "general";
+}
+
+[[nodiscard]] LogCategory logCategoryFromString(const std::string& value)
+{
+    if (value == "combat") {
+        return LogCategory::Combat;
+    }
+    if (value == "items") {
+        return LogCategory::Items;
+    }
+    if (value == "progression") {
+        return LogCategory::Progression;
+    }
+    if (value == "system") {
+        return LogCategory::System;
+    }
+    return LogCategory::General;
+}
+
+[[nodiscard]] Json logEntryToJson(const LogEntry& entry)
+{
+    Json fragments = Json::array();
+    for (const auto& fragment : entry.fragments) {
+        fragments.push_back(
+            Json{{"text", fragment.text},
+                 {"foreground", colorToJson(fragment.foreground)}});
+    }
+    return Json{{"message", entry.message},
+                {"category", logCategoryToString(entry.category)},
+                {"sequence", entry.sequence},
+                {"fragments", std::move(fragments)}};
+}
+
+[[nodiscard]] LogEntry logEntryFromJson(const Json& json)
+{
+    LogEntry entry;
+    entry.message = json.value("message", std::string{});
+    entry.category =
+        logCategoryFromString(json.value("category", std::string{"general"}));
+    entry.sequence = json.value("sequence", 0);
+    for (const auto& fragment : json.value("fragments", Json::array())) {
+        entry.fragments.push_back(
+            LogFragment{fragment.value("text", std::string{}),
+                        fragment.contains("foreground")
+                            ? colorFromJson(fragment.at("foreground"))
+                            : defaultLogColor(entry.category)});
+    }
+    return entry;
+}
+
+[[nodiscard]] EntityId entityId(const entt::registry& registry,
+                                entt::entity entity)
+{
+    if (entity == entt::null || !registry.valid(entity) ||
+        !registry.all_of<SaveEntityId>(entity)) {
+        return 0;
+    }
+    return registry.get<SaveEntityId>(entity).value;
 }
 
 } // namespace rl::save
