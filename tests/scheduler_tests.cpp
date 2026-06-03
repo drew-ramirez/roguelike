@@ -20,7 +20,11 @@ void runSchedulerTests(TestRunner& runner)
                           findPhase(SystemPhase::PlayerIntent) &&
                       findPhase(SystemPhase::AITurn) <
                           findPhase(SystemPhase::RenderPrep),
-                  "scheduler exposes deterministic turn phases");
+                  "scheduler exposes deterministic named turn phases");
+    runner.expect(systemPhaseName(SystemPhase::PlayerIntent) ==
+                          "PlayerIntent" &&
+                      systemPhaseName(SystemPhase::RenderPrep) == "RenderPrep",
+                  "scheduler exposes Section 4 phase names");
 
     std::vector<std::string> calls;
     SystemScheduler scheduler;

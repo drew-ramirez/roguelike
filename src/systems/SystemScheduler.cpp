@@ -59,6 +59,31 @@ std::vector<SystemPhase> defaultSystemPhaseOrder()
             SystemPhase::RenderPrep};
 }
 
+std::string_view systemPhaseName(SystemPhase phase) noexcept
+{
+    switch (phase) {
+    case SystemPhase::PreTurn:
+        return "PreTurn";
+    case SystemPhase::PlayerIntent:
+        return "PlayerIntent";
+    case SystemPhase::AITurn:
+        return "AITurn";
+    case SystemPhase::Movement:
+        return "Movement";
+    case SystemPhase::Combat:
+        return "Combat";
+    case SystemPhase::Effects:
+        return "Effects";
+    case SystemPhase::Cleanup:
+        return "Cleanup";
+    case SystemPhase::Visibility:
+        return "Visibility";
+    case SystemPhase::RenderPrep:
+        return "RenderPrep";
+    }
+    return "unknown";
+}
+
 SystemScheduler::SystemScheduler() : phaseOrder_(defaultSystemPhaseOrder()) {}
 
 SystemScheduler::SystemScheduler(std::vector<SystemPhase> phaseOrder)
@@ -80,8 +105,8 @@ void SystemScheduler::registerSystem(SystemPhase phase,
         throw std::invalid_argument("Scheduled system task must be callable");
     }
 
-    systems_.push_back(
-        ScheduledSystem{phase, std::move(name), std::move(task)});
+    systems_.push_back(ScheduledSystem{
+        phase, std::move(name), std::move(task), systems_.size()});
 }
 
 void SystemScheduler::run() const
@@ -100,6 +125,22 @@ void SystemScheduler::runPhase(SystemPhase phase) const
     }
 }
 
+std::vector<SystemPhase> SystemScheduler::phaseOrder() const
+{
+    return phaseOrder_;
+}
+
+std::vector<ScheduledSystemInfo> SystemScheduler::registeredSystems() const
+{
+    std::vector<ScheduledSystemInfo> result;
+    result.reserve(systems_.size());
+    for (const auto& system : systems_) {
+        result.push_back(ScheduledSystemInfo{
+            system.phase, system.name, system.registrationOrder});
+    }
+    return result;
+}
+
 std::vector<ScheduledSystemInfo> SystemScheduler::executionPlan() const
 {
     std::vector<ScheduledSystemInfo> result;
@@ -107,8 +148,8 @@ std::vector<ScheduledSystemInfo> SystemScheduler::executionPlan() const
     for (const auto phase : phaseOrder_) {
         for (const auto& system : systems_) {
             if (system.phase == phase) {
-                result.push_back(
-                    ScheduledSystemInfo{system.phase, system.name});
+                result.push_back(ScheduledSystemInfo{
+                    system.phase, system.name, system.registrationOrder});
             }
         }
     }
