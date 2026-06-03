@@ -96,6 +96,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/ui/Targeting.cpp
     src/ui/VendorMenu.cpp
     src/ui/Widgets.cpp
+    src/world/WorldGeneration.cpp
 )
 
 set(ROGUELIKE_APP_SOURCES
@@ -239,6 +240,8 @@ set(ROGUELIKE_HEADERS
     src/ui/Targeting.hpp
     src/ui/VendorMenu.hpp
     src/ui/Widgets.hpp
+    src/world/WorldGeneration.hpp
+    src/world/WorldTypes.hpp
 )
 
 set(ROGUELIKE_FORMAT_FILES
