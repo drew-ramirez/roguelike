@@ -106,8 +106,7 @@ void runLevelSnapshotTests(TestRunner& runner)
                                      2,
                                      LevelArrivalMode::UpStairs),
                       "stair transition reaches a deeper level");
-        runner.expect(resources.depth == 2,
-                      "stair transition updates depth");
+        runner.expect(resources.depth == 2, "stair transition updates depth");
 
         runner.expect(tryChangeLevel(registry,
                                      resources,
@@ -146,9 +145,9 @@ void runLevelSnapshotTests(TestRunner& runner)
         entt::registry loadedRegistry;
         GameResources loadedResources;
         Map loadedMap{1, 1};
-        runner.expect(deserializeGame(
-                          text, loadedRegistry, loadedResources, loadedMap),
-                      "save JSON with archived levels loads");
+        runner.expect(
+            deserializeGame(text, loadedRegistry, loadedResources, loadedMap),
+            "save JSON with archived levels loads");
         runner.expect(loadedResources.dungeon.hasLevel(1),
                       "load restores archived dungeon levels");
 

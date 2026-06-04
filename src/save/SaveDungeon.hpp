@@ -2,7 +2,6 @@
 
 #include <map>
 
-#include "map/MasterDungeonMap.hpp"
 #include "save/SaveTypes.hpp"
 
 namespace rl::save {

@@ -2,15 +2,10 @@
 
 #include <unordered_map>
 
-#include <entt/entt.hpp>
-
 #include "save/SaveTypes.hpp"
 
 namespace rl::save {
 
-void ensureSaveIds(entt::registry& registry);
-[[nodiscard]] EntityId entityId(const entt::registry& registry,
-                                entt::entity entity);
 [[nodiscard]] Json entityToJson(const entt::registry& registry,
                                 entt::entity entity);
 void loadEntityImmediateComponents(entt::registry& registry,

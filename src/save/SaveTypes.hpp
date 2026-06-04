@@ -1,16 +1,19 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <string>
+#include <unordered_map>
 
 #include <entt/entt.hpp>
 #include <nlohmann/json.hpp>
 
-#include "core/GameLog.hpp"
+#include "core/GameResources.hpp"
 #include "core/Point.hpp"
 #include "ecs/Components.hpp"
+#include "map/Map.hpp"
+#include "map/MasterDungeonMap.hpp"
 #include "map/TileType.hpp"
-#include "render/Color.hpp"
 
 namespace rl::save {
 
@@ -33,5 +36,9 @@ void putBool(Json& json, const char* key, bool value);
 [[nodiscard]] LogCategory logCategoryFromString(const std::string& value);
 [[nodiscard]] Json logEntryToJson(const LogEntry& entry);
 [[nodiscard]] LogEntry logEntryFromJson(const Json& json);
+
+[[nodiscard]] EntityId entityId(const entt::registry& registry,
+                                entt::entity entity);
+void ensureSaveIds(entt::registry& registry);
 
 } // namespace rl::save

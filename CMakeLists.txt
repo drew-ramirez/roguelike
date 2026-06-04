@@ -305,7 +305,7 @@ add_dependencies(roguelike_core_tests copy_data)
 
 foreach(target_name roguelike_core roguelike roguelike_core_tests)
     if(MSVC)
-        target_compile_options(${target_name} PRIVATE /W4 /permissive-)
+        target_compile_options(${target_name} PRIVATE /W4 /permissive- /FS)
     else()
         target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wpedantic)
     endif()

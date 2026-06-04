@@ -2,9 +2,6 @@
 
 #include <unordered_map>
 
-#include <entt/entt.hpp>
-
-#include "core/GameResources.hpp"
 #include "save/SaveTypes.hpp"
 
 namespace rl::save {

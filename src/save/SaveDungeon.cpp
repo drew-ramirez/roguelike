@@ -1,10 +1,8 @@
 #include "save/SaveDungeon.hpp"
 
 #include <cstdint>
-#include <map>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "save/SaveMap.hpp"
 

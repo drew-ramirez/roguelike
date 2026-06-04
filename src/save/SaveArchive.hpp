@@ -1,7 +1,5 @@
 #pragma once
 
-#include "core/GameResources.hpp"
-#include "map/Map.hpp"
 #include "save/SaveTypes.hpp"
 
 namespace rl::save {

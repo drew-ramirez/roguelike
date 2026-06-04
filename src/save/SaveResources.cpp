@@ -6,8 +6,6 @@
 #include <utility>
 #include <vector>
 
-#include "save/SaveEntities.hpp"
-
 namespace rl::save {
 
 [[nodiscard]] Json resourcesToJson(const entt::registry& registry,
