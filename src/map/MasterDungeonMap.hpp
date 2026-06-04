@@ -98,6 +98,11 @@ class MasterDungeonMap {
                                             entt::entity player,
                                             entt::entity entity);
 
+[[nodiscard]] std::vector<StoredEntity>
+captureLevelLocalEntities(const entt::registry& registry,
+                          entt::entity player);
+void restoreStoredEntities(entt::registry& registry,
+                           const std::vector<StoredEntity>& entities);
 void destroyLevelLocalEntities(entt::registry& registry, entt::entity player);
 
 } // namespace rl

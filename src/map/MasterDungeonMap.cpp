@@ -287,6 +287,27 @@ bool isPlayerPersistentEntity(const entt::registry& registry,
            registry.get<Equipped>(entity).owner == player;
 }
 
+std::vector<StoredEntity>
+captureLevelLocalEntities(const entt::registry& registry, entt::entity player)
+{
+    std::vector<StoredEntity> entities;
+    const auto named = registry.view<const Name>();
+    for (const auto entity : named) {
+        if (!isPlayerPersistentEntity(registry, player, entity)) {
+            entities.push_back(captureEntity(registry, entity));
+        }
+    }
+    return entities;
+}
+
+void restoreStoredEntities(entt::registry& registry,
+                           const std::vector<StoredEntity>& entities)
+{
+    for (const auto& entity : entities) {
+        restoreEntity(registry, entity);
+    }
+}
+
 void destroyLevelLocalEntities(entt::registry& registry, entt::entity player)
 {
     std::vector<entt::entity> doomed;
@@ -314,13 +335,7 @@ void MasterDungeonMap::storeLevel(int depth,
     state.depth = depth;
     state.builderId = std::move(builderId);
     state.map = map;
-
-    const auto named = registry.view<const Name>();
-    for (const auto entity : named) {
-        if (!isPlayerPersistentEntity(registry, player, entity)) {
-            state.entities.push_back(captureEntity(registry, entity));
-        }
-    }
+    state.entities = captureLevelLocalEntities(registry, player);
 
     levels_[depth] = std::move(state);
 }
@@ -346,9 +361,7 @@ void MasterDungeonMap::restoreLevel(int depth,
     }
 
     map = state->map;
-    for (const auto& entity : state->entities) {
-        restoreEntity(registry, entity);
-    }
+    restoreStoredEntities(registry, state->entities);
 }
 
 void MasterDungeonMap::clear()

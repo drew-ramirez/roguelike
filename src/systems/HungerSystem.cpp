@@ -7,6 +7,8 @@
 
 #include "systems/HungerSystem.hpp"
 
+#include <algorithm>
+
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "systems/DamageSystem.hpp"
@@ -65,6 +67,33 @@ std::string_view hungerStateLabel(HungerState state) noexcept
         return "Starving";
     }
     return "Normal";
+}
+
+void consumeHunger(entt::registry& registry,
+                   GameResources& resources,
+                   int amount)
+{
+    if (amount <= 0) {
+        return;
+    }
+
+    const auto player = resources.player;
+    if (player == entt::null || !registry.valid(player) ||
+        !registry.all_of<HungerClock>(player)) {
+        return;
+    }
+
+    auto& clock = registry.get<HungerClock>(player);
+    const HungerState previous = clock.state;
+    clock.duration -= amount;
+    clock.state = hungerStateForDuration(clock.duration);
+    logStateTransition(resources, previous, clock.state);
+
+    if (clock.state == HungerState::Starving) {
+        const int damage = std::max(1, amount / starvationDamageInterval);
+        resources.log.add("Starvation hurts.");
+        queueDamage(registry, player, damage);
+    }
 }
 
 void processHunger(entt::registry& registry, GameResources& resources)

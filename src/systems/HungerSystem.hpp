@@ -19,6 +19,9 @@ struct GameResources;
 [[nodiscard]] HungerState hungerStateForDuration(int duration) noexcept;
 [[nodiscard]] std::string_view hungerStateLabel(HungerState state) noexcept;
 
+void consumeHunger(entt::registry& registry,
+                   GameResources& resources,
+                   int amount);
 void processHunger(entt::registry& registry, GameResources& resources);
 
 } // namespace rl

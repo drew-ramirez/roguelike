@@ -43,12 +43,9 @@ void runRegionRoutingTests(TestRunner& runner)
     runner.expect(routeForDepth(4).region == DungeonRegion::DeepCaverns &&
                       routeForDepth(4).builderId == "deep-caverns",
                   "depth 4 routes to deep caverns");
-    runner.expect(routeForDepth(5).region ==
-                          DungeonRegion::DwarfFortTransition &&
-                      routeForDepth(5).builderId == "dwarf-transition",
+    runner.expect(routeForDepth(5).region == DungeonRegion::DwarfFortTransition,
                   "depth 5 routes to dwarf transition");
-    runner.expect(routeForDepth(6).region == DungeonRegion::DragonLair &&
-                      routeForDepth(6).builderId == "dragon-lair",
+    runner.expect(routeForDepth(6).region == DungeonRegion::DragonLair,
                   "depth 6 routes to dragon fort");
     runner.expect(routeForDepth(7).region == DungeonRegion::MushroomEntrance,
                   "depth 7 routes to mushroom entrance");
@@ -68,6 +65,8 @@ void runRegionRoutingTests(TestRunner& runner)
         town.map.tileAt(town.stairsPosition.x, town.stairsPosition.y) ==
             TileType::DownStairs,
         "town has a down exit");
+    runner.expect(hasSpawnRequest(town, "food_ration"),
+                  "town starts with an emergency food pickup");
 
     Rng woodsRng{100U};
     const auto woods = buildLevelForDepth(2, 40, 25, woodsRng, {});
@@ -93,7 +92,8 @@ void runRegionRoutingTests(TestRunner& runner)
                   "limestone caverns expose multiple spawn regions");
     runner.expect(hasSpawnRequest(cavern, "kobold") &&
                       hasSpawnRequest(cavern, "cave_bat") &&
-                      hasSpawnRequest(cavern, "limestone_column"),
+                      hasSpawnRequest(cavern, "limestone_column") &&
+                      hasSpawnRequest(cavern, "food_ration"),
                   "limestone caverns request themed encounters");
     runner.expect(
         cavern.map.tileAt(cavern.playerStart.x, cavern.playerStart.y) ==

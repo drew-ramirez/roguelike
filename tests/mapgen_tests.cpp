@@ -243,6 +243,15 @@ void setChunkTile(wfc::ChunkPattern& pattern, int x, int y, TileType tile)
                        });
 }
 
+[[nodiscard]] bool hasSpawnRequest(const MapBuildResult& result,
+                                   std::string_view id)
+{
+    return std::any_of(
+        result.spawnRequests.begin(),
+        result.spawnRequests.end(),
+        [id](const SpawnRequest& request) { return request.id == id; });
+}
+
 } // namespace
 
 void runMapgenTests(TestRunner& runner)
@@ -471,8 +480,9 @@ void runMapgenTests(TestRunner& runner)
                       "town builder output validates through pipeline");
         runner.expect(
             hasSpawn("blacksmith") && hasSpawn("alchemist") &&
-                hasSpawn("townsfolk") && hasSpawn("chair"),
-            "town builder requests vendor, bystander, and prop spawns");
+                hasSpawn("townsfolk") && hasSpawn("chair") &&
+                hasSpawn("food_ration"),
+            "town builder requests vendor, bystander, prop, and food spawns");
     }
 
     {
@@ -519,21 +529,15 @@ void runMapgenTests(TestRunner& runner)
                 regions[index].id, 40, 25, rng, MapBuildOptions{true});
             const auto validation = validateMapBuild(
                 result.map, result.playerStart, result.stairsPosition);
-            const auto hasRegionSpawn = [&](std::string_view id) {
-                return std::any_of(
-                    result.spawnRequests.begin(),
-                    result.spawnRequests.end(),
-                    [id](const auto& request) { return request.id == id; });
-            };
             runner.expect(validation.valid,
                           regions[index].id + " region validates");
             runner.expect(
                 hasBuildStepContaining(result, regions[index].buildStep),
                 regions[index].id + " records authored theme");
-            runner.expect(hasRegionSpawn(regions[index].firstSpawn) &&
-                              hasRegionSpawn(regions[index].secondSpawn),
-                          regions[index].id +
-                              " requests authored region content");
+            runner.expect(
+                hasSpawnRequest(result, regions[index].firstSpawn) &&
+                    hasSpawnRequest(result, regions[index].secondSpawn),
+                regions[index].id + " requests authored region content");
         }
     }
 
@@ -776,37 +780,38 @@ void runMapgenTests(TestRunner& runner)
     }
 
     {
-        runner.expect(isKnownMapBuilder("simple") && isKnownMapBuilder("bsp") &&
-                          isKnownMapBuilder("bsp-interior") &&
-                          isKnownMapBuilder("cellular") &&
-                          isKnownMapBuilder("drunkard") &&
-                          isKnownMapBuilder("drunkard-open-area") &&
-                          isKnownMapBuilder("drunkard-open-halls") &&
-                          isKnownMapBuilder("drunkard-winding-passages") &&
-                          isKnownMapBuilder("drunkard-fat-passages") &&
-                          isKnownMapBuilder("drunkard-symmetry") &&
-                          isKnownMapBuilder("maze") &&
-                          isKnownMapBuilder("dla") &&
-                          isKnownMapBuilder("dla-walk-inwards") &&
-                          isKnownMapBuilder("dla-walk-outwards") &&
-                          isKnownMapBuilder("dla-central-attractor") &&
-                          isKnownMapBuilder("dla-insectoid") &&
-                          isKnownMapBuilder("voronoi") &&
-                          isKnownMapBuilder("voronoi-pythagoras") &&
-                          isKnownMapBuilder("voronoi-manhattan") &&
-                          isKnownMapBuilder("voronoi-chebyshev") &&
-                          isKnownMapBuilder("wfc") &&
-                          isKnownMapBuilder("limestone-caverns") &&
-                          isKnownMapBuilder("deep-caverns") &&
-                          isKnownMapBuilder("dwarf-transition") &&
-                          isKnownMapBuilder("dragon-lair") &&
-                          isKnownMapBuilder("mushroom-entrance") &&
-                          isKnownMapBuilder("mushroom-forest") &&
-                          isKnownMapBuilder("mushroom-exit") &&
-                          isKnownMapBuilder("dark-elf-city") &&
-                          isKnownMapBuilder("cavern-vaults") &&
-                          isKnownMapBuilder("ruined-rooms"),
-                      "mapgen viewer exposes all implemented builders");
+        runner.expect(
+            isKnownMapBuilder("simple") && isKnownMapBuilder("bsp") &&
+                isKnownMapBuilder("bsp-interior") &&
+                isKnownMapBuilder("cellular") &&
+                isKnownMapBuilder("drunkard") &&
+                isKnownMapBuilder("drunkard-open-area") &&
+                isKnownMapBuilder("drunkard-open-halls") &&
+                isKnownMapBuilder("drunkard-winding-passages") &&
+                isKnownMapBuilder("drunkard-fat-passages") &&
+                isKnownMapBuilder("drunkard-symmetry") &&
+                isKnownMapBuilder("maze") && isKnownMapBuilder("dla") &&
+                isKnownMapBuilder("dla-walk-inwards") &&
+                isKnownMapBuilder("dla-walk-outwards") &&
+                isKnownMapBuilder("dla-central-attractor") &&
+                isKnownMapBuilder("dla-insectoid") &&
+                isKnownMapBuilder("voronoi") &&
+                isKnownMapBuilder("voronoi-pythagoras") &&
+                isKnownMapBuilder("voronoi-manhattan") &&
+                isKnownMapBuilder("voronoi-chebyshev") &&
+                isKnownMapBuilder("wfc") && isKnownMapBuilder("town") &&
+                isKnownMapBuilder("woods") &&
+                isKnownMapBuilder("limestone-caverns") &&
+                isKnownMapBuilder("deep-caverns") &&
+                isKnownMapBuilder("dwarf-transition") &&
+                isKnownMapBuilder("dragon-lair") &&
+                isKnownMapBuilder("mushroom-entrance") &&
+                isKnownMapBuilder("mushroom-forest") &&
+                isKnownMapBuilder("mushroom-exit") &&
+                isKnownMapBuilder("dark-elf-city") &&
+                isKnownMapBuilder("cavern-vaults") &&
+                isKnownMapBuilder("ruined-rooms"),
+            "mapgen viewer exposes all implemented builders");
         std::ostringstream output;
         const int result = runMapgenViewer(
             MapgenViewerOptions{"bsp", Rng::Seed{777U}, false, 40, 25}, output);
@@ -828,6 +833,8 @@ void runMapgenTests(TestRunner& runner)
                                            "dla",
                                            "voronoi",
                                            "wfc",
+                                           "town",
+                                           "woods",
                                            "limestone-caverns",
                                            "deep-caverns",
                                            "dwarf-transition",
@@ -898,6 +905,7 @@ void runMapgenTests(TestRunner& runner)
             {"cellular", 72.0, 82.0},
             {"limestone-caverns", 72.0, 82.0},
             {"cavern-vaults", 75.0, 84.0},
+            {"woods", 58.0, 70.0},
             {"mushroom-entrance", 62.0, 76.0},
             {"mushroom-forest", 62.0, 76.0},
             {"mushroom-exit", 62.0, 76.0},
