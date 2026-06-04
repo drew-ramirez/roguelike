@@ -1,6 +1,7 @@
 #include "TestSuites.hpp"
 
 #include <algorithm>
+#include <utility>
 
 #include <entt/entt.hpp>
 
@@ -14,6 +15,7 @@
 #include "spawn/Spawner.hpp"
 #include "systems/EquipmentSystem.hpp"
 #include "systems/ItemSystem.hpp"
+#include "world/WorldGeneration.hpp"
 
 namespace rl::test {
 
@@ -33,6 +35,35 @@ void runSaveLoadTests(TestRunner& runner)
     resources.townPortalReturnDepth = 4;
     resources.townPortalReturnPosition = Point{5, 5};
     resources.townPortalPosition = Point{2, 2};
+    resources.world = generateWorldMap(resources.rng.seed());
+    resources.world.currentMacro = reedfenWorldPosition();
+    resources.world.currentScreen = Point{1, 1};
+    resources.world.cursor = limestoneWorldPosition();
+    resources.world.undergroundEntryDepth = 5;
+    updateCurrentWorldRegion(resources.world);
+    runner.expect(unlockCurrentLandmarkFastTravel(resources.world),
+                  "test setup unlocks Reedfen fast travel");
+    if (auto* greenholt =
+            worldRegionById(resources.world, "greenholt_hearth")) {
+        for (auto& route : greenholt->routes) {
+            if (route.destinationRegionId == "reedfen_ford") {
+                route.discovered = false;
+            }
+        }
+    }
+    SurfaceScreenState cachedSurface;
+    cachedSurface.key =
+        SurfaceScreenKey{reedfenWorldPosition(), Point{0, 1}, false};
+    cachedSurface.builderId = "surface-cardinal-transition";
+    cachedSurface.map = Map{6, 6, TileType::Floor};
+    cachedSurface.map.setTile(1, 1, TileType::Wall);
+    cachedSurface.map.setRevealed(2, 2, true);
+    StoredEntity cachedEntity;
+    cachedEntity.name = Name{"Cached reed cache"};
+    cachedEntity.position = Position{2, 2};
+    cachedSurface.entities.push_back(cachedEntity);
+    resources.world.surfaceScreens.emplace(cachedSurface.key,
+                                           std::move(cachedSurface));
     resources.log.incrementCounter("kills", 2);
     resources.log.addFragments(
         LogCategory::Items,
@@ -80,6 +111,38 @@ void runSaveLoadTests(TestRunner& runner)
                       loadedResources.townPortalReturnPosition == Point{5, 5} &&
                       loadedResources.townPortalPosition == Point{2, 2},
                   "load restores active portal state");
+    runner.expect(
+        loadedResources.world.currentMacro == reedfenWorldPosition() &&
+            loadedResources.world.currentScreen == Point{1, 1} &&
+            loadedResources.world.cursor == limestoneWorldPosition() &&
+            loadedResources.world.currentRegionId == "reedfen_ford" &&
+            loadedResources.world.undergroundEntryDepth == 5,
+        "load restores surface world position and cursor state");
+    const auto* loadedReedfen =
+        worldCellAt(loadedResources.world, reedfenWorldPosition());
+    runner.expect(loadedReedfen != nullptr && loadedReedfen->discovered &&
+                      loadedReedfen->visited &&
+                      loadedReedfen->landmark.has_value() &&
+                      loadedReedfen->landmark->fastTravelUnlocked,
+                  "load restores landmark discovery and fast travel unlock");
+    const auto* loadedGreenholt =
+        worldRegionById(loadedResources.world, "greenholt_hearth");
+    runner.expect(loadedGreenholt != nullptr &&
+                      findDiscoveredRoute(*loadedGreenholt, "reedfen_ford") ==
+                          nullptr,
+                  "load restores route discovery state");
+    const SurfaceScreenKey cachedKey{
+        reedfenWorldPosition(), Point{0, 1}, false};
+    const auto cached = loadedResources.world.surfaceScreens.find(cachedKey);
+    runner.expect(
+        cached != loadedResources.world.surfaceScreens.end() &&
+            cached->second.builderId == "surface-cardinal-transition" &&
+            cached->second.map.tileAt(1, 1) == TileType::Wall &&
+            cached->second.map.isRevealed(2, 2) &&
+            cached->second.entities.size() == 1 &&
+            cached->second.entities.front().name.has_value() &&
+            cached->second.entities.front().name->value == "Cached reed cache",
+        "load restores cached surface screen snapshots");
     runner.expect(loadedResources.log.counter("kills") == 2,
                   "load restores log progress counters");
     const auto logEntries = loadedResources.log.entries();

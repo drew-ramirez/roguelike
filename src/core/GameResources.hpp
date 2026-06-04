@@ -7,6 +7,7 @@
 #include "core/Rng.hpp"
 #include "map/MasterDungeonMap.hpp"
 #include "render/Color.hpp"
+#include "world/WorldTypes.hpp"
 
 #include <optional>
 #include <string>
@@ -61,6 +62,7 @@ struct GameResources {
     int depth = 1;
     std::string mapBuilderId = "normal";
     MasterDungeonMap dungeon;
+    WorldMapState world;
     int inventorySelection = 0;
     int vendorSelection = 0;
     int spellSelection = 0;
