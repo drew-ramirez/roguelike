@@ -29,6 +29,11 @@ class RawDatabase {
     entity(std::string_view name) const noexcept;
     [[nodiscard]] const RawSpell* spell(std::string_view id) const noexcept;
     [[nodiscard]] const RawFaction* faction(std::string_view id) const noexcept;
+    [[nodiscard]] const RawIngredient*
+    ingredient(std::string_view id) const noexcept;
+    [[nodiscard]] const RawRecipe* recipe(std::string_view id) const noexcept;
+    [[nodiscard]] const RawBiomeResourceTable*
+    biomeResourceTable(std::string_view id) const noexcept;
     [[nodiscard]] std::vector<std::string>
     itemIdsForCategory(std::string_view category) const;
 
@@ -42,6 +47,10 @@ class RawDatabase {
     std::unordered_map<std::string, std::string> entityAliases_;
     std::unordered_map<std::string, RawSpell> spells_;
     std::unordered_map<std::string, RawFaction> factions_;
+    std::unordered_map<std::string, RawIngredient> ingredients_;
+    std::unordered_map<std::string, RawRecipe> recipes_;
+    std::unordered_map<std::string, RawBiomeResourceTable>
+        biomeResourceTables_;
     std::vector<SpawnEntry> monsterSpawnTable_;
     std::vector<SpawnEntry> itemSpawnTable_;
     std::vector<SpawnEntry> propSpawnTable_;

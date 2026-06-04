@@ -93,6 +93,22 @@ struct RawVendor {
     int gold = 0;
 };
 
+struct RawCampSite {
+    std::string campType;
+    int safetyBonus = 0;
+};
+
+struct RawCookingStation {
+    std::string stationId;
+    std::vector<std::string> methods;
+    std::vector<std::string> placeTags;
+};
+
+struct RawSettlementService {
+    std::string serviceId;
+    std::string recipeId;
+};
+
 struct RawEntityTemplate {
     std::string id;
     std::string name;
@@ -107,6 +123,9 @@ struct RawEntityTemplate {
     bool grantsWin = false;
     std::string faction;
     std::optional<RawVendor> vendor;
+    std::optional<RawCampSite> campSite;
+    std::optional<RawCookingStation> cookingStation;
+    std::optional<RawSettlementService> settlementService;
     std::optional<RawCombatStats> combat;
     std::optional<RawAttributes> attributes;
     std::optional<RawPools> pools;
@@ -140,6 +159,46 @@ struct RawSpell {
 struct RawFaction {
     std::string id;
     std::vector<std::string> hostileTo;
+};
+
+struct RawIngredient {
+    std::string id;
+    std::string name;
+    std::optional<std::string> item;
+    std::vector<std::string> tags;
+};
+
+struct RawIngredientAmount {
+    std::string id;
+    int count = 1;
+};
+
+struct RawRecipeOutput {
+    std::string id;
+    int count = 1;
+};
+
+struct RawRecipe {
+    std::string id;
+    std::string name;
+    std::string station;
+    std::vector<RawIngredientAmount> ingredients;
+    std::vector<RawRecipeOutput> outputs;
+    std::string method;
+    std::vector<std::string> placeTags;
+    int nutrition = 300;
+};
+
+struct RawBiomeResourceEntry {
+    std::string ingredient;
+    int weight = 1;
+    int minCount = 1;
+    int maxCount = 1;
+};
+
+struct RawBiomeResourceTable {
+    std::string id;
+    std::vector<RawBiomeResourceEntry> resources;
 };
 
 } // namespace rl
