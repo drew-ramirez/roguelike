@@ -15,13 +15,29 @@ struct GameResources;
 class IFovProvider;
 class Map;
 
+enum class LevelArrivalMode { DownStairs, UpStairs, PortalReturn };
+
 [[nodiscard]] bool playerIsOnDownStairs(const entt::registry& registry,
                                         const GameResources& resources,
                                         const Map& map);
+[[nodiscard]] bool playerIsOnUpStairs(const entt::registry& registry,
+                                      const GameResources& resources,
+                                      const Map& map);
+
+[[nodiscard]] bool tryChangeLevel(entt::registry& registry,
+                                  GameResources& resources,
+                                  Map& map,
+                                  IFovProvider& fovProvider,
+                                  int targetDepth,
+                                  LevelArrivalMode arrivalMode);
 
 [[nodiscard]] bool tryDescendToNextLevel(entt::registry& registry,
                                          GameResources& resources,
                                          Map& map,
                                          IFovProvider& fovProvider);
+[[nodiscard]] bool tryAscendToPreviousLevel(entt::registry& registry,
+                                            GameResources& resources,
+                                            Map& map,
+                                            IFovProvider& fovProvider);
 
 } // namespace rl

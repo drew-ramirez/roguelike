@@ -54,6 +54,16 @@ void setDistantStairs(Map& map, Point start, Point& stairsPosition)
     map.setTile(stairsPosition.x, stairsPosition.y, TileType::DownStairs);
 }
 
+void setUpStairsAtStart(Map& map, Point start, Point& upStairsPosition)
+{
+    if (!map.inBounds(start.x, start.y) || !map.isWalkable(start.x, start.y)) {
+        throw std::runtime_error("Unable to place up stairs at level start");
+    }
+
+    upStairsPosition = start;
+    map.setTile(upStairsPosition.x, upStairsPosition.y, TileType::UpStairs);
+}
+
 void recordSnapshot(std::vector<MapSnapshot>& snapshots,
                     const Map& map,
                     std::string label,

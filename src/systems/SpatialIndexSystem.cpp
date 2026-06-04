@@ -1,7 +1,7 @@
 /**
  * **************************************************************************
  * @file     SpatialIndexSystem.cpp
- * @brief    Finds tile-blocking entities for movement and bump combat
+ * @brief    Finds tile occupants for movement, pickup, and spawning
  * **************************************************************************
  */
 
@@ -12,24 +12,60 @@
 
 namespace rl {
 
-std::optional<entt::entity> blockingEntityAt(const entt::registry& registry,
-                                             Point position,
-                                             entt::entity ignored)
+TileContent tileContentAt(const entt::registry& registry,
+                          Point position,
+                          entt::entity ignored)
 {
-    const auto view = registry.view<const Position, const BlocksTile>();
+    TileContent content;
+    const auto view = registry.view<const Position>();
     for (const auto entity : view) {
         if (entity == ignored) {
             continue;
         }
 
-        const auto& blockerPosition = view.get<const Position>(entity);
-        if (blockerPosition.x == position.x &&
-            blockerPosition.y == position.y) {
-            return entity;
+        const auto& entityPosition = view.get<const Position>(entity);
+        if (entityPosition.x != position.x || entityPosition.y != position.y) {
+            continue;
+        }
+
+        content.entities.push_back(entity);
+        if (!content.blocker.has_value() &&
+            registry.all_of<BlocksTile>(entity)) {
+            content.blocker = entity;
+        }
+        if (!content.item.has_value() && registry.all_of<Item>(entity)) {
+            content.item = entity;
+        }
+        if (!content.trap.has_value() && registry.all_of<Trap>(entity)) {
+            content.trap = entity;
         }
     }
+    return content;
+}
 
-    return std::nullopt;
+std::vector<entt::entity>
+entitiesAt(const entt::registry& registry, Point position, entt::entity ignored)
+{
+    return tileContentAt(registry, position, ignored).entities;
+}
+
+std::optional<entt::entity> blockingEntityAt(const entt::registry& registry,
+                                             Point position,
+                                             entt::entity ignored)
+{
+    return tileContentAt(registry, position, ignored).blocker;
+}
+
+std::optional<entt::entity>
+itemAt(const entt::registry& registry, Point position, entt::entity ignored)
+{
+    return tileContentAt(registry, position, ignored).item;
+}
+
+std::optional<entt::entity>
+trapAt(const entt::registry& registry, Point position, entt::entity ignored)
+{
+    return tileContentAt(registry, position, ignored).trap;
 }
 
 bool isBlocked(const Map& map,

@@ -20,7 +20,18 @@ namespace rl {
 struct GameResources;
 class Map;
 
-enum class PlayerInputResult { None, TookTurn, OpenInventory, Descend, Save };
+enum class PlayerInputResult {
+    None,
+    TookTurn,
+    OpenInventory,
+    OpenVendor,
+    OpenSpellMenu,
+    StartedTargeting,
+    UsePortal,
+    Descend,
+    Ascend,
+    Save
+};
 
 /**
  * Converts supported movement keys into tile deltas

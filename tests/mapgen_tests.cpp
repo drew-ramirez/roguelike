@@ -243,6 +243,15 @@ void setChunkTile(wfc::ChunkPattern& pattern, int x, int y, TileType tile)
                        });
 }
 
+[[nodiscard]] bool hasSpawnRequest(const MapBuildResult& result,
+                                   std::string_view id)
+{
+    return std::any_of(
+        result.spawnRequests.begin(),
+        result.spawnRequests.end(),
+        [id](const SpawnRequest& request) { return request.id == id; });
+}
+
 } // namespace
 
 void runMapgenTests(TestRunner& runner)
@@ -453,6 +462,86 @@ void runMapgenTests(TestRunner& runner)
     }
 
     {
+        Rng rng{606U};
+        const auto result =
+            buildMapById("town", 40, 25, rng, MapBuildOptions{true});
+        const auto validation = validateMapBuild(
+            result.map, result.playerStart, result.stairsPosition);
+        const auto hasSpawn = [&](std::string_view id) {
+            return std::any_of(
+                result.spawnRequests.begin(),
+                result.spawnRequests.end(),
+                [id](const auto& request) { return request.id == id; });
+        };
+
+        runner.expect(result.builderName == "town",
+                      "town builder reports its id");
+        runner.expect(validation.valid,
+                      "town builder output validates through pipeline");
+        runner.expect(
+            hasSpawn("blacksmith") && hasSpawn("alchemist") &&
+                hasSpawn("townsfolk") && hasSpawn("chair") &&
+                hasSpawn("food_ration"),
+            "town builder requests vendor, bystander, prop, and food spawns");
+    }
+
+    {
+        struct RegionContent {
+            std::string id;
+            std::string buildStep;
+            std::string firstSpawn;
+            std::string secondSpawn;
+        };
+        const std::vector<RegionContent> regions{
+            {"deep-caverns",
+             "theme: deep caverns",
+             "deep_kobold",
+             "stone_golem"},
+            {"dwarf-transition",
+             "theme: cavern to dwarf fort transition",
+             "dwarf_sentry",
+             "dwarf_rubble"},
+            {"dragon-lair",
+             "content: dragon and dwarf fortress treasure",
+             "dragon",
+             "gauntlets_of_might"},
+            {"mushroom-entrance",
+             "theme: mushroom entrance",
+             "mushroom_patch",
+             "sporeling"},
+            {"mushroom-forest",
+             "content: fungal forest encounters",
+             "sporeling",
+             "fungal_giant"},
+            {"mushroom-exit",
+             "theme: mushroom exit toward dark elf city",
+             "dark_elf_scout_a",
+             "hand_crossbow"},
+            {"dark-elf-city",
+             "content: rival dark elf clans",
+             "dark_elf_marksman_a",
+             "dark_elf_blade_b"},
+        };
+
+        for (std::size_t index = 0; index < regions.size(); ++index) {
+            Rng rng{static_cast<Rng::Seed>(700U + index)};
+            const auto result = buildMapById(
+                regions[index].id, 40, 25, rng, MapBuildOptions{true});
+            const auto validation = validateMapBuild(
+                result.map, result.playerStart, result.stairsPosition);
+            runner.expect(validation.valid,
+                          regions[index].id + " region validates");
+            runner.expect(
+                hasBuildStepContaining(result, regions[index].buildStep),
+                regions[index].id + " records authored theme");
+            runner.expect(
+                hasSpawnRequest(result, regions[index].firstSpawn) &&
+                    hasSpawnRequest(result, regions[index].secondSpawn),
+                regions[index].id + " requests authored region content");
+        }
+    }
+
+    {
         Rng rng{222U};
         const auto result =
             BspDungeonBuilder::build(40, 25, rng, MapBuildOptions{true});
@@ -572,10 +661,9 @@ void runMapgenTests(TestRunner& runner)
             "drunkard-open-area", 40, 25, openAreaRng, MapBuildOptions{true});
         runner.expect(openArea.builderName == "drunkard-open-area",
                       "drunkard open-area variant reports its id");
-        runner.expect(
-            hasBuildStepContaining(openArea, "starting-point") &&
-                hasBuildStepContaining(openArea, "lifetime 400"),
-            "drunkard open-area uses starting-point settings");
+        runner.expect(hasBuildStepContaining(openArea, "starting-point") &&
+                          hasBuildStepContaining(openArea, "lifetime 400"),
+                      "drunkard open-area uses starting-point settings");
 
         Rng fatPassagesRng{82U};
         const auto fatPassages = buildMapById("drunkard-fat-passages",
@@ -692,29 +780,38 @@ void runMapgenTests(TestRunner& runner)
     }
 
     {
-        runner.expect(isKnownMapBuilder("simple") && isKnownMapBuilder("bsp") &&
-                          isKnownMapBuilder("bsp-interior") &&
-                          isKnownMapBuilder("cellular") &&
-                          isKnownMapBuilder("drunkard") &&
-                          isKnownMapBuilder("drunkard-open-area") &&
-                          isKnownMapBuilder("drunkard-open-halls") &&
-                          isKnownMapBuilder("drunkard-winding-passages") &&
-                          isKnownMapBuilder("drunkard-fat-passages") &&
-                          isKnownMapBuilder("drunkard-symmetry") &&
-                          isKnownMapBuilder("maze") &&
-                          isKnownMapBuilder("dla") &&
-                          isKnownMapBuilder("dla-walk-inwards") &&
-                          isKnownMapBuilder("dla-walk-outwards") &&
-                          isKnownMapBuilder("dla-central-attractor") &&
-                          isKnownMapBuilder("dla-insectoid") &&
-                          isKnownMapBuilder("voronoi") &&
-                          isKnownMapBuilder("voronoi-pythagoras") &&
-                          isKnownMapBuilder("voronoi-manhattan") &&
-                          isKnownMapBuilder("voronoi-chebyshev") &&
-                          isKnownMapBuilder("wfc") &&
-                          isKnownMapBuilder("cavern-vaults") &&
-                          isKnownMapBuilder("ruined-rooms"),
-                      "mapgen viewer exposes all implemented builders");
+        runner.expect(
+            isKnownMapBuilder("simple") && isKnownMapBuilder("bsp") &&
+                isKnownMapBuilder("bsp-interior") &&
+                isKnownMapBuilder("cellular") &&
+                isKnownMapBuilder("drunkard") &&
+                isKnownMapBuilder("drunkard-open-area") &&
+                isKnownMapBuilder("drunkard-open-halls") &&
+                isKnownMapBuilder("drunkard-winding-passages") &&
+                isKnownMapBuilder("drunkard-fat-passages") &&
+                isKnownMapBuilder("drunkard-symmetry") &&
+                isKnownMapBuilder("maze") && isKnownMapBuilder("dla") &&
+                isKnownMapBuilder("dla-walk-inwards") &&
+                isKnownMapBuilder("dla-walk-outwards") &&
+                isKnownMapBuilder("dla-central-attractor") &&
+                isKnownMapBuilder("dla-insectoid") &&
+                isKnownMapBuilder("voronoi") &&
+                isKnownMapBuilder("voronoi-pythagoras") &&
+                isKnownMapBuilder("voronoi-manhattan") &&
+                isKnownMapBuilder("voronoi-chebyshev") &&
+                isKnownMapBuilder("wfc") && isKnownMapBuilder("town") &&
+                isKnownMapBuilder("woods") &&
+                isKnownMapBuilder("limestone-caverns") &&
+                isKnownMapBuilder("deep-caverns") &&
+                isKnownMapBuilder("dwarf-transition") &&
+                isKnownMapBuilder("dragon-lair") &&
+                isKnownMapBuilder("mushroom-entrance") &&
+                isKnownMapBuilder("mushroom-forest") &&
+                isKnownMapBuilder("mushroom-exit") &&
+                isKnownMapBuilder("dark-elf-city") &&
+                isKnownMapBuilder("cavern-vaults") &&
+                isKnownMapBuilder("ruined-rooms"),
+            "mapgen viewer exposes all implemented builders");
         std::ostringstream output;
         const int result = runMapgenViewer(
             MapgenViewerOptions{"bsp", Rng::Seed{777U}, false, 40, 25}, output);
@@ -736,6 +833,16 @@ void runMapgenTests(TestRunner& runner)
                                            "dla",
                                            "voronoi",
                                            "wfc",
+                                           "town",
+                                           "woods",
+                                           "limestone-caverns",
+                                           "deep-caverns",
+                                           "dwarf-transition",
+                                           "dragon-lair",
+                                           "mushroom-entrance",
+                                           "mushroom-forest",
+                                           "mushroom-exit",
+                                           "dark-elf-city",
                                            "cavern-vaults",
                                            "ruined-rooms"};
         const std::array<Rng::Seed, 2> seeds{1U, 4242U};
@@ -796,7 +903,12 @@ void runMapgenTests(TestRunner& runner)
         };
         const std::vector<OpennessLimit> limits{
             {"cellular", 72.0, 82.0},
+            {"limestone-caverns", 72.0, 82.0},
             {"cavern-vaults", 75.0, 84.0},
+            {"woods", 58.0, 70.0},
+            {"mushroom-entrance", 62.0, 76.0},
+            {"mushroom-forest", 62.0, 76.0},
+            {"mushroom-exit", 62.0, 76.0},
             {"drunkard", 48.0, 66.0},
             {"dla", 34.0, 36.0},
             {"voronoi", 78.0, 68.0},

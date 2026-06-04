@@ -2,10 +2,11 @@
 
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
+#include "raws/RawDatabase.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
+#include "spawn/RawSpawner.hpp"
 #include "spawn/TrapSpawner.hpp"
-#include "systems/ItemSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
@@ -17,10 +18,10 @@ namespace {
                                       Point playerStart,
                                       Point stairsPosition)
 {
+    const auto tileContent = tileContentAt(registry, point);
     return point != playerStart && point != stairsPosition &&
            map.isWalkable(point.x, point.y) &&
-           !blockingEntityAt(registry, point).has_value() &&
-           !itemAtPosition(registry, point).has_value();
+           !tileContent.blocker.has_value() && !tileContent.item.has_value();
 }
 
 } // namespace
@@ -36,6 +37,8 @@ entt::entity spawnPlayer(entt::registry& registry, Point position)
     registry.emplace<BlocksTile>(entity);
     registry.emplace<Viewshed>(entity);
     registry.emplace<CombatStats>(entity, CombatStats{30, 30, 2, 5});
+    registry.emplace<Attributes>(entity, Attributes{11, 11, 11, 11});
+    registry.emplace<Pools>(entity, Pools{30, 30, 6, 6, 1, 0, 0});
     registry.emplace<HungerClock>(entity);
     return entity;
 }
@@ -53,22 +56,9 @@ std::size_t spawnRequestedEntities(entt::registry& registry,
             continue;
         }
 
-        if (request.id == "goblin") {
-            [[maybe_unused]] const auto entity =
-                spawnGoblin(registry, request.position);
-        } else if (request.id == "orc") {
-            [[maybe_unused]] const auto entity =
-                spawnOrc(registry, request.position);
-        } else if (request.id == "healing_potion") {
-            [[maybe_unused]] const auto entity =
-                spawnHealingPotion(registry, request.position);
-        } else if (request.id == "food_ration") {
-            [[maybe_unused]] const auto entity =
-                spawnFoodRation(registry, request.position);
-        } else if (request.id == "spike_trap") {
-            [[maybe_unused]] const auto entity =
-                spawnSpikeTrap(registry, request.position);
-        } else {
+        if (const auto entity = spawnRawEntity(
+                registry, defaultRawDatabase(), request.id, request.position);
+            !entity.has_value()) {
             continue;
         }
         ++spawned;

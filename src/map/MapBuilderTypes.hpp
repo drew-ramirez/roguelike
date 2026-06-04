@@ -6,11 +6,21 @@
 #include "core/Point.hpp"
 #include "map/Map.hpp"
 #include "map/Rect.hpp"
+#include "world/WorldTypes.hpp"
 
 namespace rl {
 
 struct MapBuildOptions {
     bool recordSnapshots = false;
+    int depth = 1;
+    bool placeUpStairs = false;
+    bool allowDownStairs = true;
+    BiomeVariant biomeVariant = BiomeVariant::DryWoods;
+    LocalScreenRole screenRole = LocalScreenRole::CornerWilderness;
+    WorldCellFields worldFields;
+    int exitMask = 0;
+    std::string landmarkId;
+    bool dangerEncounter = false;
 };
 
 struct MapSnapshot {
@@ -46,6 +56,7 @@ struct MapBuildResult {
     std::vector<CorridorPath> corridorPaths;
     std::vector<std::string> buildSteps;
     std::vector<SpawnRequest> spawnRequests;
+    Point upStairsPosition;
 };
 
 using BuilderMap = MapBuildResult;

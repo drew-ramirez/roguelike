@@ -41,6 +41,7 @@ void runInventoryTests(TestRunner& runner)
         registry.remove<Position>(potion);
         registry.emplace<InBackpack>(potion, InBackpack{resources.player});
         registry.get<CombatStats>(resources.player).hp = 20;
+        registry.get<Pools>(resources.player).hitPoints = 20;
 
         const std::vector<InputEvent> use{{InputEventType::KeyDown, Key::U}};
         runner.expect(handleInventoryInput(registry, resources, map, use) ==
@@ -50,6 +51,8 @@ void runInventoryTests(TestRunner& runner)
                       "valid healing use consumes the potion");
         runner.expect(registry.get<CombatStats>(resources.player).hp == 28,
                       "healing clamps through normal stat update");
+        runner.expect(registry.get<Pools>(resources.player).hitPoints == 28,
+                      "healing updates pools alongside combat HP");
     }
 
     {

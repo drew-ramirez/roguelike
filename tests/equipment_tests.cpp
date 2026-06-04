@@ -5,11 +5,14 @@
 #include "core/GameResources.hpp"
 #include "core/RunState.hpp"
 #include "ecs/Components.hpp"
+#include "raws/RawDatabase.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
+#include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/DamageSystem.hpp"
 #include "systems/EquipmentSystem.hpp"
+#include "systems/ItemSystem.hpp"
 #include "systems/MeleeCombatSystem.hpp"
 
 namespace rl::test {
@@ -19,6 +22,42 @@ void runEquipmentTests(TestRunner& runner)
     entt::registry registry;
     GameResources resources;
     resources.player = spawnPlayer(registry, Point{2, 2});
+    runner.expect(registry.all_of<Attributes, Pools>(resources.player),
+                  "player spawns with attributes and pools");
+    runner.expect(registry.get<Pools>(resources.player).hitPoints == 30 &&
+                      registry.get<Pools>(resources.player).mana == 6,
+                  "player pools mirror starting health and mana");
+
+    const auto rawEquipment = RawDatabase::fromJson(R"({
+      "items": [{
+        "id": "might_charm",
+        "name": "Might Charm",
+        "renderable": {"glyph": "[", "fg": "#FFFFFF", "bg": "#000000", "order": 2},
+        "equippable": "armor",
+        "attribute_bonus": {"might": 2, "quickness": 1, "intelligence": -1}
+      }]
+    })");
+    const auto charm =
+        spawnNamedEntity(registry, rawEquipment, "might_charm", Point{1, 3});
+    runner.expect(registry.all_of<AttributeBonus>(charm) &&
+                      registry.get<AttributeBonus>(charm).might == 2 &&
+                      registry.get<AttributeBonus>(charm).quickness == 1 &&
+                      registry.get<AttributeBonus>(charm).intelligence == -1,
+                  "raw equipment spawns attribute bonus");
+    registry.remove<Position>(charm);
+    registry.emplace<InBackpack>(charm, InBackpack{resources.player});
+    runner.expect(
+        equipOrUnequipItem(registry, resources.log, resources.player, charm),
+        "attribute bonus equipment can be equipped");
+    const auto derivedAttributes =
+        attributesWithEquipment(registry, resources.player);
+    const auto baseAttributes = registry.get<Attributes>(resources.player);
+    runner.expect(
+        derivedAttributes.might == baseAttributes.might + 2 &&
+            derivedAttributes.quickness == baseAttributes.quickness + 1 &&
+            derivedAttributes.intelligence == baseAttributes.intelligence - 1,
+        "derived attributes include equipped attribute bonuses");
+
     const auto dagger = spawnDagger(registry, Point{1, 1});
     const auto sword = spawnSword(registry, Point{1, 2});
     registry.remove<Position>(dagger);
@@ -40,8 +79,25 @@ void runEquipmentTests(TestRunner& runner)
     runner.expect(registry.get<CombatStats>(resources.player).power == 5,
                   "base CombatStats power is not mutated by equipment");
 
+    const auto cursedArmor = spawnChainMail(registry, Point{1, 3});
+    registry.remove<Position>(cursedArmor);
+    registry.emplace<InBackpack>(cursedArmor, InBackpack{resources.player});
+    runner.expect(equipOrUnequipItem(
+                      registry, resources.log, resources.player, cursedArmor),
+                  "armor equips before curse checks");
+    registry.emplace<CursedItem>(cursedArmor);
+    runner.expect(!equipOrUnequipItem(
+                      registry, resources.log, resources.player, cursedArmor),
+                  "cursed equipped item cannot be removed");
+    runner.expect(!dropItemAtOwner(
+                      registry, resources, resources.player, cursedArmor),
+                  "cursed equipped item cannot be dropped");
+    runner.expect(registry.all_of<Equipped>(cursedArmor),
+                  "cursed equipment remains equipped after blocked actions");
+
     const auto defender = spawnGoblin(registry, Point{3, 2});
-    registry.get<CombatStats>(defender).hp = 20;
+    registry.get<CombatStats>(defender) = CombatStats{20, 20, 0, 3};
+    registry.get<Pools>(defender) = Pools{20, 20, 0, 0, 1, 0, 0};
     registry.emplace_or_replace<WantsToMelee>(resources.player,
                                               WantsToMelee{defender});
     processMeleeCombat(registry, resources.log);
@@ -49,6 +105,41 @@ void runEquipmentTests(TestRunner& runner)
     applyDamageAndCleanup(registry, resources, state);
     runner.expect(registry.get<CombatStats>(defender).hp == 11,
                   "melee combat uses computed equipment power");
+    runner.expect(registry.get<Pools>(defender).hitPoints == 11,
+                  "damage updates pools alongside combat HP");
+
+    entt::registry statRegistry;
+    GameResources statResources;
+    statResources.rng.reseed(123U);
+    statResources.player = spawnPlayer(statRegistry, Point{2, 2});
+    statRegistry.emplace_or_replace<Attributes>(statResources.player,
+                                                Attributes{14, 10, 10, 10});
+
+    const auto trainingSword = statRegistry.create();
+    statRegistry.emplace<Name>(trainingSword, Name{"Training Sword"});
+    statRegistry.emplace<Item>(trainingSword);
+    statRegistry.emplace<Equippable>(trainingSword,
+                                     Equippable{EquipmentSlot::Weapon});
+    statRegistry.emplace<WeaponStats>(trainingSword,
+                                      WeaponStats{"2d1+2", 1, "might"});
+    statRegistry.emplace<InBackpack>(trainingSword,
+                                     InBackpack{statResources.player});
+    runner.expect(equipOrUnequipItem(statRegistry,
+                                     statResources.log,
+                                     statResources.player,
+                                     trainingSword),
+                  "stat weapon equips before combat");
+
+    const auto target = spawnGoblin(statRegistry, Point{3, 2});
+    statRegistry.get<CombatStats>(target) = CombatStats{20, 20, 1, 3};
+    statRegistry.get<Pools>(target) = Pools{20, 20, 0, 0, 1, 0, 0};
+    statRegistry.get<CombatStats>(target).defense = 1;
+    statRegistry.emplace_or_replace<WantsToMelee>(statResources.player,
+                                                  WantsToMelee{target});
+
+    processMeleeCombat(statRegistry, statResources.log, &statResources.rng);
+    runner.expect(statRegistry.get<SufferDamage>(target).amount == 11,
+                  "stat melee uses weapon dice hit bonus and attributes");
 }
 
 } // namespace rl::test

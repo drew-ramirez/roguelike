@@ -6,8 +6,9 @@
 
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
+#include "raws/RawDatabase.hpp"
+#include "spawn/RawSpawner.hpp"
 #include "spawn/SpawnTable.hpp"
-#include "systems/ItemSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
@@ -21,17 +22,12 @@ Point randomPointInRoom(const Rect& room, Rng& rng)
     };
 }
 
-[[nodiscard]] bool hasItemAt(const entt::registry& registry, Point point)
-{
-    return itemAtPosition(registry, point).has_value();
-}
-
 [[nodiscard]] bool
 canSpawnAt(const entt::registry& registry, Point point, Point playerStart)
 {
-    return point != playerStart &&
-           !blockingEntityAt(registry, point).has_value() &&
-           !hasItemAt(registry, point);
+    const auto tileContent = tileContentAt(registry, point);
+    return point != playerStart && !tileContent.blocker.has_value() &&
+           !tileContent.item.has_value();
 }
 
 [[nodiscard]] bool canSpawnAt(const entt::registry& registry,
@@ -46,25 +42,7 @@ canSpawnAt(const entt::registry& registry, Point point, Point playerStart)
 [[nodiscard]] entt::entity
 spawnItemById(entt::registry& registry, std::string_view id, Point position)
 {
-    if (id == "fireball_scroll") {
-        return spawnFireballScroll(registry, position);
-    }
-    if (id == "magic_mapping_scroll") {
-        return spawnMagicMappingScroll(registry, position);
-    }
-    if (id == "food_ration") {
-        return spawnFoodRation(registry, position);
-    }
-    if (id == "dagger") {
-        return spawnDagger(registry, position);
-    }
-    if (id == "sword") {
-        return spawnSword(registry, position);
-    }
-    if (id == "chain_mail") {
-        return spawnChainMail(registry, position);
-    }
-    return spawnHealingPotion(registry, position);
+    return spawnNamedEntity(registry, defaultRawDatabase(), id, position);
 }
 
 } // namespace
@@ -72,90 +50,44 @@ spawnItemById(entt::registry& registry, std::string_view id, Point position)
 entt::entity
 spawnHealingPotion(entt::registry& registry, Point position, int amount)
 {
-    const auto entity = registry.create();
-    registry.emplace<Position>(entity, Position{position.x, position.y});
-    registry.emplace<Renderable>(
-        entity, Renderable{U'!', Color{220, 80, 140, 255}, Color::black(), 2});
-    registry.emplace<Name>(entity, Name{"Healing Potion"});
-    registry.emplace<Item>(entity);
-    registry.emplace<Consumable>(entity);
-    registry.emplace<ProvidesHealing>(entity, ProvidesHealing{amount});
+    const auto entity = spawnNamedEntity(
+        registry, defaultRawDatabase(), "healing_potion", position);
+    registry.replace<ProvidesHealing>(entity, ProvidesHealing{amount});
     return entity;
 }
 
 entt::entity spawnFoodRation(entt::registry& registry, Point position)
 {
-    const auto entity = registry.create();
-    registry.emplace<Position>(entity, Position{position.x, position.y});
-    registry.emplace<Renderable>(
-        entity, Renderable{U'%', Color{190, 150, 70, 255}, Color::black(), 2});
-    registry.emplace<Name>(entity, Name{"Food Ration"});
-    registry.emplace<Item>(entity);
-    registry.emplace<Consumable>(entity);
-    registry.emplace<ProvidesNutrition>(entity, ProvidesNutrition{350});
-    return entity;
+    return spawnNamedEntity(
+        registry, defaultRawDatabase(), "food_ration", position);
 }
 
 entt::entity spawnFireballScroll(entt::registry& registry, Point position)
 {
-    const auto entity = registry.create();
-    registry.emplace<Position>(entity, Position{position.x, position.y});
-    registry.emplace<Renderable>(
-        entity, Renderable{U'?', Color{255, 160, 60, 255}, Color::black(), 2});
-    registry.emplace<Name>(entity, Name{"Fireball Scroll"});
-    registry.emplace<Item>(entity);
-    registry.emplace<Consumable>(entity);
-    registry.emplace<Ranged>(entity, Ranged{6});
-    registry.emplace<AreaOfEffect>(entity, AreaOfEffect{2});
-    registry.emplace<InflictsDamage>(entity, InflictsDamage{12});
-    return entity;
+    return spawnNamedEntity(
+        registry, defaultRawDatabase(), "fireball_scroll", position);
 }
 
 entt::entity spawnMagicMappingScroll(entt::registry& registry, Point position)
 {
-    const auto entity = registry.create();
-    registry.emplace<Position>(entity, Position{position.x, position.y});
-    registry.emplace<Renderable>(
-        entity, Renderable{U'?', Color{90, 180, 255, 255}, Color::black(), 2});
-    registry.emplace<Name>(entity, Name{"Magic Mapping Scroll"});
-    registry.emplace<Item>(entity);
-    registry.emplace<Consumable>(entity);
-    registry.emplace<MagicMapper>(entity);
-    return entity;
+    return spawnNamedEntity(
+        registry, defaultRawDatabase(), "magic_mapping_scroll", position);
 }
 
 entt::entity spawnDagger(entt::registry& registry, Point position)
 {
-    const auto entity = registry.create();
-    registry.emplace<Position>(entity, Position{position.x, position.y});
-    registry.emplace<Renderable>(
-        entity, Renderable{U'/', Color{180, 180, 190, 255}, Color::black(), 2});
-    registry.emplace<Name>(entity, Name{"Dagger"});
-    registry.emplace<Item>(entity);
-    registry.emplace<Equippable>(entity, Equippable{EquipmentSlot::Weapon});
-    registry.emplace<MeleePowerBonus>(entity, MeleePowerBonus{2});
-    return entity;
+    return spawnNamedEntity(registry, defaultRawDatabase(), "dagger", position);
 }
 
 entt::entity spawnSword(entt::registry& registry, Point position)
 {
-    const auto entity = spawnDagger(registry, position);
-    registry.replace<Name>(entity, Name{"Sword"});
-    registry.replace<MeleePowerBonus>(entity, MeleePowerBonus{4});
-    return entity;
+    return spawnNamedEntity(registry, defaultRawDatabase(), "sword", position);
 }
 
 entt::entity spawnChainMail(entt::registry& registry, Point position)
 {
-    const auto entity = registry.create();
-    registry.emplace<Position>(entity, Position{position.x, position.y});
-    registry.emplace<Renderable>(
-        entity, Renderable{U'[', Color{130, 170, 210, 255}, Color::black(), 2});
-    registry.emplace<Name>(entity, Name{"Chain Mail"});
-    registry.emplace<Item>(entity);
-    registry.emplace<Equippable>(entity, Equippable{EquipmentSlot::Armor});
-    registry.emplace<DefenseBonus>(entity, DefenseBonus{2});
-    return entity;
+    return spawnNamedEntity(
+        registry, defaultRawDatabase(), "chain_mail", position);
 }
 
 std::size_t spawnItems(entt::registry& registry,
@@ -185,9 +117,12 @@ std::size_t spawnItems(entt::registry& registry,
                 continue;
             }
 
-            const auto id = forceEarlyItems && spawned == 0
-                                ? std::string{"healing_potion"}
-                                : rollSpawn(itemSpawnTable(), depth, rng);
+            const auto id =
+                forceEarlyItems
+                    ? (spawned == 0 ? std::string{"healing_potion"}
+                                    : std::string{"food_ration"})
+                    : rollSpawn(
+                          defaultRawDatabase().itemSpawnTable(), depth, rng);
             [[maybe_unused]] const auto item =
                 spawnItemById(registry, id, position);
             ++spawned;
@@ -236,9 +171,12 @@ std::size_t spawnItems(entt::registry& registry,
                 continue;
             }
 
-            const auto id = forceEarlyItems && spawned == 0
-                                ? std::string{"healing_potion"}
-                                : rollSpawn(itemSpawnTable(), depth, rng);
+            const auto id =
+                forceEarlyItems
+                    ? (spawned == 0 ? std::string{"healing_potion"}
+                                    : std::string{"food_ration"})
+                    : rollSpawn(
+                          defaultRawDatabase().itemSpawnTable(), depth, rng);
             [[maybe_unused]] const auto item =
                 spawnItemById(registry, id, position);
             ++spawned;

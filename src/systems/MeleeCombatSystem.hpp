@@ -12,7 +12,10 @@
 namespace rl {
 
 class GameLog;
+class Rng;
 
-void processMeleeCombat(entt::registry& registry, GameLog& log);
+void processMeleeCombat(entt::registry& registry,
+                        GameLog& log,
+                        Rng* rng = nullptr);
 
 } // namespace rl

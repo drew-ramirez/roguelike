@@ -34,6 +34,10 @@ struct Monster {};
 
 struct Item {};
 
+struct RawIdentity {
+    std::string templateName;
+};
+
 struct BlocksTile {};
 
 struct Viewshed {
@@ -47,6 +51,23 @@ struct CombatStats {
     int hp = 1;
     int defense = 0;
     int power = 1;
+};
+
+struct Attributes {
+    int might = 10;
+    int fitness = 10;
+    int quickness = 10;
+    int intelligence = 10;
+};
+
+struct Pools {
+    int hitPoints = 1;
+    int maxHitPoints = 1;
+    int mana = 0;
+    int maxMana = 0;
+    int level = 1;
+    int xp = 0;
+    int gold = 0;
 };
 
 struct WantsToMelee {
@@ -98,6 +119,87 @@ struct InflictsDamage {
     int amount = 0;
 };
 
+struct Neutral {};
+
+struct Bystander {};
+
+struct Vendor {
+    std::string category;
+    int gold = 0;
+};
+
+struct Prop {};
+
+struct Faction {
+    std::string id;
+};
+
+struct XpReward {
+    int amount = 0;
+};
+
+struct ItemStats {
+    int weight = 0;
+    int baseValue = 0;
+    int initiativePenalty = 0;
+    std::string category;
+};
+
+struct WeaponStats {
+    std::string damage = "1d4";
+    int hitBonus = 0;
+    std::string attribute = "might";
+};
+
+struct RangedWeapon {
+    int range = 0;
+    std::string damage = "1d4";
+    int hitBonus = 0;
+    std::string attribute = "quickness";
+};
+
+struct MagicItem {
+    std::string tier = "common";
+    std::string unidentifiedName;
+    bool identified = true;
+};
+
+struct IdentifiedItem {};
+
+struct CursedItem {};
+
+struct TownPortal {};
+
+struct ProvidesIdentify {};
+
+struct ProvidesRemoveCurse {};
+
+struct Confusion {
+    int turns = 0;
+};
+
+struct KnownSpells {
+    std::vector<std::string> ids;
+};
+
+struct Spellbook {
+    std::string spellId;
+};
+
+struct ManaCost {
+    int amount = 0;
+};
+
+struct Boss {};
+
+struct BreathWeapon {
+    int range = 0;
+    int damage = 0;
+    int cooldown = 0;
+};
+
+struct GrantsWin {};
+
 struct InBackpack {
     entt::entity owner = entt::null;
 };
@@ -121,6 +223,13 @@ struct DefenseBonus {
     int amount = 0;
 };
 
+struct AttributeBonus {
+    int might = 0;
+    int fitness = 0;
+    int quickness = 0;
+    int intelligence = 0;
+};
+
 struct WantsToPickupItem {
     entt::entity item = entt::null;
 };
@@ -132,6 +241,19 @@ struct WantsToUseItem {
 
 struct WantsToDropItem {
     entt::entity item = entt::null;
+};
+
+struct WantsToCastSpell {
+    std::string spellId;
+    std::optional<Point> target;
+};
+
+struct WantsToShoot {
+    entt::entity weapon = entt::null;
+    std::optional<Point> target;
+    bool breath = false;
+    int damage = 0;
+    int radius = 0;
 };
 
 struct Trap {

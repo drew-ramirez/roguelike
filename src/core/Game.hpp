@@ -32,7 +32,7 @@ class Game {
   public:
     explicit Game(std::optional<Rng::Seed> seed = std::nullopt,
                   bool loadExisting = false,
-                  std::string builderId = "simple",
+                  std::string builderId = "normal",
                   int mapWidth = 80,
                   int mapHeight = 43,
                   bool visualMapgen = false,
@@ -51,7 +51,7 @@ class Game {
     void renderMapGeneration();
 
     std::optional<Rng::Seed> initialSeed_;
-    std::string builderId_ = "simple";
+    std::string builderId_ = "normal";
     bool visualMapgen_ = false;
     MapTheme mapTheme_;
     RunState state_ = RunState::MainMenu;

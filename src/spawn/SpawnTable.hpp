@@ -18,6 +18,8 @@ struct SpawnEntry {
     std::string id;
     int weight = 1;
     int minDepth = 1;
+    int maxDepth = 1000;
+    int addMapDepthToWeight = 0;
 };
 
 [[nodiscard]] std::string

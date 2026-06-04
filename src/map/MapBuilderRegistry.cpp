@@ -9,6 +9,9 @@
 
 #include <stdexcept>
 
+#include "map/DungeonRegionRouter.hpp"
+#include "map/MapBuilderCommon.hpp"
+#include "map/TileType.hpp"
 #include "map/generators/BspDungeonBuilder.hpp"
 #include "map/generators/BspInteriorBuilder.hpp"
 #include "map/generators/BuilderChain.hpp"
@@ -16,6 +19,7 @@
 #include "map/generators/DlaBuilder.hpp"
 #include "map/generators/DrunkardsWalkBuilder.hpp"
 #include "map/generators/MazeBuilder.hpp"
+#include "map/generators/Section4Builders.hpp"
 #include "map/generators/SimpleMapBuilder.hpp"
 #include "map/generators/VoronoiBuilder.hpp"
 #include "map/generators/WfcBuilder.hpp"
@@ -54,6 +58,24 @@ std::vector<std::string> availableMapBuilders()
             "voronoi-manhattan",
             "voronoi-chebyshev",
             "wfc",
+            "town",
+            "woods",
+            "surface-town-outskirts",
+            "surface-cardinal-transition",
+            "surface-corner-wilderness",
+            "surface-ruin-pocket",
+            "surface-cave-mouth",
+            "surface-camp-shrine",
+            "surface-resource-heavy",
+            "surface-danger-encounter",
+            "limestone-caverns",
+            "deep-caverns",
+            "dwarf-transition",
+            "dragon-lair",
+            "mushroom-entrance",
+            "mushroom-forest",
+            "mushroom-exit",
+            "dark-elf-city",
             "cavern-vaults",
             "ruined-rooms"};
 }
@@ -204,6 +226,72 @@ MapBuildResult buildMapById(std::string_view builderId,
     if (builderId == "wfc") {
         return WfcBuilder::build(width, height, rng, options);
     }
+    if (builderId == "town") {
+        return Section4Builders::buildTown(width, height, rng, options);
+    }
+    if (builderId == "woods") {
+        return Section4Builders::buildWoods(width, height, rng, options);
+    }
+    if (builderId == "surface-town-outskirts") {
+        return Section4Builders::buildTownOutskirts(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-cardinal-transition") {
+        return Section4Builders::buildSurfaceCardinalTransition(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-corner-wilderness") {
+        return Section4Builders::buildSurfaceCornerWilderness(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-ruin-pocket") {
+        return Section4Builders::buildSurfaceRuinPocket(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-cave-mouth") {
+        return Section4Builders::buildSurfaceCaveMouth(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-camp-shrine") {
+        return Section4Builders::buildSurfaceCampShrine(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-resource-heavy") {
+        return Section4Builders::buildSurfaceResourceHeavy(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-danger-encounter") {
+        return Section4Builders::buildSurfaceDangerEncounter(
+            width, height, rng, options);
+    }
+    if (builderId == "limestone-caverns") {
+        return Section4Builders::buildLimestoneCaverns(
+            width, height, rng, options);
+    }
+    if (builderId == "deep-caverns") {
+        return Section4Builders::buildDeepCaverns(width, height, rng, options);
+    }
+    if (builderId == "dwarf-transition") {
+        return Section4Builders::buildDwarfTransition(
+            width, height, rng, options);
+    }
+    if (builderId == "dragon-lair") {
+        return Section4Builders::buildDragonLair(width, height, rng, options);
+    }
+    if (builderId == "mushroom-entrance") {
+        return Section4Builders::buildMushroomEntrance(
+            width, height, rng, options);
+    }
+    if (builderId == "mushroom-forest") {
+        return Section4Builders::buildMushroomForest(
+            width, height, rng, options);
+    }
+    if (builderId == "mushroom-exit") {
+        return Section4Builders::buildMushroomExit(width, height, rng, options);
+    }
+    if (builderId == "dark-elf-city") {
+        return Section4Builders::buildDarkElfCity(width, height, rng, options);
+    }
     if (builderId == "cavern-vaults") {
         return BuilderChain::buildCavernVaults(width, height, rng, options);
     }
@@ -211,6 +299,27 @@ MapBuildResult buildMapById(std::string_view builderId,
         return BuilderChain::buildRuinedRooms(width, height, rng, options);
     }
     throw std::invalid_argument("Unknown map builder");
+}
+
+MapBuildResult buildLevelForDepth(
+    int depth, int width, int height, Rng& rng, MapBuildOptions options)
+{
+    const auto route = routeForDepth(depth);
+    options.depth = depth;
+    options.placeUpStairs = route.hasUpStairs;
+    auto result = buildMapById(route.builderId, width, height, rng, options);
+    result.builderName = route.builderId;
+    if (!route.hasDownStairs) {
+        result.map.setTile(
+            result.stairsPosition.x, result.stairsPosition.y, TileType::Floor);
+        result.stairsPosition = result.playerStart;
+    }
+    if (route.hasUpStairs) {
+        setUpStairsAtStart(
+            result.map, result.playerStart, result.upStairsPosition);
+    }
+    result.buildSteps.push_back("region:" + route.regionId);
+    return result;
 }
 
 } // namespace rl

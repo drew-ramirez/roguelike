@@ -14,6 +14,7 @@
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
+#include "progression/ExperienceSystem.hpp"
 #include "systems/ParticleSystem.hpp"
 
 namespace rl {
@@ -52,6 +53,11 @@ void requestDamageAt(GameResources& resources,
     requestDamageParticle(resources, Point{position.x, position.y});
 }
 
+void claimArtifact(GameResources& resources)
+{
+    resources.progress.artifactClaimed = true;
+}
+
 } // namespace
 
 void queueDamage(entt::registry& registry, entt::entity target, int amount)
@@ -83,6 +89,11 @@ void applyDamageAndCleanup(entt::registry& registry,
         markBlood(map, registry, entity);
         requestDamageAt(resources, registry, entity);
         stats.hp = std::max(0, stats.hp - damage.amount);
+        if (registry.all_of<Pools>(entity)) {
+            auto& pools = registry.get<Pools>(entity);
+            pools.maxHitPoints = stats.maxHp;
+            pools.hitPoints = stats.hp;
+        }
 
         if (stats.hp <= 0) {
             dead.push_back(entity);
@@ -105,6 +116,14 @@ void applyDamageAndCleanup(entt::registry& registry,
 
         markBlood(map, registry, entity);
         resources.log.add(entityName(registry, entity) + " dies.");
+        resources.log.incrementCounter("kills");
+        if (registry.all_of<GrantsWin>(entity)) {
+            claimArtifact(resources);
+            resources.log.add("The artifact is claimed.");
+            resources.log.incrementCounter("artifact_claimed");
+            state = RunState::GameOver;
+        }
+        awardExperienceForKill(registry, resources, entity);
         registry.destroy(entity);
     }
 }

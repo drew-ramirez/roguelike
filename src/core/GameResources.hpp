@@ -5,6 +5,7 @@
 #include "core/GameLog.hpp"
 #include "core/Point.hpp"
 #include "core/Rng.hpp"
+#include "map/MasterDungeonMap.hpp"
 #include "render/Color.hpp"
 
 #include <optional>
@@ -13,11 +14,34 @@
 
 namespace rl {
 
+enum class TargetingMode { Item, Spell, Shoot };
+
 struct PendingTargeting {
+    TargetingMode mode = TargetingMode::Item;
     entt::entity item = entt::null;
+    std::string spellId;
+    int manaCost = 0;
     int range = 0;
     std::optional<int> radius;
     Point cursor;
+};
+
+enum class VendorMode { Buy, Sell };
+
+struct PendingVendor {
+    entt::entity vendor = entt::null;
+    VendorMode mode = VendorMode::Buy;
+};
+
+enum class ItemSelectionMode { Identify, RemoveCurse };
+
+struct PendingItemSelection {
+    ItemSelectionMode mode = ItemSelectionMode::Identify;
+    entt::entity source = entt::null;
+};
+
+struct GameProgress {
+    bool artifactClaimed = false;
 };
 
 struct ParticleRequest {
@@ -35,9 +59,20 @@ struct GameResources {
     GameLog log;
     entt::entity player = entt::null;
     int depth = 1;
-    std::string mapBuilderId = "simple";
+    std::string mapBuilderId = "normal";
+    MasterDungeonMap dungeon;
     int inventorySelection = 0;
+    int vendorSelection = 0;
+    int spellSelection = 0;
+    int itemSelection = 0;
     std::optional<PendingTargeting> pendingTargeting;
+    std::optional<PendingVendor> pendingVendor;
+    std::optional<PendingItemSelection> pendingItemSelection;
+    GameProgress progress;
+    bool townPortalActive = false;
+    int townPortalReturnDepth = 1;
+    std::optional<Point> townPortalReturnPosition;
+    std::optional<Point> townPortalPosition;
     std::vector<ParticleRequest> particleRequests;
 };
 

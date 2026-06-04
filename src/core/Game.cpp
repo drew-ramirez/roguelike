@@ -19,12 +19,14 @@
 
 #include "ecs/Components.hpp"
 #include "map/MapBuilderRegistry.hpp"
+#include "raws/RawDatabase.hpp"
 #include "render/SdlRenderer.hpp"
 #include "save/SaveGame.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "spawn/TrapSpawner.hpp"
+#include "systems/BystanderAI.hpp"
 #include "systems/DamageSystem.hpp"
 #include "systems/HungerSystem.hpp"
 #include "systems/InputSystem.hpp"
@@ -34,13 +36,19 @@
 #include "systems/MeleeCombatSystem.hpp"
 #include "systems/MonsterAI.hpp"
 #include "systems/ParticleSystem.hpp"
+#include "systems/PortalSystem.hpp"
 #include "systems/RenderSystem.hpp"
+#include "systems/SystemScheduler.hpp"
 #include "systems/TrapSystem.hpp"
+#include "systems/VendorSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
 #include "ui/Hud.hpp"
 #include "ui/InventoryMenu.hpp"
+#include "ui/ItemSelectionMenu.hpp"
 #include "ui/MainMenu.hpp"
+#include "ui/SpellMenu.hpp"
 #include "ui/Targeting.hpp"
+#include "ui/VendorMenu.hpp"
 
 namespace rl {
 namespace {
@@ -96,11 +104,20 @@ void Game::startNewGame(std::optional<Rng::Seed> seed)
     resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
     std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
 
-    commitGeneratedMap(buildMapById(resources_.mapBuilderId,
-                                    map_.width(),
-                                    map_.height(),
-                                    resources_.rng,
-                                    MapBuildOptions{}));
+    const auto options = MapBuildOptions{false, resources_.depth};
+    if (resources_.mapBuilderId == "normal") {
+        commitGeneratedMap(buildLevelForDepth(resources_.depth,
+                                              map_.width(),
+                                              map_.height(),
+                                              resources_.rng,
+                                              options));
+    } else {
+        commitGeneratedMap(buildMapById(resources_.mapBuilderId,
+                                        map_.width(),
+                                        map_.height(),
+                                        resources_.rng,
+                                        options));
+    }
 }
 
 void Game::beginVisualMapgen(std::optional<Rng::Seed> seed)
@@ -112,11 +129,18 @@ void Game::beginVisualMapgen(std::optional<Rng::Seed> seed)
     resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
     std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
 
-    auto build = buildMapById(resources_.mapBuilderId,
-                              map_.width(),
-                              map_.height(),
-                              resources_.rng,
-                              MapBuildOptions{true});
+    const auto options = MapBuildOptions{true, resources_.depth};
+    auto build = resources_.mapBuilderId == "normal"
+                     ? buildLevelForDepth(resources_.depth,
+                                          map_.width(),
+                                          map_.height(),
+                                          resources_.rng,
+                                          options)
+                     : buildMapById(resources_.mapBuilderId,
+                                    map_.width(),
+                                    map_.height(),
+                                    resources_.rng,
+                                    options);
     std::vector<MapSnapshot> frames = build.snapshots;
     frames.push_back(MapSnapshot{"final generated map", build.map});
     resetMapgenPlayback(mapgenPlayback_, std::move(frames));
@@ -134,26 +158,35 @@ void Game::commitGeneratedMap(MapBuildResult build)
                                map_,
                                build.playerStart,
                                build.stairsPosition);
-    resources_.log.add("Entered the dungeon.");
-    const auto spawned = spawnMonsters(registry_,
-                                       build.spawnRegions,
-                                       map_,
-                                       resources_.rng,
-                                       build.playerStart,
-                                       resources_.depth);
-    [[maybe_unused]] const auto spawnedItems = spawnItems(registry_,
-                                                          build.spawnRegions,
-                                                          map_,
-                                                          resources_.rng,
-                                                          build.playerStart,
-                                                          resources_.depth);
-    [[maybe_unused]] const auto spawnedTraps = spawnTraps(registry_,
-                                                          build.spawnRegions,
-                                                          map_,
-                                                          resources_.rng,
-                                                          build.playerStart,
-                                                          build.stairsPosition,
-                                                          resources_.depth);
+    populateAllVendorStock(registry_, defaultRawDatabase());
+    const bool townStart =
+        resources_.mapBuilderId == "normal" && resources_.depth == 1;
+    resources_.log.add(townStart ? "Entered the town."
+                                 : "Entered the dungeon.");
+    const auto spawned = townStart ? 0
+                                   : spawnMonsters(registry_,
+                                                   build.spawnRegions,
+                                                   map_,
+                                                   resources_.rng,
+                                                   build.playerStart,
+                                                   resources_.depth);
+    [[maybe_unused]] const auto spawnedItems =
+        townStart ? 0
+                  : spawnItems(registry_,
+                               build.spawnRegions,
+                               map_,
+                               resources_.rng,
+                               build.playerStart,
+                               resources_.depth);
+    [[maybe_unused]] const auto spawnedTraps =
+        townStart ? 0
+                  : spawnTraps(registry_,
+                               build.spawnRegions,
+                               map_,
+                               resources_.rng,
+                               build.playerStart,
+                               build.stairsPosition,
+                               resources_.depth);
     if (spawned > 0) {
         resources_.log.add("You hear movement in the dark.");
     }
@@ -237,8 +270,23 @@ void Game::tick(const std::vector<InputEvent>& events)
             resolvePlayerTurn();
         } else if (input == PlayerInputResult::OpenInventory) {
             state_ = RunState::ShowInventory;
+        } else if (input == PlayerInputResult::OpenVendor) {
+            state_ = RunState::ShowVendor;
+        } else if (input == PlayerInputResult::OpenSpellMenu) {
+            state_ = RunState::ShowSpellMenu;
+        } else if (input == PlayerInputResult::StartedTargeting) {
+            state_ = RunState::ShowTargeting;
+        } else if (input == PlayerInputResult::UsePortal) {
+            if (tryUseReturnPortal(registry_, resources_, map_, fovProvider_)) {
+                state_ = RunState::AwaitingInput;
+            }
         } else if (input == PlayerInputResult::Descend) {
             if (tryDescendToNextLevel(
+                    registry_, resources_, map_, fovProvider_)) {
+                state_ = RunState::AwaitingInput;
+            }
+        } else if (input == PlayerInputResult::Ascend) {
+            if (tryAscendToPreviousLevel(
                     registry_, resources_, map_, fovProvider_)) {
                 state_ = RunState::AwaitingInput;
             }
@@ -257,7 +305,34 @@ void Game::tick(const std::vector<InputEvent>& events)
             state_ = RunState::AwaitingInput;
         } else if (input == InventoryInputResult::StartedTargeting) {
             state_ = RunState::ShowTargeting;
+        } else if (input == InventoryInputResult::StartedItemSelection) {
+            state_ = RunState::ShowItemSelection;
         } else if (input == InventoryInputResult::TookTurn) {
+            resolvePlayerTurn();
+        }
+    } else if (state_ == RunState::ShowItemSelection) {
+        const auto input =
+            handleItemSelectionInput(registry_, resources_, map_, events);
+        if (input == ItemSelectionInputResult::Close) {
+            state_ = RunState::AwaitingInput;
+        } else if (input == ItemSelectionInputResult::TookTurn) {
+            resolvePlayerTurn();
+        }
+    } else if (state_ == RunState::ShowVendor) {
+        const auto input = handleVendorInput(registry_, resources_, events);
+        if (input == VendorInputResult::Close) {
+            state_ = RunState::AwaitingInput;
+        } else if (input == VendorInputResult::TookTurn) {
+            resolvePlayerTurn(false);
+        }
+    } else if (state_ == RunState::ShowSpellMenu) {
+        const auto input =
+            handleSpellInput(registry_, resources_, map_, events);
+        if (input == SpellInputResult::Close) {
+            state_ = RunState::AwaitingInput;
+        } else if (input == SpellInputResult::StartedTargeting) {
+            state_ = RunState::ShowTargeting;
+        } else if (input == SpellInputResult::TookTurn) {
             resolvePlayerTurn();
         }
     } else if (state_ == RunState::ShowTargeting) {
@@ -275,28 +350,8 @@ void Game::tick(const std::vector<InputEvent>& events)
 
 void Game::resolvePlayerTurn(bool runMonsters)
 {
-    state_ = RunState::PlayerTurn;
-    processPickupItems(registry_, resources_);
-    [[maybe_unused]] const bool usedItem =
-        processItemUses(registry_, resources_, map_);
-    processMeleeCombat(registry_, resources_.log);
-    processPlayerTraps(registry_, resources_);
-    processHunger(registry_, resources_);
-    applyDamageAndCleanup(registry_, resources_, state_, &map_);
-    updateVisibility(registry_, map_, resources_.player, fovProvider_);
-
-    if (state_ != RunState::GameOver && runMonsters) {
-        state_ = RunState::MonsterTurn;
-        runMonsterAi(registry_, resources_, map_);
-        processMeleeCombat(registry_, resources_.log);
-        applyDamageAndCleanup(registry_, resources_, state_, &map_);
-    }
-
-    flushParticleRequests(registry_, resources_);
-
-    if (state_ != RunState::GameOver) {
-        state_ = RunState::AwaitingInput;
-    }
+    resolveTurnSystems(
+        registry_, resources_, map_, fovProvider_, state_, runMonsters);
 }
 
 void Game::render()
@@ -331,6 +386,12 @@ void Game::render()
     drawHud(console_, resources_, registry_, state_);
     if (state_ == RunState::ShowInventory) {
         drawInventoryMenu(console_, registry_, resources_);
+    } else if (state_ == RunState::ShowItemSelection) {
+        drawItemSelectionMenu(console_, registry_, resources_);
+    } else if (state_ == RunState::ShowVendor) {
+        drawVendorMenu(console_, registry_, resources_);
+    } else if (state_ == RunState::ShowSpellMenu) {
+        drawSpellMenu(console_, registry_, resources_);
     }
 }
 

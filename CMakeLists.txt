@@ -15,7 +15,10 @@ find_package(ZLIB REQUIRED)
 
 set(ROGUELIKE_CORE_SOURCES
     src/assets/RexPaintLoader.cpp
+    src/core/Achievements.cpp
+    src/core/Dice.cpp
     src/core/GameLog.cpp
+    src/core/Morgue.cpp
     src/core/Rng.cpp
     src/debug/MapgenPlayback.cpp
     src/debug/MapgenViewer.cpp
@@ -25,7 +28,9 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/MapBrush.cpp
     src/map/MapBuilderRegistry.cpp
     src/map/MapConnectivity.cpp
+    src/map/DungeonRegionRouter.cpp
     src/map/MapGeometry.cpp
+    src/map/MasterDungeonMap.cpp
     src/map/MapValidation.cpp
     src/map/generators/BspDungeonBuilder.cpp
     src/map/generators/BspInteriorBuilder.cpp
@@ -35,23 +40,36 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/generators/DrunkardsWalkBuilder.cpp
     src/map/generators/MazeBuilder.cpp
     src/map/generators/RandomWalk.cpp
+    src/map/generators/Section4Builders.cpp
     src/map/generators/SimpleMapBuilder.cpp
     src/map/generators/VoronoiBuilder.cpp
     src/map/generators/WfcBuilder.cpp
     src/map/corridors/CorridorBuilder.cpp
     src/map/prefabs/Prefab.cpp
     src/map/rooms/RoomCarver.cpp
+    src/progression/ExperienceSystem.cpp
+    src/raws/RawDatabase.cpp
     src/render/Camera.cpp
     src/render/ConsoleBuffer.cpp
+    src/render/LayeredConsoleBuffer.cpp
     src/render/MapTheme.cpp
     src/render/WallGlyph.cpp
+    src/save/SaveArchive.cpp
+    src/save/SaveDungeon.cpp
+    src/save/SaveEntities.cpp
     src/save/SaveGame.cpp
+    src/save/SaveMap.cpp
+    src/save/SavePrimitives.cpp
+    src/save/SaveResources.cpp
     src/spawn/ItemSpawner.cpp
     src/spawn/MonsterSpawner.cpp
+    src/spawn/RawSpawner.cpp
     src/spawn/SpawnTable.cpp
     src/spawn/Spawner.cpp
     src/spawn/TrapSpawner.cpp
+    src/systems/BystanderAI.cpp
     src/systems/DamageSystem.cpp
+    src/systems/EffectSystem.cpp
     src/systems/EquipmentSystem.cpp
     src/systems/HungerSystem.cpp
     src/systems/InputSystem.cpp
@@ -61,15 +79,24 @@ set(ROGUELIKE_CORE_SOURCES
     src/systems/MeleeCombatSystem.cpp
     src/systems/MonsterAI.cpp
     src/systems/ParticleSystem.cpp
+    src/systems/PortalSystem.cpp
+    src/systems/RangedCombatSystem.cpp
     src/systems/RenderSystem.cpp
     src/systems/SpatialIndexSystem.cpp
+    src/systems/SpellSystem.cpp
+    src/systems/SystemScheduler.cpp
     src/systems/TrapSystem.cpp
+    src/systems/VendorSystem.cpp
     src/systems/VisibilitySystem.cpp
     src/ui/Hud.cpp
     src/ui/InventoryMenu.cpp
+    src/ui/ItemSelectionMenu.cpp
     src/ui/MainMenu.cpp
+    src/ui/SpellMenu.cpp
     src/ui/Targeting.cpp
+    src/ui/VendorMenu.cpp
     src/ui/Widgets.cpp
+    src/world/WorldGeneration.cpp
 )
 
 set(ROGUELIKE_APP_SOURCES
@@ -80,15 +107,33 @@ set(ROGUELIKE_APP_SOURCES
 
 set(ROGUELIKE_TEST_SOURCES
     tests/asset_tests.cpp
+    tests/ai_tests.cpp
     tests/core_tests.cpp
     tests/descent_spawn_tests.cpp
+    tests/dice_tests.cpp
+    tests/dragon_tests.cpp
+    tests/effects_tests.cpp
     tests/equipment_tests.cpp
+    tests/faction_tests.cpp
     tests/input_tests.cpp
     tests/inventory_tests.cpp
+    tests/level_snapshot_tests.cpp
+    tests/log_tests.cpp
     tests/mapgen_tests.cpp
     tests/polish_pressure_tests.cpp
+    tests/portal_tests.cpp
+    tests/progression_tests.cpp
+    tests/ranged_combat_tests.cpp
+    tests/raws_validation_tests.cpp
+    tests/region_routing_tests.cpp
     tests/save_load_tests.cpp
+    tests/scheduler_tests.cpp
+    tests/spell_tests.cpp
+    tests/spatial_tests.cpp
     tests/targeting_tests.cpp
+    tests/ui_tests.cpp
+    tests/vendor_tests.cpp
+    tests/world_generation_tests.cpp
 )
 
 set(ROGUELIKE_TEST_HEADERS
@@ -98,9 +143,12 @@ set(ROGUELIKE_TEST_HEADERS
 
 set(ROGUELIKE_HEADERS
     src/assets/RexPaintLoader.hpp
+    src/core/Achievements.hpp
+    src/core/Dice.hpp
     src/core/Game.hpp
     src/core/GameLog.hpp
     src/core/GameResources.hpp
+    src/core/Morgue.hpp
     src/core/Point.hpp
     src/core/Rng.hpp
     src/core/RunState.hpp
@@ -118,6 +166,7 @@ set(ROGUELIKE_HEADERS
     src/map/generators/DrunkardsWalkBuilder.hpp
     src/map/generators/MazeBuilder.hpp
     src/map/generators/RandomWalk.hpp
+    src/map/generators/Section4Builders.hpp
     src/map/generators/SimpleMapBuilder.hpp
     src/map/generators/VoronoiBuilder.hpp
     src/map/generators/WfcBuilder.hpp
@@ -127,28 +176,44 @@ set(ROGUELIKE_HEADERS
     src/map/MapBuilderCommon.hpp
     src/map/MapBrush.hpp
     src/map/MapConnectivity.hpp
+    src/map/DungeonRegionRouter.hpp
     src/map/MapGeometry.hpp
     src/map/Map.hpp
     src/map/MapBuilder.hpp
     src/map/MapBuilderRegistry.hpp
     src/map/MapBuilderTypes.hpp
     src/map/MapValidation.hpp
+    src/map/MasterDungeonMap.hpp
     src/map/Rect.hpp
     src/map/TileType.hpp
+    src/progression/ExperienceSystem.hpp
+    src/raws/RawDatabase.hpp
+    src/raws/RawTypes.hpp
     src/render/Color.hpp
     src/render/Camera.hpp
     src/render/ConsoleBuffer.hpp
+    src/render/ConsoleLayer.hpp
     src/render/IRenderer.hpp
+    src/render/LayeredConsoleBuffer.hpp
     src/render/MapTheme.hpp
     src/render/SdlRenderer.hpp
     src/render/WallGlyph.hpp
+    src/save/SaveArchive.hpp
+    src/save/SaveDungeon.hpp
+    src/save/SaveEntities.hpp
     src/save/SaveGame.hpp
+    src/save/SaveMap.hpp
+    src/save/SaveResources.hpp
+    src/save/SaveTypes.hpp
     src/spawn/ItemSpawner.hpp
     src/spawn/MonsterSpawner.hpp
+    src/spawn/RawSpawner.hpp
     src/spawn/SpawnTable.hpp
     src/spawn/Spawner.hpp
     src/spawn/TrapSpawner.hpp
+    src/systems/BystanderAI.hpp
     src/systems/DamageSystem.hpp
+    src/systems/EffectSystem.hpp
     src/systems/EquipmentSystem.hpp
     src/systems/HungerSystem.hpp
     src/systems/InputSystem.hpp
@@ -158,16 +223,26 @@ set(ROGUELIKE_HEADERS
     src/systems/MeleeCombatSystem.hpp
     src/systems/MonsterAI.hpp
     src/systems/ParticleSystem.hpp
+    src/systems/PortalSystem.hpp
+    src/systems/RangedCombatSystem.hpp
     src/systems/RenderSystem.hpp
     src/systems/SpatialIndexSystem.hpp
+    src/systems/SpellSystem.hpp
+    src/systems/SystemScheduler.hpp
     src/systems/TrapSystem.hpp
+    src/systems/VendorSystem.hpp
     src/systems/VisibilitySystem.hpp
     src/ui/Hud.hpp
     src/ui/InventoryMenu.hpp
+    src/ui/ItemSelectionMenu.hpp
     src/ui/MainMenu.hpp
     src/ui/MenuResult.hpp
+    src/ui/SpellMenu.hpp
     src/ui/Targeting.hpp
+    src/ui/VendorMenu.hpp
     src/ui/Widgets.hpp
+    src/world/WorldGeneration.hpp
+    src/world/WorldTypes.hpp
 )
 
 set(ROGUELIKE_FORMAT_FILES
@@ -218,12 +293,19 @@ add_custom_target(copy_assets ALL
             ${CMAKE_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
     COMMENT "Copying runtime assets"
 )
+add_custom_target(copy_data ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/data ${CMAKE_BINARY_DIR}/data
+    COMMENT "Copying runtime data"
+)
 add_dependencies(roguelike copy_assets)
 add_dependencies(roguelike_core_tests copy_assets)
+add_dependencies(roguelike copy_data)
+add_dependencies(roguelike_core_tests copy_data)
 
 foreach(target_name roguelike_core roguelike roguelike_core_tests)
     if(MSVC)
-        target_compile_options(${target_name} PRIVATE /W4 /permissive-)
+        target_compile_options(${target_name} PRIVATE /W4 /permissive- /FS)
     else()
         target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wpedantic)
     endif()

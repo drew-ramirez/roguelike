@@ -1,5 +1,7 @@
 #include "systems/InputSystem.hpp"
 
+#include <string>
+
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
@@ -7,6 +9,22 @@
 #include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
+namespace {
+
+[[nodiscard]] std::optional<entt::entity>
+equippedRangedWeapon(const entt::registry& registry, entt::entity owner)
+{
+    const auto view = registry.view<const Equipped, const RangedWeapon>();
+    for (const auto item : view) {
+        const auto& equipped = view.get<const Equipped>(item);
+        if (equipped.owner == owner && equipped.slot == EquipmentSlot::Weapon) {
+            return item;
+        }
+    }
+    return std::nullopt;
+}
+
+} // namespace
 
 std::optional<Point> movementDeltaForKey(Key key)
 {
@@ -59,8 +77,10 @@ std::optional<Point> movementDeltaForKey(Key key)
     case Key::Z:
     case Key::Escape:
     case Key::Enter:
+    case Key::Space:
     case Key::F5:
     case Key::Descend:
+    case Key::Ascend:
     case Key::Unknown:
         return std::nullopt;
     }
@@ -108,6 +128,40 @@ PlayerInputResult handleMapInput(entt::registry& registry,
             resources.inventorySelection = 0;
             return PlayerInputResult::OpenInventory;
         }
+        if (event.key == Key::C) {
+            resources.spellSelection = 0;
+            return PlayerInputResult::OpenSpellMenu;
+        }
+        if (event.key == Key::Enter) {
+            return PlayerInputResult::UsePortal;
+        }
+        if (event.key == Key::F) {
+            const auto weapon =
+                equippedRangedWeapon(registry, resources.player);
+            if (!weapon.has_value()) {
+                resources.log.add("You have no ranged weapon equipped.");
+                return PlayerInputResult::None;
+            }
+            const auto ownerPosition =
+                registry.all_of<Position>(resources.player)
+                    ? std::optional<Point>{Point{
+                          registry.get<Position>(resources.player).x,
+                          registry.get<Position>(resources.player).y}}
+                    : std::nullopt;
+            if (!ownerPosition.has_value()) {
+                return PlayerInputResult::None;
+            }
+            const auto& ranged = registry.get<RangedWeapon>(*weapon);
+            resources.pendingTargeting = PendingTargeting{TargetingMode::Shoot,
+                                                          *weapon,
+                                                          {},
+                                                          0,
+                                                          ranged.range,
+                                                          std::nullopt,
+                                                          *ownerPosition};
+            resources.log.add("Choose a target.");
+            return PlayerInputResult::StartedTargeting;
+        }
         if (event.key == Key::G) {
             return queuePickupItemAtPlayer(registry, resources)
                        ? PlayerInputResult::TookTurn
@@ -118,6 +172,9 @@ PlayerInputResult handleMapInput(entt::registry& registry,
         }
         if (event.key == Key::Descend) {
             return PlayerInputResult::Descend;
+        }
+        if (event.key == Key::Ascend) {
+            return PlayerInputResult::Ascend;
         }
 
         const auto delta = movementDeltaForKey(event.key);
@@ -142,11 +199,29 @@ PlayerInputResult handleMapInput(entt::registry& registry,
                 return PlayerInputResult::TookTurn;
             }
 
-            if (const auto blocker =
-                    blockingEntityAt(registry, target, resources.player);
-                blocker.has_value()) {
+            const auto targetContent =
+                tileContentAt(registry, target, resources.player);
+            if (targetContent.blocker.has_value()) {
+                const auto blocker = *targetContent.blocker;
+                if (registry.all_of<Vendor>(blocker)) {
+                    resources.pendingVendor =
+                        PendingVendor{blocker, VendorMode::Buy};
+                    resources.vendorSelection = 0;
+                    return PlayerInputResult::OpenVendor;
+                }
+                if (registry.all_of<Neutral>(blocker)) {
+                    const auto name = registry.all_of<Name>(blocker)
+                                          ? registry.get<Name>(blocker).value
+                                          : std::string{"Someone"};
+                    resources.log.add(name + " has nothing urgent to say.");
+                    return PlayerInputResult::TookTurn;
+                }
+                if (registry.all_of<Prop>(blocker)) {
+                    resources.log.add("Something blocks the way.");
+                    return PlayerInputResult::None;
+                }
                 registry.emplace_or_replace<WantsToMelee>(
-                    resources.player, WantsToMelee{*blocker});
+                    resources.player, WantsToMelee{blocker});
                 return PlayerInputResult::TookTurn;
             }
 
@@ -179,12 +254,11 @@ bool handlePlayerInput(entt::registry& registry,
 
             const auto& position = registry.get<Position>(resources.player);
             const Point target{position.x + delta->x, position.y + delta->y};
-            // Walking into a blocker becomes bump combat instead of movement
-            if (const auto blocker =
-                    blockingEntityAt(registry, target, resources.player);
-                blocker.has_value()) {
+            const auto targetContent =
+                tileContentAt(registry, target, resources.player);
+            if (targetContent.blocker.has_value()) {
                 registry.emplace_or_replace<WantsToMelee>(
-                    resources.player, WantsToMelee{*blocker});
+                    resources.player, WantsToMelee{*targetContent.blocker});
                 return true;
             }
 

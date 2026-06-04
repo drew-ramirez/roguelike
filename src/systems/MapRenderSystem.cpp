@@ -42,6 +42,10 @@ void renderTile(const Map& map,
         const auto& style = theme.style(MapThemeTile::DownStairs, visible);
         console.set(
             screenX, screenY, style.glyph, style.foreground, style.background);
+    } else if (tile == TileType::UpStairs) {
+        const auto& style = theme.style(MapThemeTile::UpStairs, visible);
+        console.set(
+            screenX, screenY, style.glyph, style.foreground, style.background);
     } else if (tile == TileType::ClosedDoor) {
         const auto& style = theme.style(MapThemeTile::ClosedDoor, visible);
         console.set(
@@ -72,6 +76,8 @@ void renderDebugTile(const Map& map,
             screenX, screenY, wallGlyph(map, worldX, worldY), Color::white());
     } else if (tile == TileType::DownStairs) {
         console.set(screenX, screenY, U'>', Color{220, 220, 120, 255});
+    } else if (tile == TileType::UpStairs) {
+        console.set(screenX, screenY, U'<', Color{220, 220, 120, 255});
     } else if (tile == TileType::ClosedDoor) {
         console.set(screenX, screenY, U'+', Color{185, 130, 70, 255});
     } else if (tile == TileType::OpenDoor) {

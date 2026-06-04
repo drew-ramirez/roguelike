@@ -19,7 +19,13 @@ class ConsoleBuffer;
 class Map;
 struct GameResources;
 
-enum class InventoryInputResult { None, Close, TookTurn, StartedTargeting };
+enum class InventoryInputResult {
+    None,
+    Close,
+    TookTurn,
+    StartedTargeting,
+    StartedItemSelection
+};
 
 [[nodiscard]] InventoryInputResult
 handleInventoryInput(entt::registry& registry,

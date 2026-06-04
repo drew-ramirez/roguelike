@@ -11,7 +11,8 @@
 
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
-#include "systems/ItemSystem.hpp"
+#include "raws/RawDatabase.hpp"
+#include "spawn/RawSpawner.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
@@ -25,27 +26,15 @@ Point randomPointInRoom(const Rect& room, Rng& rng)
     };
 }
 
-[[nodiscard]] bool trapAtPosition(const entt::registry& registry, Point point)
-{
-    const auto view = registry.view<const Trap, const Position>();
-    for (const auto entity : view) {
-        const auto& position = view.get<const Position>(entity);
-        if (position.x == point.x && position.y == point.y) {
-            return true;
-        }
-    }
-    return false;
-}
-
 [[nodiscard]] bool canSpawnTrapAt(const entt::registry& registry,
                                   Point point,
                                   Point playerStart,
                                   Point stairsPosition)
 {
+    const auto tileContent = tileContentAt(registry, point);
     return point != playerStart && point != stairsPosition &&
-           !blockingEntityAt(registry, point).has_value() &&
-           !itemAtPosition(registry, point).has_value() &&
-           !trapAtPosition(registry, point);
+           !tileContent.blocker.has_value() && !tileContent.item.has_value() &&
+           !tileContent.trap.has_value();
 }
 
 [[nodiscard]] bool canSpawnTrapAt(const entt::registry& registry,
@@ -65,14 +54,14 @@ entt::entity spawnSpikeTrap(entt::registry& registry,
                             bool hidden,
                             bool triggered)
 {
-    const auto entity = registry.create();
-    registry.emplace<Position>(entity, Position{position.x, position.y});
-    registry.emplace<Renderable>(
-        entity, Renderable{U'^', Color{220, 90, 80, 255}, Color::black(), 1});
-    registry.emplace<Name>(entity, Name{"Spike Trap"});
-    registry.emplace<Trap>(entity, Trap{3, triggered});
-    if (hidden && !triggered) {
-        registry.emplace<Hidden>(entity);
+    const auto entity = spawnNamedEntity(registry,
+                                         defaultRawDatabase(),
+                                         "spike_trap",
+                                         position,
+                                         RawSpawnOptions{hidden, triggered});
+    registry.emplace_or_replace<Trap>(entity, Trap{3, triggered});
+    if ((!hidden || triggered) && registry.all_of<Hidden>(entity)) {
+        registry.remove<Hidden>(entity);
     }
     return entity;
 }

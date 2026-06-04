@@ -39,15 +39,24 @@ void ConsoleBuffer::clear(Color foreground, Color background, char32_t glyph)
     }
 }
 
-void ConsoleBuffer::set(
-    int x, int y, char32_t glyph, Color foreground, Color background)
+void ConsoleBuffer::clearTransparent()
+{
+    clear(Color::white(), Color::black(), transparentCellGlyph);
+}
+
+void ConsoleBuffer::setCell(int x, int y, const Cell& cell)
 {
     if (!inBounds(x, y)) {
         return;
     }
 
-    cells_[static_cast<std::size_t>(indexOf(x, y))] =
-        Cell{glyph, foreground, background};
+    cells_[static_cast<std::size_t>(indexOf(x, y))] = cell;
+}
+
+void ConsoleBuffer::set(
+    int x, int y, char32_t glyph, Color foreground, Color background)
+{
+    setCell(x, y, Cell{glyph, foreground, background});
 }
 
 void ConsoleBuffer::print(

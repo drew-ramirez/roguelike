@@ -43,11 +43,11 @@ void smooth(Map& map)
     for (int y = 1; y < map.height() - 1; ++y) {
         for (int x = 1; x < map.width() - 1; ++x) {
             const int neighbors = wallNeighborCount(map, x, y);
-            // dense wall neighborhoods stay walls, while a zero-wall
-            // neighborhood becomes a wall island to break huge empty blobs
+            // Dense wall neighborhoods stay walls; overly open neighborhoods
+            // gain small wall islands to break up huge empty blobs.
             next.setTile(x,
                          y,
-                         neighbors > 4 || neighbors == 0 ? TileType::Wall
+                         neighbors > 4 || neighbors <= 1 ? TileType::Wall
                                                          : TileType::Floor);
         }
     }

@@ -3,15 +3,18 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <utility>
 
 #include "core/GameLog.hpp"
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
 #include "systems/DamageSystem.hpp"
+#include "systems/EffectSystem.hpp"
 #include "systems/EquipmentSystem.hpp"
 #include "systems/HungerSystem.hpp"
 #include "systems/ParticleSystem.hpp"
+#include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
 namespace {
@@ -85,6 +88,11 @@ void consumeIfNeeded(entt::registry& registry, entt::entity item)
 
     const int amount = registry.get<ProvidesHealing>(item).amount;
     stats.hp = std::min(stats.maxHp, stats.hp + amount);
+    if (registry.all_of<Pools>(owner)) {
+        auto& pools = registry.get<Pools>(owner);
+        pools.maxHitPoints = stats.maxHp;
+        pools.hitPoints = stats.hp;
+    }
     resources.log.add("You drink " + entityName(registry, item) + ".");
     if (const auto ownerPosition = entityPosition(registry, owner);
         ownerPosition.has_value()) {
@@ -243,14 +251,7 @@ std::vector<entt::entity> inventoryItems(const entt::registry& registry,
 std::optional<entt::entity> itemAtPosition(const entt::registry& registry,
                                            Point position)
 {
-    const auto view = registry.view<const Item, const Position>();
-    for (const auto item : view) {
-        const auto& itemPosition = view.get<const Position>(item);
-        if (itemPosition.x == position.x && itemPosition.y == position.y) {
-            return item;
-        }
-    }
-    return std::nullopt;
+    return itemAt(registry, position);
 }
 
 bool queuePickupItemAtPlayer(entt::registry& registry, GameResources& resources)
@@ -300,6 +301,11 @@ bool dropItemAtOwner(entt::registry& registry,
     if (!ownerPosition.has_value() || !itemOwnedBy(registry, owner, item)) {
         return false;
     }
+    if (registry.all_of<Equipped>(item) && registry.all_of<CursedItem>(item)) {
+        resources.log.add("You cannot drop cursed " +
+                          entityName(registry, item) + ".");
+        return false;
+    }
 
     removeCarriedOwnership(registry, item);
     registry.emplace_or_replace<Position>(
@@ -312,7 +318,8 @@ bool useInventoryItem(entt::registry& registry,
                       GameResources& resources,
                       Map& map,
                       entt::entity owner,
-                      entt::entity item)
+                      entt::entity item,
+                      IFovProvider* fovProvider)
 {
     if (!itemOwnedBy(registry, owner, item)) {
         return false;
@@ -329,31 +336,94 @@ bool useInventoryItem(entt::registry& registry,
         if (registry.all_of<AreaOfEffect>(item)) {
             radius = registry.get<AreaOfEffect>(item).radius;
         }
-        resources.pendingTargeting =
-            PendingTargeting{item, ranged.range, radius, *ownerPosition};
+        resources.pendingTargeting = PendingTargeting{TargetingMode::Item,
+                                                      item,
+                                                      {},
+                                                      0,
+                                                      ranged.range,
+                                                      radius,
+                                                      *ownerPosition};
         resources.log.add("Choose a target.");
         return false;
     }
 
-    if (registry.all_of<ProvidesHealing>(item)) {
-        return healOwner(registry, resources, owner, item);
+    if (registry.all_of<Spellbook>(item)) {
+        const auto spellId = registry.get<Spellbook>(item).spellId;
+        auto& known = registry.all_of<KnownSpells>(owner)
+                          ? registry.get<KnownSpells>(owner)
+                          : registry.emplace<KnownSpells>(owner);
+        if (std::find(known.ids.begin(), known.ids.end(), spellId) !=
+            known.ids.end()) {
+            resources.log.add("You already know that spell.");
+            return false;
+        }
+        known.ids.push_back(spellId);
+        resources.log.add("You learn " + spellId + ".");
+        return true;
     }
 
-    if (registry.all_of<ProvidesNutrition>(item)) {
-        return feedOwner(registry, resources, owner, item);
-    }
-
-    if (registry.all_of<MagicMapper>(item)) {
-        return applyMagicMapping(registry, resources, map, owner, item);
+    if (applyItemEffects(
+            registry, resources, map, owner, item, std::nullopt, fovProvider)) {
+        return true;
     }
 
     resources.log.add("Nothing happens.");
     return false;
 }
 
+std::vector<entt::entity> itemEffectTargets(const entt::registry& registry,
+                                            entt::entity owner,
+                                            entt::entity source)
+{
+    std::vector<entt::entity> targets;
+    const bool identify =
+        registry.valid(source) && registry.all_of<ProvidesIdentify>(source);
+    const bool removeCurse =
+        registry.valid(source) && registry.all_of<ProvidesRemoveCurse>(source);
+    for (const auto item : inventoryItems(registry, owner)) {
+        if (item == source) {
+            continue;
+        }
+        if (identify && registry.all_of<MagicItem>(item) &&
+            !registry.get<MagicItem>(item).identified) {
+            targets.push_back(item);
+        } else if (removeCurse && registry.all_of<CursedItem>(item)) {
+            targets.push_back(item);
+        }
+    }
+    return targets;
+}
+
+bool useInventoryItemOnTargetItem(entt::registry& registry,
+                                  GameResources& resources,
+                                  Map& map,
+                                  entt::entity owner,
+                                  entt::entity source,
+                                  entt::entity target,
+                                  IFovProvider* fovProvider)
+{
+    if (!itemOwnedBy(registry, owner, source) ||
+        !itemOwnedBy(registry, owner, target)) {
+        return false;
+    }
+
+    auto requests = effectRequestsForItem(registry, owner, source);
+    for (auto& request : requests) {
+        request.targetEntity = target;
+    }
+    EffectsQueue queue;
+    queue.enqueue(std::move(requests));
+    const bool resolved = queue.resolve(registry, resources, map, fovProvider);
+    if (resolved) {
+        consumeIfNeeded(registry, source);
+    }
+    return resolved;
+}
+
 bool processItemUses(entt::registry& registry,
                      GameResources& resources,
-                     Map& map)
+                     Map& map,
+                     IFovProvider* fovProvider)
 {
     bool used = false;
     const auto view = registry.view<const WantsToUseItem>();
@@ -364,17 +434,19 @@ bool processItemUses(entt::registry& registry,
         }
 
         if (intent.target.has_value()) {
-            used = applyTargetedEffect(registry,
-                                       resources,
-                                       map,
-                                       user,
-                                       intent.item,
-                                       *intent.target) ||
+            used = applyItemEffects(registry,
+                                    resources,
+                                    map,
+                                    user,
+                                    intent.item,
+                                    intent.target,
+                                    fovProvider) ||
                    used;
             continue;
         }
 
-        used = useInventoryItem(registry, resources, map, user, intent.item) ||
+        used = useInventoryItem(
+                   registry, resources, map, user, intent.item, fovProvider) ||
                used;
     }
     registry.clear<WantsToUseItem>();
@@ -415,8 +487,17 @@ bool confirmPendingTarget(entt::registry& registry,
         return false;
     }
 
-    registry.emplace_or_replace<WantsToUseItem>(
-        resources.player, WantsToUseItem{pending.item, pending.cursor});
+    if (pending.mode == TargetingMode::Spell) {
+        registry.emplace_or_replace<WantsToCastSpell>(
+            resources.player,
+            WantsToCastSpell{pending.spellId, pending.cursor});
+    } else if (pending.mode == TargetingMode::Shoot) {
+        registry.emplace_or_replace<WantsToShoot>(
+            resources.player, WantsToShoot{pending.item, pending.cursor});
+    } else {
+        registry.emplace_or_replace<WantsToUseItem>(
+            resources.player, WantsToUseItem{pending.item, pending.cursor});
+    }
     resources.pendingTargeting.reset();
     return true;
 }

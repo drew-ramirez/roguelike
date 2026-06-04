@@ -1,6 +1,7 @@
 #include "TestSuites.hpp"
 
 #include <algorithm>
+#include <string>
 
 #include <entt/entt.hpp>
 
@@ -17,6 +18,22 @@
 #include "systems/MapTransitionSystem.hpp"
 
 namespace rl::test {
+namespace {
+
+[[nodiscard]] int countNamed(const entt::registry& registry,
+                             const std::string& name)
+{
+    int count = 0;
+    const auto view = registry.view<const Name>();
+    for (const auto entity : view) {
+        if (view.get<const Name>(entity).value == name) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+} // namespace
 
 void runDescentAndSpawnTests(TestRunner& runner)
 {
@@ -55,6 +72,11 @@ void runDescentAndSpawnTests(TestRunner& runner)
                   "descent removes level-local entities");
     runner.expect(findTile(build.map, TileType::DownStairs).has_value(),
                   "new level also has stairs");
+    runner.expect(countNamed(registry, "Wolf") == 1 &&
+                      countNamed(registry, "Wild Boar") == 1,
+                  "descent into woods spawns authored wildlife");
+    runner.expect(countNamed(registry, "Food Ration") >= 1,
+                  "descent into woods spawns a supply pickup");
 
     Rng first{100U};
     Rng second{100U};
@@ -67,6 +89,23 @@ void runDescentAndSpawnTests(TestRunner& runner)
                     monsterSpawnTable().end(),
                     [](const SpawnEntry& entry) { return entry.minDepth > 1; }),
         "spawn table has depth-gated entries");
+
+    Rng itemRng{2222U};
+    const auto itemBuild = SimpleMapBuilder::build(40, 25, itemRng);
+    entt::registry itemRegistry;
+    const auto itemPlayer = spawnPlayer(itemRegistry, itemBuild.playerStart);
+    const auto itemCount = spawnItems(itemRegistry,
+                                      itemBuild.spawnRegions,
+                                      itemBuild.map,
+                                      itemRng,
+                                      itemBuild.playerStart,
+                                      1);
+    runner.expect(itemCount >= 2 &&
+                      countNamed(itemRegistry, "Healing Potion") >= 1 &&
+                      countNamed(itemRegistry, "Food Ration") >= 1,
+                  "early item spawning guarantees healing and food");
+    runner.expect(itemRegistry.valid(itemPlayer),
+                  "supply spawn keeps the player entity valid");
 }
 
 } // namespace rl::test

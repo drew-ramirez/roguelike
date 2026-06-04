@@ -3,34 +3,17 @@
 #include <algorithm>
 #include <stdexcept>
 
+#include "raws/RawDatabase.hpp"
+
 namespace rl {
-namespace {
-
-const std::vector<SpawnEntry> monsters{
-    SpawnEntry{"goblin", 80, 1},
-    SpawnEntry{"orc", 30, 2},
-    SpawnEntry{"troll", 12, 3},
-};
-
-const std::vector<SpawnEntry> items{
-    SpawnEntry{"healing_potion", 70, 1},
-    SpawnEntry{"food_ration", 45, 1},
-    SpawnEntry{"fireball_scroll", 20, 1},
-    SpawnEntry{"magic_mapping_scroll", 12, 1},
-    SpawnEntry{"dagger", 20, 1},
-    SpawnEntry{"sword", 18, 2},
-    SpawnEntry{"chain_mail", 12, 2},
-};
-
-} // namespace
-
 std::string
 rollSpawn(const std::vector<SpawnEntry>& entries, int depth, Rng& rng)
 {
     int totalWeight = 0;
     for (const auto& entry : entries) {
-        if (depth >= entry.minDepth) {
-            totalWeight += entry.weight;
+        if (depth >= entry.minDepth && depth <= entry.maxDepth) {
+            totalWeight += entry.weight + (entry.addMapDepthToWeight *
+                                           std::max(0, depth - entry.minDepth));
         }
     }
 
@@ -40,11 +23,12 @@ rollSpawn(const std::vector<SpawnEntry>& entries, int depth, Rng& rng)
 
     int roll = rng.rangeInclusive(1, totalWeight);
     for (const auto& entry : entries) {
-        if (depth < entry.minDepth) {
+        if (depth < entry.minDepth || depth > entry.maxDepth) {
             continue;
         }
 
-        roll -= entry.weight;
+        roll -= entry.weight + (entry.addMapDepthToWeight *
+                                std::max(0, depth - entry.minDepth));
         if (roll <= 0) {
             return entry.id;
         }
@@ -55,12 +39,12 @@ rollSpawn(const std::vector<SpawnEntry>& entries, int depth, Rng& rng)
 
 const std::vector<SpawnEntry>& monsterSpawnTable()
 {
-    return monsters;
+    return defaultRawDatabase().monsterSpawnTable();
 }
 
 const std::vector<SpawnEntry>& itemSpawnTable()
 {
-    return items;
+    return defaultRawDatabase().itemSpawnTable();
 }
 
 int maxMonstersForDepth(int depth)

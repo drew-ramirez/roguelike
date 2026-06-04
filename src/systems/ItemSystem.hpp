@@ -17,6 +17,7 @@
 namespace rl {
 
 struct GameResources;
+class IFovProvider;
 class Map;
 
 [[nodiscard]] std::vector<entt::entity>
@@ -39,10 +40,25 @@ void processPickupItems(entt::registry& registry, GameResources& resources);
                                     GameResources& resources,
                                     Map& map,
                                     entt::entity owner,
-                                    entt::entity item);
+                                    entt::entity item,
+                                    IFovProvider* fovProvider = nullptr);
+
+[[nodiscard]] std::vector<entt::entity> itemEffectTargets(
+    const entt::registry& registry, entt::entity owner, entt::entity source);
 
 [[nodiscard]] bool
-processItemUses(entt::registry& registry, GameResources& resources, Map& map);
+useInventoryItemOnTargetItem(entt::registry& registry,
+                             GameResources& resources,
+                             Map& map,
+                             entt::entity owner,
+                             entt::entity source,
+                             entt::entity target,
+                             IFovProvider* fovProvider = nullptr);
+
+[[nodiscard]] bool processItemUses(entt::registry& registry,
+                                   GameResources& resources,
+                                   Map& map,
+                                   IFovProvider* fovProvider = nullptr);
 
 [[nodiscard]] bool isValidTarget(const entt::registry& registry,
                                  const GameResources& resources,

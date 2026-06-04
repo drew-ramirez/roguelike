@@ -527,7 +527,8 @@ bool smokeHudAndLog()
     console.clear();
     rl::drawHud(console, resources, registry, rl::RunState::AwaitingInput);
     return console.cellAt(1, 44).glyph == U'H' &&
-           console.cellAt(1, 45).glyph == U't';
+           console.cellAt(1, 45).glyph == U'M' &&
+           console.cellAt(28, 47).glyph == U'f';
 }
 
 int runSmoke()
@@ -596,11 +597,11 @@ int main(int argc, char* argv[])
             return rl::runMapgenViewer(options, std::cout);
         }
 
-        std::string builderId = "simple";
+        std::string builderId = "normal";
         if (const auto builder = parseBuilderArgument(argc, argv)) {
             builderId = std::string{*builder};
         }
-        if (!rl::isKnownMapBuilder(builderId)) {
+        if (builderId != "normal" && !rl::isKnownMapBuilder(builderId)) {
             throw std::invalid_argument("Unknown map builder: " + builderId);
         }
 
