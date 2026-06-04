@@ -122,6 +122,95 @@ bool addSpawnRequestIfOpen(MapBuildResult& result, std::string id, Point point)
     return dx + dy;
 }
 
+[[nodiscard]] int resolvedExitMask(MapBuildOptions options) noexcept
+{
+    if (options.exitMask != 0) {
+        return options.exitMask;
+    }
+    return exitNorth | exitEast | exitSouth | exitWest;
+}
+
+void carveSurfaceExits(Map& map, Point center, int exitMask)
+{
+    map.setTile(center.x, center.y, TileType::Floor);
+    if ((exitMask & exitNorth) != 0) {
+        carveVertical(map, center.x, 0, center.y);
+    }
+    if ((exitMask & exitEast) != 0) {
+        carveHorizontal(map, center.y, center.x, map.width() - 1);
+    }
+    if ((exitMask & exitSouth) != 0) {
+        carveVertical(map, center.x, center.y, map.height() - 1);
+    }
+    if ((exitMask & exitWest) != 0) {
+        carveHorizontal(map, center.y, 0, center.x);
+    }
+}
+
+void finishSurfaceRegion(MapBuildResult& result,
+                         Rng& rng,
+                         std::string builderName,
+                         MapBuildOptions options,
+                         bool hasCaveMouth = false)
+{
+    repairConnectivity(result.map, result.playerStart, rng);
+    cullUnreachable(result.map, result.playerStart);
+    result.builderName = std::move(builderName);
+    if (hasCaveMouth) {
+        setDistantStairs(result.map, result.playerStart, result.stairsPosition);
+    } else {
+        result.stairsPosition = result.playerStart;
+    }
+    result.spawnRegions =
+        spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);
+    recordSnapshot(
+        result.snapshots, result.map, "surface region final", options.recordSnapshots);
+    validateBuildOrThrow(result,
+                         "Surface screen generation produced an invalid map");
+}
+
+void addBiomeFlavor(MapBuildResult& result,
+                    BiomeVariant biome,
+                    Point center,
+                    bool danger)
+{
+    if (danger || biome == BiomeVariant::DangerousWilds) {
+        addSpawnRequestIfOpen(result, "orc", Point{center.x - 4, center.y});
+        addSpawnRequestIfOpen(result, "wolf", Point{center.x + 4, center.y});
+        addSpawnRequestIfOpen(
+            result, "healing_potion", Point{center.x, center.y + 3});
+        return;
+    }
+
+    switch (biome) {
+    case BiomeVariant::LimestoneRise:
+    case BiomeVariant::Sinklands:
+        addSpawnRequestIfOpen(result, "cave_bat", Point{center.x - 4, center.y});
+        addSpawnRequestIfOpen(
+            result, "limestone_column", Point{center.x + 4, center.y});
+        break;
+    case BiomeVariant::ReedMarsh:
+        addSpawnRequestIfOpen(
+            result, "wild_boar", Point{center.x - 4, center.y});
+        addSpawnRequestIfOpen(result, "food_ration", Point{center.x + 3, center.y});
+        break;
+    case BiomeVariant::RuinedWoodland:
+        addSpawnRequestIfOpen(result, "goblin", Point{center.x - 4, center.y});
+        addSpawnRequestIfOpen(
+            result, "dwarf_rubble", Point{center.x + 4, center.y});
+        break;
+    case BiomeVariant::DeepGrove:
+    case BiomeVariant::DryWoods:
+    case BiomeVariant::WetWoods:
+        addSpawnRequestIfOpen(result, "wolf", Point{center.x - 4, center.y});
+        addSpawnRequestIfOpen(
+            result, "wild_boar", Point{center.x + 4, center.y});
+        break;
+    case BiomeVariant::DangerousWilds:
+        break;
+    }
+}
+
 [[nodiscard]] std::vector<SpawnRegion>
 partitionCavernSpawnRegions(const Map& map, Point start, Point stairs)
 {
@@ -227,8 +316,10 @@ MapBuildResult Section4Builders::buildTown(int width,
         SpawnRequest{"townsfolk", Point{width - 8, height - 7}});
     result.spawnRequests.push_back(
         SpawnRequest{"chair", Point{midX - 2, midY - 1}});
+    result.spawnRequests.push_back(
+        SpawnRequest{"food_ration", Point{midX + 1, midY}});
 
-    finalizeRegion(result, "town", options.recordSnapshots);
+    finalizeRegion(result, "town", options.recordSnapshots, options.allowDownStairs);
     return result;
 }
 
@@ -242,7 +333,7 @@ MapBuildResult Section4Builders::buildWoods(int width,
     const int roadX = width / 2;
     carveVertical(result.map, roadX, 1, height - 2);
     carveHorizontal(result.map, height / 3, roadX - 8, roadX + 8);
-    addScatterFloors(result.map, rng, (width * height) / 6, 'c');
+    addScatterFloors(result.map, rng, (width * height) / 18, 'c');
     repairConnectivity(result.map, Point{roadX, 2}, rng);
     cullUnreachable(result.map, Point{roadX, 2});
     result.playerStart = Point{roadX, 2};
@@ -254,6 +345,185 @@ MapBuildResult Section4Builders::buildWoods(int width,
     addSpawnRequestIfOpen(
         result, "healing_potion", Point{roadX + 2, clearingY});
     addBuildStep(result, "content: woods wildlife and supplies");
+    return result;
+}
+
+MapBuildResult Section4Builders::buildTownOutskirts(int width,
+                                                    int height,
+                                                    Rng& rng,
+                                                    MapBuildOptions options)
+{
+    validateBuilderDimensions("surface-town-outskirts", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    const Point center{width / 2, height / 2};
+    carveSurfaceExits(result.map, center, resolvedExitMask(options));
+    carveRect(result.map, Rect{center.x - 8, center.y - 4, center.x + 9, center.y + 5});
+    carveRect(result.map, Rect{4, 4, 12, 9});
+    carveRect(result.map, Rect{width - 13, height - 10, width - 5, height - 5});
+    result.playerStart = center;
+
+    finishSurfaceRegion(result, rng, "surface-town-outskirts", options);
+    addSpawnRequestIfOpen(result, "townsfolk", Point{center.x - 5, center.y});
+    addSpawnRequestIfOpen(result, "chair", Point{center.x + 4, center.y - 1});
+    addSpawnRequestIfOpen(result, "food_ration", Point{center.x, center.y + 3});
+    addBuildStep(result, "role: town outskirts");
+    return result;
+}
+
+MapBuildResult Section4Builders::buildSurfaceCardinalTransition(
+    int width,
+    int height,
+    Rng& rng,
+    MapBuildOptions options)
+{
+    validateBuilderDimensions(
+        "surface-cardinal-transition", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    const Point center{width / 2, height / 2};
+    carveSurfaceExits(result.map, center, resolvedExitMask(options));
+    carveRect(result.map, Rect{center.x - 5, center.y - 3, center.x + 6, center.y + 4});
+    addScatterFloors(result.map, rng, (width * height) / 28, 'c');
+    result.playerStart = center;
+
+    finishSurfaceRegion(result, rng, "surface-cardinal-transition", options);
+    addBiomeFlavor(result, options.biomeVariant, center, false);
+    addBuildStep(result, "role: cardinal transition");
+    return result;
+}
+
+MapBuildResult Section4Builders::buildSurfaceCornerWilderness(
+    int width,
+    int height,
+    Rng& rng,
+    MapBuildOptions options)
+{
+    validateBuilderDimensions(
+        "surface-corner-wilderness", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    const Point center{width / 2, height / 2};
+    carveSurfaceExits(result.map, center, resolvedExitMask(options));
+    addScatterFloors(result.map, rng, (width * height) / 18, 'c');
+    result.playerStart = center;
+
+    finishSurfaceRegion(result, rng, "surface-corner-wilderness", options);
+    addBiomeFlavor(result, options.biomeVariant, center, false);
+    addSpawnRequestIfOpen(result, "food_ration", Point{center.x, center.y + 2});
+    addBuildStep(result, "role: corner wilderness");
+    return result;
+}
+
+MapBuildResult Section4Builders::buildSurfaceRuinPocket(
+    int width,
+    int height,
+    Rng& rng,
+    MapBuildOptions options)
+{
+    validateBuilderDimensions("surface-ruin-pocket", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    const Point center{width / 2, height / 2};
+    carveSurfaceExits(result.map, center, resolvedExitMask(options));
+    carveRect(result.map, Rect{center.x - 9, center.y - 5, center.x - 2, center.y + 1});
+    carveRect(result.map, Rect{center.x + 2, center.y - 1, center.x + 10, center.y + 5});
+    carveHorizontal(result.map, center.y, center.x - 4, center.x + 4);
+    carveVertical(result.map, center.x, center.y - 4, center.y + 4);
+    result.playerStart = center;
+
+    finishSurfaceRegion(result, rng, "surface-ruin-pocket", options);
+    addSpawnRequestIfOpen(result, "goblin", Point{center.x - 5, center.y - 2});
+    addSpawnRequestIfOpen(result, "dwarf_rubble", Point{center.x + 5, center.y + 2});
+    addSpawnRequestIfOpen(
+        result, "cursed_dagger", Point{center.x + 2, center.y});
+    addBuildStep(result, "role: ruin pocket");
+    return result;
+}
+
+MapBuildResult Section4Builders::buildSurfaceCaveMouth(int width,
+                                                       int height,
+                                                       Rng& rng,
+                                                       MapBuildOptions options)
+{
+    validateBuilderDimensions("surface-cave-mouth", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    const Point center{width / 2, height / 2};
+    carveSurfaceExits(result.map, center, resolvedExitMask(options));
+    carveRect(result.map, Rect{center.x - 7, center.y - 4, center.x + 8, center.y + 5});
+    addScatterFloors(result.map, rng, (width * height) / 26, 'c');
+    result.playerStart = center;
+
+    finishSurfaceRegion(result, rng, "surface-cave-mouth", options, true);
+    addSpawnRequestIfOpen(result, "cave_bat", Point{center.x - 5, center.y});
+    addSpawnRequestIfOpen(
+        result, "limestone_column", Point{center.x + 5, center.y});
+    addSpawnRequestIfOpen(
+        result, "healing_potion", Point{center.x, center.y + 3});
+    addBuildStep(result, "role: cave mouth");
+    return result;
+}
+
+MapBuildResult Section4Builders::buildSurfaceCampShrine(
+    int width,
+    int height,
+    Rng& rng,
+    MapBuildOptions options)
+{
+    validateBuilderDimensions("surface-camp-shrine", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    const Point center{width / 2, height / 2};
+    carveSurfaceExits(result.map, center, resolvedExitMask(options));
+    carveRect(result.map, Rect{center.x - 8, center.y - 5, center.x + 9, center.y + 6});
+    addScatterFloors(result.map, rng, (width * height) / 36, 'p');
+    result.playerStart = center;
+
+    finishSurfaceRegion(result, rng, "surface-camp-shrine", options);
+    addSpawnRequestIfOpen(result, "chair", Point{center.x - 4, center.y});
+    addSpawnRequestIfOpen(result, "food_ration", Point{center.x, center.y + 2});
+    addSpawnRequestIfOpen(
+        result, "healing_potion", Point{center.x + 3, center.y});
+    addBuildStep(result, "role: camp shrine");
+    return result;
+}
+
+MapBuildResult Section4Builders::buildSurfaceResourceHeavy(
+    int width,
+    int height,
+    Rng& rng,
+    MapBuildOptions options)
+{
+    validateBuilderDimensions("surface-resource-heavy", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    const Point center{width / 2, height / 2};
+    carveSurfaceExits(result.map, center, resolvedExitMask(options));
+    carveRect(result.map, Rect{center.x - 6, center.y - 4, center.x + 7, center.y + 5});
+    addScatterFloors(result.map, rng, (width * height) / 22, 'c');
+    result.playerStart = center;
+
+    finishSurfaceRegion(result, rng, "surface-resource-heavy", options);
+    addBiomeFlavor(result, options.biomeVariant, center, false);
+    addSpawnRequestIfOpen(result, "food_ration", Point{center.x - 2, center.y + 2});
+    addSpawnRequestIfOpen(
+        result, "healing_potion", Point{center.x + 2, center.y + 2});
+    addBuildStep(result, "role: resource heavy");
+    return result;
+}
+
+MapBuildResult Section4Builders::buildSurfaceDangerEncounter(
+    int width,
+    int height,
+    Rng& rng,
+    MapBuildOptions options)
+{
+    validateBuilderDimensions("surface-danger-encounter", width, height, 30, 20);
+    MapBuildResult result{Map{width, height, TileType::Wall}};
+    const Point center{width / 2, height / 2};
+    carveRect(result.map, Rect{center.x - 12, center.y - 8, center.x + 13, center.y + 9});
+    carveSurfaceExits(result.map, center, resolvedExitMask(options));
+    addScatterFloors(result.map, rng, (width * height) / 34, 'p');
+    result.playerStart = center;
+
+    finishSurfaceRegion(result, rng, "surface-danger-encounter", options);
+    addBiomeFlavor(result, options.biomeVariant, center, true);
+    addSpawnRequestIfOpen(result, "fireball_scroll", Point{center.x, center.y + 4});
+    addBuildStep(result, "role: danger encounter");
     return result;
 }
 
@@ -273,10 +543,12 @@ MapBuildResult Section4Builders::buildLimestoneCaverns(int width,
     constexpr std::size_t batOffset = 5;
     constexpr std::size_t columnOffset = 10;
     constexpr std::size_t supplyOffset = 15;
+    constexpr std::size_t rationOffset = 22;
     addSpawnRequestFromDistantFloor(result, "kobold", koboldOffset);
     addSpawnRequestFromDistantFloor(result, "cave_bat", batOffset);
     addSpawnRequestFromDistantFloor(result, "limestone_column", columnOffset);
     addSpawnRequestFromDistantFloor(result, "healing_potion", supplyOffset);
+    addSpawnRequestFromDistantFloor(result, "food_ration", rationOffset);
     addBuildStep(result, "theme: limestone caverns");
     addBuildStep(result, "content: cavern denizens and formations");
     recordSnapshot(result.snapshots,
@@ -465,4 +737,5 @@ MapBuildResult Section4Builders::buildDarkElfCity(int width,
     addBuildStep(result, "content: rival dark elf clans");
     return result;
 }
+
 } // namespace rl

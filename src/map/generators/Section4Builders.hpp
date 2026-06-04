@@ -18,6 +18,22 @@ struct Section4Builders {
     buildTown(int width, int height, Rng& rng, MapBuildOptions options = {});
     [[nodiscard]] static MapBuildResult
     buildWoods(int width, int height, Rng& rng, MapBuildOptions options = {});
+    [[nodiscard]] static MapBuildResult buildTownOutskirts(
+        int width, int height, Rng& rng, MapBuildOptions options = {});
+    [[nodiscard]] static MapBuildResult buildSurfaceCardinalTransition(
+        int width, int height, Rng& rng, MapBuildOptions options = {});
+    [[nodiscard]] static MapBuildResult buildSurfaceCornerWilderness(
+        int width, int height, Rng& rng, MapBuildOptions options = {});
+    [[nodiscard]] static MapBuildResult buildSurfaceRuinPocket(
+        int width, int height, Rng& rng, MapBuildOptions options = {});
+    [[nodiscard]] static MapBuildResult buildSurfaceCaveMouth(
+        int width, int height, Rng& rng, MapBuildOptions options = {});
+    [[nodiscard]] static MapBuildResult buildSurfaceCampShrine(
+        int width, int height, Rng& rng, MapBuildOptions options = {});
+    [[nodiscard]] static MapBuildResult buildSurfaceResourceHeavy(
+        int width, int height, Rng& rng, MapBuildOptions options = {});
+    [[nodiscard]] static MapBuildResult buildSurfaceDangerEncounter(
+        int width, int height, Rng& rng, MapBuildOptions options = {});
     [[nodiscard]] static MapBuildResult buildLimestoneCaverns(
         int width, int height, Rng& rng, MapBuildOptions options = {});
     [[nodiscard]] static MapBuildResult buildDeepCaverns(

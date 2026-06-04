@@ -60,6 +60,14 @@ std::vector<std::string> availableMapBuilders()
             "wfc",
             "town",
             "woods",
+            "surface-town-outskirts",
+            "surface-cardinal-transition",
+            "surface-corner-wilderness",
+            "surface-ruin-pocket",
+            "surface-cave-mouth",
+            "surface-camp-shrine",
+            "surface-resource-heavy",
+            "surface-danger-encounter",
             "limestone-caverns",
             "deep-caverns",
             "dwarf-transition",
@@ -223,6 +231,38 @@ MapBuildResult buildMapById(std::string_view builderId,
     }
     if (builderId == "woods") {
         return Section4Builders::buildWoods(width, height, rng, options);
+    }
+    if (builderId == "surface-town-outskirts") {
+        return Section4Builders::buildTownOutskirts(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-cardinal-transition") {
+        return Section4Builders::buildSurfaceCardinalTransition(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-corner-wilderness") {
+        return Section4Builders::buildSurfaceCornerWilderness(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-ruin-pocket") {
+        return Section4Builders::buildSurfaceRuinPocket(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-cave-mouth") {
+        return Section4Builders::buildSurfaceCaveMouth(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-camp-shrine") {
+        return Section4Builders::buildSurfaceCampShrine(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-resource-heavy") {
+        return Section4Builders::buildSurfaceResourceHeavy(
+            width, height, rng, options);
+    }
+    if (builderId == "surface-danger-encounter") {
+        return Section4Builders::buildSurfaceDangerEncounter(
+            width, height, rng, options);
     }
     if (builderId == "limestone-caverns") {
         return Section4Builders::buildLimestoneCaverns(
