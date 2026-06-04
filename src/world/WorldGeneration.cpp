@@ -1,7 +1,7 @@
 /**
  * **************************************************************************
  * @file     WorldGeneration.cpp
- * @brief    Builds deterministic macro-world cells
+ * @brief    Builds deterministic macro-world cells and local screen roles
  * **************************************************************************
  */
 
@@ -137,6 +137,139 @@ void applyAnchor(WorldCellDescriptor& cell)
     return "Wilds";
 }
 
+[[nodiscard]] bool isCardinalScreen(Point screen) noexcept
+{
+    return (screen.x == 1 && screen.y != 1) ||
+           (screen.y == 1 && screen.x != 1);
+}
+
+[[nodiscard]] bool isCornerScreen(Point screen) noexcept
+{
+    return screen.x != 1 && screen.y != 1;
+}
+
+[[nodiscard]] int deterministicRoleRoll(const WorldCellDescriptor& cell,
+                                         Point screen) noexcept
+{
+    const auto hash = hash2d(static_cast<Rng::Seed>(
+                                 (cell.position.x + 31) * 101 +
+                                 (cell.position.y + 17) * 313),
+                             screen.x,
+                             screen.y);
+    return static_cast<int>(hash % 100U);
+}
+
+[[nodiscard]] int exitMaskFor(Point macro, Point screen) noexcept
+{
+    int mask = 0;
+    if (screen.y > 0 || macro.y > 0) {
+        mask |= exitNorth;
+    }
+    if (screen.x < localScreenGridSize - 1 ||
+        macro.x < worldMapWidth - 1) {
+        mask |= exitEast;
+    }
+    if (screen.y < localScreenGridSize - 1 ||
+        macro.y < worldMapHeight - 1) {
+        mask |= exitSouth;
+    }
+    if (screen.x > 0 || macro.x > 0) {
+        mask |= exitWest;
+    }
+    return mask;
+}
+
+[[nodiscard]] std::string builderForDescriptor(
+    const WorldCellDescriptor& cell,
+    LocalScreenRole role)
+{
+    if (role == LocalScreenRole::CenterLandmark &&
+        cell.landmark.has_value()) {
+        if (cell.landmark->id == "greenholt") {
+            return "town";
+        }
+        if (cell.landmark->id == "limestone") {
+            return "surface-cave-mouth";
+        }
+        return "surface-camp-shrine";
+    }
+
+    switch (role) {
+    case LocalScreenRole::CenterLandmark:
+        return "surface-resource-heavy";
+    case LocalScreenRole::CardinalTransition:
+        return "surface-cardinal-transition";
+    case LocalScreenRole::CornerWilderness:
+        return "surface-corner-wilderness";
+    case LocalScreenRole::RuinPocket:
+        return "surface-ruin-pocket";
+    case LocalScreenRole::CaveMouth:
+        return "surface-cave-mouth";
+    case LocalScreenRole::CampShrine:
+        return "surface-camp-shrine";
+    case LocalScreenRole::ResourceHeavy:
+        return "surface-resource-heavy";
+    case LocalScreenRole::TownOutskirts:
+        return "surface-town-outskirts";
+    case LocalScreenRole::DangerEncounter:
+        return "surface-danger-encounter";
+    }
+    return "surface-corner-wilderness";
+}
+
+[[nodiscard]] LocalScreenRole roleForScreen(const WorldCellDescriptor& cell,
+                                            Point screen,
+                                            bool dangerEncounter)
+{
+    if (dangerEncounter) {
+        return LocalScreenRole::DangerEncounter;
+    }
+
+    if (screen == Point{1, 1} && cell.landmark.has_value()) {
+        return LocalScreenRole::CenterLandmark;
+    }
+
+    if (cell.landmark.has_value() && cell.landmark->id == "greenholt" &&
+        isCardinalScreen(screen)) {
+        return LocalScreenRole::TownOutskirts;
+    }
+
+    if (isCornerScreen(screen)) {
+        if (cell.fields.ruinDensity > 0.66 &&
+            deterministicRoleRoll(cell, screen) > 45) {
+            return LocalScreenRole::RuinPocket;
+        }
+        return LocalScreenRole::CornerWilderness;
+    }
+
+    if (screen == Point{1, 1}) {
+        if (cell.biome == BiomeVariant::Sinklands ||
+            cell.biome == BiomeVariant::LimestoneRise) {
+            return LocalScreenRole::CaveMouth;
+        }
+        if (cell.fields.ruinDensity > 0.62) {
+            return LocalScreenRole::RuinPocket;
+        }
+        if (deterministicRoleRoll(cell, screen) < 18) {
+            return LocalScreenRole::CampShrine;
+        }
+        return LocalScreenRole::ResourceHeavy;
+    }
+
+    if ((cell.biome == BiomeVariant::Sinklands ||
+         cell.biome == BiomeVariant::LimestoneRise) &&
+        screen.y == 2) {
+        return LocalScreenRole::CaveMouth;
+    }
+
+    if (cell.fields.ruinDensity > 0.68 &&
+        deterministicRoleRoll(cell, screen) > 55) {
+        return LocalScreenRole::RuinPocket;
+    }
+
+    return LocalScreenRole::CardinalTransition;
+}
+
 } // namespace
 
 bool worldPointInBounds(Point point) noexcept
@@ -181,30 +314,30 @@ const WorldCellDescriptor* worldCellAt(const WorldMapState& world, Point point)
 
 double valueNoise2d(Rng::Seed seed, double x, double y) noexcept
 {
-    const auto x0 = static_cast<int>(std::floor(x));
-    const auto y0 = static_cast<int>(std::floor(y));
+    const int x0 = static_cast<int>(std::floor(x));
+    const int y0 = static_cast<int>(std::floor(y));
     const int x1 = x0 + 1;
     const int y1 = y0 + 1;
     const double sx = smoothstep(x - static_cast<double>(x0));
     const double sy = smoothstep(y - static_cast<double>(y0));
 
     const double north = lerp(latticeValue(seed, x0, y0),
-                              latticeValue(seed, x1, y0),
-                              sx);
+                             latticeValue(seed, x1, y0),
+                             sx);
     const double south = lerp(latticeValue(seed, x0, y1),
-                              latticeValue(seed, x1, y1),
-                              sx);
+                             latticeValue(seed, x1, y1),
+                             sx);
     return clamped01(lerp(north, south, sy));
 }
 
 double fbmNoise2d(Rng::Seed seed, double x, double y, int octaves) noexcept
 {
-    double total = 0.0;
     double amplitude = 0.5;
     double frequency = 1.0;
+    double total = 0.0;
     double normalization = 0.0;
     for (int octave = 0; octave < octaves; ++octave) {
-        total += valueNoise2d(seed + static_cast<Rng::Seed>(octave * 7919),
+        total += valueNoise2d(seed + static_cast<Rng::Seed>(octave * 9973),
                               x * frequency,
                               y * frequency) *
                  amplitude;
@@ -226,14 +359,14 @@ BiomeVariant deriveBiomeVariant(const WorldCellFields& fields)
     if (fields.elevation > 0.68 && fields.moisture < 0.58) {
         return BiomeVariant::LimestoneRise;
     }
-    if (fields.marshPressure > 0.64 && fields.moisture > 0.55) {
+    if (fields.marshPressure > 0.68 && fields.moisture > 0.58) {
         return fields.elevation < 0.28 ? BiomeVariant::Sinklands
                                        : BiomeVariant::ReedMarsh;
     }
-    if (fields.woodlandDensity > 0.72) {
+    if (fields.woodlandDensity > 0.72 && fields.moisture > 0.48) {
         return BiomeVariant::DeepGrove;
     }
-    if (fields.moisture > 0.62) {
+    if (fields.moisture > 0.55) {
         return BiomeVariant::WetWoods;
     }
     return BiomeVariant::DryWoods;
@@ -357,6 +490,60 @@ Color biomeColor(BiomeVariant biome) noexcept
     return Color::white();
 }
 
+std::string_view localScreenRoleId(LocalScreenRole role) noexcept
+{
+    switch (role) {
+    case LocalScreenRole::CenterLandmark:
+        return "center_landmark";
+    case LocalScreenRole::CardinalTransition:
+        return "cardinal_transition";
+    case LocalScreenRole::CornerWilderness:
+        return "corner_wilderness";
+    case LocalScreenRole::RuinPocket:
+        return "ruin_pocket";
+    case LocalScreenRole::CaveMouth:
+        return "cave_mouth";
+    case LocalScreenRole::CampShrine:
+        return "camp_shrine";
+    case LocalScreenRole::ResourceHeavy:
+        return "resource_heavy";
+    case LocalScreenRole::TownOutskirts:
+        return "town_outskirts";
+    case LocalScreenRole::DangerEncounter:
+        return "danger_encounter";
+    }
+    return "corner_wilderness";
+}
+
+LocalScreenRole localScreenRoleFromId(std::string_view id) noexcept
+{
+    if (id == "center_landmark") {
+        return LocalScreenRole::CenterLandmark;
+    }
+    if (id == "cardinal_transition") {
+        return LocalScreenRole::CardinalTransition;
+    }
+    if (id == "ruin_pocket") {
+        return LocalScreenRole::RuinPocket;
+    }
+    if (id == "cave_mouth") {
+        return LocalScreenRole::CaveMouth;
+    }
+    if (id == "camp_shrine") {
+        return LocalScreenRole::CampShrine;
+    }
+    if (id == "resource_heavy") {
+        return LocalScreenRole::ResourceHeavy;
+    }
+    if (id == "town_outskirts") {
+        return LocalScreenRole::TownOutskirts;
+    }
+    if (id == "danger_encounter") {
+        return LocalScreenRole::DangerEncounter;
+    }
+    return LocalScreenRole::CornerWilderness;
+}
+
 WorldMapState generateWorldMap(Rng::Seed seed)
 {
     WorldMapState world;
@@ -383,6 +570,33 @@ WorldMapState generateWorldMap(Rng::Seed seed)
     }
 
     return world;
+}
+
+LocalScreenDescriptor describeLocalScreen(const WorldMapState& world,
+                                          Point macro,
+                                          Point screen,
+                                          bool dangerEncounter)
+{
+    if (!worldPointInBounds(macro) || !localScreenInBounds(screen)) {
+        throw std::out_of_range("Local screen coordinate is out of bounds");
+    }
+
+    const auto* cell = worldCellAt(world, macro);
+    if (cell == nullptr) {
+        throw std::runtime_error("World map has no cells to describe");
+    }
+
+    LocalScreenDescriptor descriptor;
+    descriptor.macro = macro;
+    descriptor.screen = screen;
+    descriptor.role = roleForScreen(*cell, screen, dangerEncounter);
+    descriptor.exitMask = exitMaskFor(macro, screen);
+    descriptor.builderId = builderForDescriptor(*cell, descriptor.role);
+    descriptor.dangerEncounter = dangerEncounter;
+    if (cell->landmark.has_value()) {
+        descriptor.landmarkId = cell->landmark->id;
+    }
+    return descriptor;
 }
 
 Point greenholtWorldPosition() noexcept

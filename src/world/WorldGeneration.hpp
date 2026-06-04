@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <string_view>
 
 #include "core/Rng.hpp"
@@ -37,7 +38,16 @@ namespace rl {
 [[nodiscard]] char32_t biomeGlyph(BiomeVariant biome) noexcept;
 [[nodiscard]] Color biomeColor(BiomeVariant biome) noexcept;
 
+[[nodiscard]] std::string_view localScreenRoleId(LocalScreenRole role) noexcept;
+[[nodiscard]] LocalScreenRole
+localScreenRoleFromId(std::string_view id) noexcept;
+
 [[nodiscard]] WorldMapState generateWorldMap(Rng::Seed seed);
+[[nodiscard]] LocalScreenDescriptor
+describeLocalScreen(const WorldMapState& world,
+                    Point macro,
+                    Point screen,
+                    bool dangerEncounter = false);
 
 [[nodiscard]] Point greenholtWorldPosition() noexcept;
 [[nodiscard]] Point reedfenWorldPosition() noexcept;
