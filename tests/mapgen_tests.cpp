@@ -252,6 +252,24 @@ void setChunkTile(wfc::ChunkPattern& pattern, int x, int y, TileType tile)
         [id](const SpawnRequest& request) { return request.id == id; });
 }
 
+[[nodiscard]] bool surfaceExitIsOpen(const Map& map, int exit)
+{
+    const Point center{map.width() / 2, map.height() / 2};
+    if (exit == exitNorth) {
+        return isConnectivityPassable(map, Point{center.x, 1});
+    }
+    if (exit == exitEast) {
+        return isConnectivityPassable(map, Point{map.width() - 2, center.y});
+    }
+    if (exit == exitSouth) {
+        return isConnectivityPassable(map, Point{center.x, map.height() - 2});
+    }
+    if (exit == exitWest) {
+        return isConnectivityPassable(map, Point{1, center.y});
+    }
+    return false;
+}
+
 } // namespace
 
 void runMapgenTests(TestRunner& runner)
@@ -483,6 +501,101 @@ void runMapgenTests(TestRunner& runner)
                 hasSpawn("townsfolk") && hasSpawn("chair") &&
                 hasSpawn("food_ration"),
             "town builder requests vendor, bystander, prop, and food spawns");
+    }
+
+    {
+        struct SurfaceRoleContent {
+            std::string id;
+            BiomeVariant biome = BiomeVariant::DryWoods;
+            LocalScreenRole role = LocalScreenRole::CornerWilderness;
+            std::string firstSpawn;
+            std::string secondSpawn;
+            bool expectsDownStairs = false;
+        };
+
+        const std::vector<SurfaceRoleContent> roles{
+            {"surface-town-outskirts",
+             BiomeVariant::DryWoods,
+             LocalScreenRole::TownOutskirts,
+             "townsfolk",
+             "food_ration",
+             false},
+            {"surface-cardinal-transition",
+             BiomeVariant::ReedMarsh,
+             LocalScreenRole::CardinalTransition,
+             "wild_boar",
+             "food_ration",
+             false},
+            {"surface-corner-wilderness",
+             BiomeVariant::DeepGrove,
+             LocalScreenRole::CornerWilderness,
+             "wolf",
+             "wild_boar",
+             false},
+            {"surface-ruin-pocket",
+             BiomeVariant::RuinedWoodland,
+             LocalScreenRole::RuinPocket,
+             "goblin",
+             "dwarf_rubble",
+             false},
+            {"surface-cave-mouth",
+             BiomeVariant::LimestoneRise,
+             LocalScreenRole::CaveMouth,
+             "cave_bat",
+             "limestone_column",
+             true},
+            {"surface-camp-shrine",
+             BiomeVariant::WetWoods,
+             LocalScreenRole::CampShrine,
+             "chair",
+             "healing_potion",
+             false},
+            {"surface-resource-heavy",
+             BiomeVariant::LimestoneRise,
+             LocalScreenRole::ResourceHeavy,
+             "limestone_column",
+             "healing_potion",
+             false},
+            {"surface-danger-encounter",
+             BiomeVariant::DangerousWilds,
+             LocalScreenRole::DangerEncounter,
+             "orc",
+             "fireball_scroll",
+             false},
+        };
+
+        for (std::size_t index = 0; index < roles.size(); ++index) {
+            Rng rng{static_cast<Rng::Seed>(7070U + index)};
+            MapBuildOptions options;
+            options.biomeVariant = roles[index].biome;
+            options.screenRole = roles[index].role;
+            options.exitMask = exitNorth | exitEast;
+            options.dangerEncounter =
+                roles[index].role == LocalScreenRole::DangerEncounter;
+
+            const auto result =
+                buildMapById(roles[index].id, 80, 43, rng, options);
+            const auto validation = validateMapBuild(
+                result.map, result.playerStart, result.stairsPosition);
+
+            runner.expect(validation.valid,
+                          roles[index].id + " surface role validates");
+            runner.expect(result.builderName == roles[index].id,
+                          roles[index].id + " reports its surface id");
+            runner.expect(hasBuildStepContaining(result, "role:"),
+                          roles[index].id + " records its local role");
+            runner.expect(surfaceExitIsOpen(result.map, exitNorth) &&
+                              surfaceExitIsOpen(result.map, exitEast),
+                          roles[index].id + " preserves requested exits");
+            runner.expect(hasSpawnRequest(result, roles[index].firstSpawn) &&
+                              hasSpawnRequest(result, roles[index].secondSpawn),
+                          roles[index].id +
+                              " requests role-appropriate content");
+            runner.expect((countTiles(result.map, TileType::DownStairs) > 0) ==
+                              roles[index].expectsDownStairs,
+                          roles[index].id +
+                              " controls deliberate surface stairs");
+        }
     }
 
     {
@@ -801,6 +914,14 @@ void runMapgenTests(TestRunner& runner)
                 isKnownMapBuilder("voronoi-chebyshev") &&
                 isKnownMapBuilder("wfc") && isKnownMapBuilder("town") &&
                 isKnownMapBuilder("woods") &&
+                isKnownMapBuilder("surface-town-outskirts") &&
+                isKnownMapBuilder("surface-cardinal-transition") &&
+                isKnownMapBuilder("surface-corner-wilderness") &&
+                isKnownMapBuilder("surface-ruin-pocket") &&
+                isKnownMapBuilder("surface-cave-mouth") &&
+                isKnownMapBuilder("surface-camp-shrine") &&
+                isKnownMapBuilder("surface-resource-heavy") &&
+                isKnownMapBuilder("surface-danger-encounter") &&
                 isKnownMapBuilder("limestone-caverns") &&
                 isKnownMapBuilder("deep-caverns") &&
                 isKnownMapBuilder("dwarf-transition") &&
@@ -835,6 +956,14 @@ void runMapgenTests(TestRunner& runner)
                                            "wfc",
                                            "town",
                                            "woods",
+                                           "surface-town-outskirts",
+                                           "surface-cardinal-transition",
+                                           "surface-corner-wilderness",
+                                           "surface-ruin-pocket",
+                                           "surface-cave-mouth",
+                                           "surface-camp-shrine",
+                                           "surface-resource-heavy",
+                                           "surface-danger-encounter",
                                            "limestone-caverns",
                                            "deep-caverns",
                                            "dwarf-transition",
@@ -906,6 +1035,10 @@ void runMapgenTests(TestRunner& runner)
             {"limestone-caverns", 72.0, 82.0},
             {"cavern-vaults", 75.0, 84.0},
             {"woods", 58.0, 70.0},
+            {"surface-cardinal-transition", 92.0, 92.0},
+            {"surface-corner-wilderness", 88.0, 90.0},
+            {"surface-resource-heavy", 88.0, 90.0},
+            {"surface-danger-encounter", 54.0, 70.0},
             {"mushroom-entrance", 62.0, 76.0},
             {"mushroom-forest", 62.0, 76.0},
             {"mushroom-exit", 62.0, 76.0},
