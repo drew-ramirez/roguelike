@@ -27,6 +27,92 @@
       "effects": {"provides_healing": 8}
     }
   ],
+  "ingredients": [
+    {"id": "wild_berries", "name": "Wild Berries", "item": "food_ration", "tags": ["food", "forage"]},
+    {"id": "dry_wood", "name": "Dry Wood", "tags": ["fuel", "forage"]},
+    {"id": "healing_herb", "name": "Healing Herb", "item": "healing_potion", "tags": ["herb", "medicine"]},
+    {"id": "pond_fish", "name": "Pond Fish", "item": "pond_fish", "tags": ["fish", "food", "marsh", "stream"]},
+    {"id": "marsh_root", "name": "Marsh Root", "item": "marsh_root", "tags": ["root", "food", "marsh", "binder"]},
+    {"id": "reed_shoot", "name": "Reed Shoot", "item": "reed_shoot", "tags": ["reed", "food", "marsh"]},
+    {"id": "bitter_herb", "name": "Bitter Herb", "item": "bitter_herb", "tags": ["herb", "bitter", "medicine"]},
+    {"id": "cave_mushroom", "name": "Cave Mushroom", "item": "cave_mushroom", "tags": ["mushroom", "fungus", "food", "cave"]},
+    {"id": "salt_crust", "name": "Salt Crust", "item": "salt_crust", "tags": ["salt", "mineral", "cave"]}
+  ],
+  "recipes": [
+    {
+      "id": "trail_ration",
+      "name": "Trail Ration",
+      "station": "campfire",
+      "method": "roasted",
+      "ingredients": [{"id": "wild_berries", "count": 2}, {"id": "dry_wood", "count": 1}],
+      "outputs": [{"id": "food_ration", "count": 1}],
+      "place_tags": ["campfire", "grove_town"],
+      "nutrition": 650
+    },
+    {
+      "id": "healing_brew",
+      "name": "Healing Brew",
+      "station": "campfire",
+      "method": "boiled",
+      "ingredients": [{"id": "healing_herb", "count": 2}, {"id": "dry_wood", "count": 1}],
+      "outputs": [{"id": "healing_potion", "count": 1}],
+      "place_tags": ["campfire", "grove_town"],
+      "nutrition": 150
+    },
+    {
+      "id": "marsh_stew",
+      "name": "Marsh Stew",
+      "station": "campfire",
+      "method": "boiled",
+      "ingredients": [{"id": "pond_fish", "count": 1}, {"id": "marsh_root", "count": 1}, {"id": "reed_shoot", "count": 1}],
+      "outputs": [{"id": "cooked_meal", "count": 1}],
+      "place_tags": ["campfire", "reed_marsh"],
+      "nutrition": 700
+    },
+    {
+      "id": "stonebelly_chowder",
+      "name": "Stonebelly Chowder",
+      "station": "campfire",
+      "method": "boiled",
+      "ingredients": [{"id": "cave_mushroom", "count": 2}, {"id": "salt_crust", "count": 1}],
+      "outputs": [{"id": "cooked_meal", "count": 1}],
+      "place_tags": ["campfire", "limestone_cave"],
+      "nutrition": 800
+    }
+  ],
+  "biome_resource_tables": [
+    {
+      "id": "temperate_forest",
+      "resources": [
+        {"ingredient": "wild_berries", "weight": 8, "min": 1, "max": 3},
+        {"ingredient": "dry_wood", "weight": 6, "min": 1, "max": 4},
+        {"ingredient": "healing_herb", "weight": 2, "min": 1, "max": 1}
+      ]
+    },
+    {
+      "id": "grove_town",
+      "resources": [
+        {"ingredient": "wild_berries", "weight": 6, "min": 1, "max": 2},
+        {"ingredient": "healing_herb", "weight": 3, "min": 1, "max": 1}
+      ]
+    },
+    {
+      "id": "reed_marsh",
+      "resources": [
+        {"ingredient": "pond_fish", "weight": 5, "min": 1, "max": 1},
+        {"ingredient": "marsh_root", "weight": 5, "min": 1, "max": 2},
+        {"ingredient": "reed_shoot", "weight": 3, "min": 1, "max": 2},
+        {"ingredient": "bitter_herb", "weight": 2, "min": 1, "max": 1}
+      ]
+    },
+    {
+      "id": "limestone_cave",
+      "resources": [
+        {"ingredient": "cave_mushroom", "weight": 5, "min": 1, "max": 2},
+        {"ingredient": "salt_crust", "weight": 3, "min": 1, "max": 1}
+      ]
+    }
+  ],
   "mobs": [
     {
       "id": "cave_bat",
@@ -122,6 +208,18 @@
       "faction": "town",
       "combat": {"max_hp": 6, "hp": 6, "defense": 0, "power": 1},
       "pools": {"hit_points": 6, "max_hit_points": 6, "level": 1}
+    },
+    {
+      "id": "reed_mentor",
+      "name": "Reed Mentor",
+      "renderable": {"glyph": "m", "fg": "#A0E0B0", "bg": "#000000", "order": 5},
+      "blocks_tile": true,
+      "neutral": true,
+      "bystander": true,
+      "faction": "town",
+      "settlement_service": {"service": "teach_recipe", "recipe": "marsh_stew"},
+      "combat": {"max_hp": 8, "hp": 8, "defense": 0, "power": 1},
+      "pools": {"hit_points": 8, "max_hit_points": 8, "level": 1}
     },
     {
       "id": "blacksmith",
@@ -310,6 +408,54 @@
       "renderable": {"glyph": "%", "fg": "#BE9646", "bg": "#000000", "order": 2},
       "item_stats": {"weight": 1, "base_value": 5, "category": "food"},
       "consumable": {"effects": {"provides_nutrition": 600}}
+    },
+    {
+      "id": "cooked_meal",
+      "name": "Cooked Meal",
+      "renderable": {"glyph": "%", "fg": "#F0C070", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 8, "category": "food"},
+      "consumable": {"effects": {"provides_nutrition": 800}}
+    },
+    {
+      "id": "pond_fish",
+      "name": "Pond Fish",
+      "renderable": {"glyph": "%", "fg": "#72B8D8", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 6, "category": "food"},
+      "consumable": {"effects": {"provides_nutrition": 180}}
+    },
+    {
+      "id": "marsh_root",
+      "name": "Marsh Root",
+      "renderable": {"glyph": "%", "fg": "#B8A060", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 4, "category": "food"},
+      "consumable": {"effects": {"provides_nutrition": 160}}
+    },
+    {
+      "id": "reed_shoot",
+      "name": "Reed Shoot",
+      "renderable": {"glyph": "%", "fg": "#8FC878", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 3, "category": "food"},
+      "consumable": {"effects": {"provides_nutrition": 120}}
+    },
+    {
+      "id": "bitter_herb",
+      "name": "Bitter Herb",
+      "renderable": {"glyph": "*", "fg": "#90C878", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 7, "category": "potions"},
+      "consumable": {"effects": {"provides_healing": 2}}
+    },
+    {
+      "id": "cave_mushroom",
+      "name": "Cave Mushroom",
+      "renderable": {"glyph": "%", "fg": "#B0D080", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 4, "category": "food"},
+      "consumable": {"effects": {"provides_nutrition": 180}}
+    },
+    {
+      "id": "salt_crust",
+      "name": "Salt Crust",
+      "renderable": {"glyph": "*", "fg": "#D8D8C0", "bg": "#000000", "order": 2},
+      "item_stats": {"weight": 1, "base_value": 5, "category": "food"}
     },
     {
       "id": "fireball_scroll",
@@ -514,6 +660,48 @@
       "blocks_tile": true
     },
     {
+      "id": "greenholt_hearth",
+      "name": "Greenholt Hearth",
+      "renderable": {"glyph": "&", "fg": "#FFB05A", "bg": "#000000", "order": 1},
+      "blocks_tile": true,
+      "camp_site": {"type": "ember_camp", "safety_bonus": 2},
+      "cooking_station": {"id": "campfire", "methods": ["boiled", "roasted"], "place_tags": ["campfire", "ember_camp", "grove_town"]}
+    },
+    {
+      "id": "reed_camp",
+      "name": "Reed Camp",
+      "renderable": {"glyph": "&", "fg": "#70B8A0", "bg": "#000000", "order": 1},
+      "blocks_tile": true,
+      "camp_site": {"type": "reed_blind", "safety_bonus": 1},
+      "cooking_station": {"id": "marsh_fire", "methods": ["boiled", "roasted"], "place_tags": ["campfire", "reed_blind", "reed_marsh"]}
+    },
+    {
+      "id": "stone_nook_camp",
+      "name": "Stone Nook Camp",
+      "renderable": {"glyph": "&", "fg": "#B8B8A0", "bg": "#000000", "order": 1},
+      "blocks_tile": true,
+      "camp_site": {"type": "stone_nook", "safety_bonus": 2},
+      "cooking_station": {"id": "stone_hearth", "methods": ["boiled", "roasted"], "place_tags": ["campfire", "stone_nook", "limestone_cave"]}
+    },
+    {
+      "id": "greenholt_tree",
+      "name": "Greenholt Tree",
+      "renderable": {"glyph": "T", "fg": "#5FAF5F", "bg": "#000000", "order": 1},
+      "blocks_tile": true
+    },
+    {
+      "id": "reed_clump",
+      "name": "Reed Clump",
+      "renderable": {"glyph": "|", "fg": "#82C878", "bg": "#000000", "order": 1},
+      "blocks_tile": true
+    },
+    {
+      "id": "fallen_log",
+      "name": "Fallen Log",
+      "renderable": {"glyph": "=", "fg": "#9A7048", "bg": "#000000", "order": 1},
+      "blocks_tile": true
+    },
+    {
       "id": "spike_trap",
       "name": "Spike Trap",
       "renderable": {"glyph": "^", "fg": "#A0A0A0", "bg": "#000000", "order": 1},
@@ -565,6 +753,9 @@
   ],
   "prop_spawn_table": [
     {"name": "chair", "weight": 10, "min_depth": 1, "max_depth": 1},
+    {"name": "greenholt_tree", "weight": 12, "min_depth": 1, "max_depth": 2},
+    {"name": "reed_clump", "weight": 10, "min_depth": 1, "max_depth": 2},
+    {"name": "fallen_log", "weight": 10, "min_depth": 1, "max_depth": 3},
     {"name": "limestone_column", "weight": 20, "min_depth": 3, "max_depth": 3},
     {"name": "deep_limestone_column", "weight": 20, "min_depth": 4, "max_depth": 4},
     {"name": "dwarf_rubble", "weight": 16, "min_depth": 5, "max_depth": 6},

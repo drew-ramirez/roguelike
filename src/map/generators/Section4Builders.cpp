@@ -213,6 +213,17 @@ bool addSpawnRequestIfOpen(MapBuildResult& result, std::string id, Point point)
            biome == BiomeVariant::Sinklands;
 }
 
+[[nodiscard]] const char* campIdForBiome(BiomeVariant biome) noexcept
+{
+    if (isLimestoneBiome(biome)) {
+        return "stone_nook_camp";
+    }
+    if (isMarshBiome(biome)) {
+        return "reed_camp";
+    }
+    return "greenholt_hearth";
+}
+
 void carveSurfaceExits(Map& map, Point center, int exitMask)
 {
     map.setTile(center.x, center.y, TileType::Floor);
@@ -305,16 +316,26 @@ void addBiomeFlavor(MapBuildResult& result,
         addSpawnRequestIfOpen(result, "cave_bat", Point{center.x - 4, center.y});
         addSpawnRequestIfOpen(
             result, "limestone_column", Point{center.x + 4, center.y});
+        addSpawnRequestIfOpen(
+            result, "cave_mushroom", Point{center.x, center.y + 3});
+        addSpawnRequestIfOpen(
+            result, "salt_crust", Point{center.x + 6, center.y + 2});
         break;
     case BiomeVariant::ReedMarsh:
         addSpawnRequestIfOpen(
             result, "wild_boar", Point{center.x - 4, center.y});
         addSpawnRequestIfOpen(result, "food_ration", Point{center.x + 3, center.y});
+        addSpawnRequestIfOpen(
+            result, "reed_clump", Point{center.x + 5, center.y + 2});
+        addSpawnRequestIfOpen(
+            result, "pond_fish", Point{center.x, center.y + 3});
         break;
     case BiomeVariant::RuinedWoodland:
         addSpawnRequestIfOpen(result, "goblin", Point{center.x - 4, center.y});
         addSpawnRequestIfOpen(
             result, "dwarf_rubble", Point{center.x + 4, center.y});
+        addSpawnRequestIfOpen(
+            result, "fallen_log", Point{center.x, center.y + 3});
         break;
     case BiomeVariant::DeepGrove:
     case BiomeVariant::DryWoods:
@@ -322,6 +343,10 @@ void addBiomeFlavor(MapBuildResult& result,
         addSpawnRequestIfOpen(result, "wolf", Point{center.x - 4, center.y});
         addSpawnRequestIfOpen(
             result, "wild_boar", Point{center.x + 4, center.y});
+        addSpawnRequestIfOpen(
+            result, "greenholt_tree", Point{center.x, center.y + 3});
+        addSpawnRequestIfOpen(
+            result, "fallen_log", Point{center.x + 6, center.y + 2});
         break;
     case BiomeVariant::DangerousWilds:
         break;
@@ -491,6 +516,8 @@ MapBuildResult Section4Builders::buildTownOutskirts(int width,
     addSpawnRequestIfOpen(result, "townsfolk", Point{center.x - 5, center.y});
     addSpawnRequestIfOpen(result, "chair", Point{center.x + 4, center.y - 1});
     addSpawnRequestIfOpen(result, "food_ration", Point{center.x, center.y + 3});
+    addSpawnRequestIfOpen(
+        result, "greenholt_hearth", Point{center.x + 5, center.y + 2});
     addBuildStep(result, "role: town outskirts");
     return result;
 }
@@ -600,6 +627,10 @@ MapBuildResult Section4Builders::buildSurfaceCaveMouth(int width,
         result, "limestone_column", Point{center.x + 5, center.y});
     addSpawnRequestIfOpen(
         result, "healing_potion", Point{center.x, center.y + 3});
+    addSpawnRequestIfOpen(
+        result, "cave_mushroom", Point{center.x - 2, center.y + 3});
+    addSpawnRequestIfOpen(
+        result, "salt_crust", Point{center.x + 2, center.y + 3});
     addBuildStep(result, "role: cave mouth");
     return result;
 }
@@ -630,6 +661,13 @@ MapBuildResult Section4Builders::buildSurfaceCampShrine(
     addSpawnRequestIfOpen(result, "food_ration", Point{center.x, center.y + 2});
     addSpawnRequestIfOpen(
         result, "healing_potion", Point{center.x + 3, center.y});
+    addSpawnRequestIfOpen(result,
+                          campIdForBiome(options.biomeVariant),
+                          Point{center.x - 1, center.y + 2});
+    if (isMarshBiome(options.biomeVariant)) {
+        addSpawnRequestIfOpen(
+            result, "reed_mentor", Point{center.x + 6, center.y});
+    }
     addBuildStep(result, "role: camp shrine");
     return result;
 }
@@ -664,6 +702,22 @@ MapBuildResult Section4Builders::buildSurfaceResourceHeavy(
     addSpawnRequestIfOpen(result, "food_ration", Point{center.x - 2, center.y + 2});
     addSpawnRequestIfOpen(
         result, "healing_potion", Point{center.x + 2, center.y + 2});
+    if (isMarshBiome(options.biomeVariant)) {
+        addSpawnRequestIfOpen(
+            result, "marsh_root", Point{center.x - 5, center.y + 3});
+        addSpawnRequestIfOpen(
+            result, "reed_shoot", Point{center.x + 5, center.y + 3});
+    } else if (isLimestoneBiome(options.biomeVariant)) {
+        addSpawnRequestIfOpen(
+            result, "cave_mushroom", Point{center.x - 5, center.y + 3});
+        addSpawnRequestIfOpen(
+            result, "salt_crust", Point{center.x + 5, center.y + 3});
+    } else {
+        addSpawnRequestIfOpen(
+            result, "bitter_herb", Point{center.x - 5, center.y + 3});
+        addSpawnRequestIfOpen(
+            result, "fallen_log", Point{center.x + 5, center.y + 3});
+    }
     addBuildStep(result, "role: resource heavy");
     return result;
 }

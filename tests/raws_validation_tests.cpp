@@ -153,6 +153,68 @@ void runRawsValidationTests(TestRunner& runner)
                       defaults.entity("scimitar") != nullptr &&
                       defaults.entity("buckler") != nullptr,
                   "default raw content includes late region props and loot");
+    runner.expect(defaults.entity("reed_mentor") != nullptr &&
+                      defaults.entity("cooked_meal") != nullptr &&
+                      defaults.entity("pond_fish") != nullptr &&
+                      defaults.entity("marsh_root") != nullptr &&
+                      defaults.entity("reed_shoot") != nullptr &&
+                      defaults.entity("bitter_herb") != nullptr &&
+                      defaults.entity("cave_mushroom") != nullptr &&
+                      defaults.entity("salt_crust") != nullptr,
+                  "default raw content includes open-world actors and resources");
+    runner.expect(defaults.entity("greenholt_hearth") != nullptr &&
+                      defaults.entity("reed_camp") != nullptr &&
+                      defaults.entity("stone_nook_camp") != nullptr &&
+                      defaults.entity("greenholt_tree") != nullptr &&
+                      defaults.entity("reed_clump") != nullptr &&
+                      defaults.entity("fallen_log") != nullptr,
+                  "default raw content includes open-world service props");
+    runner.expect(defaults.ingredient("pond_fish") != nullptr &&
+                      defaults.ingredient("marsh_root") != nullptr &&
+                      defaults.recipe("marsh_stew") != nullptr &&
+                      defaults.recipe("stonebelly_chowder") != nullptr &&
+                      defaults.biomeResourceTable("reed_marsh") != nullptr &&
+                      defaults.biomeResourceTable("limestone_cave") != nullptr,
+                  "default raw content includes open-world resource contracts");
+
+    const auto* reedCamp = defaults.entity("reed_camp");
+    const auto* reedMentor = defaults.entity("reed_mentor");
+    runner.expect(reedCamp != nullptr && reedCamp->campSite.has_value() &&
+                      reedCamp->cookingStation.has_value() &&
+                      reedCamp->cookingStation->placeTags.front() ==
+                          "campfire",
+                  "default raw content preserves camp service metadata");
+    runner.expect(reedMentor != nullptr &&
+                      reedMentor->settlementService.has_value() &&
+                      reedMentor->settlementService->recipeId ==
+                          "marsh_stew",
+                  "default raw content preserves settlement service metadata");
+
+    const auto marshRoot =
+        spawnRawEntity(registry, defaults, "marsh_root", Point{7, 2});
+    runner.expect(marshRoot.has_value() &&
+                      registry.all_of<Item,
+                                      Consumable,
+                                      ProvidesNutrition,
+                                      RawIdentity>(*marshRoot),
+                  "raw marsh root spawns as a food resource item");
+
+    const auto reedCampEntity =
+        spawnRawEntity(registry, defaults, "reed_camp", Point{8, 2});
+    runner.expect(reedCampEntity.has_value() &&
+                      registry.all_of<Prop, BlocksTile, RawIdentity>(
+                          *reedCampEntity),
+                  "raw reed camp spawns as a blocking service prop");
+
+    const auto reedMentorEntity =
+        spawnRawEntity(registry, defaults, "reed_mentor", Point{9, 2});
+    runner.expect(reedMentorEntity.has_value() &&
+                      registry.all_of<Monster,
+                                      Neutral,
+                                      Bystander,
+                                      Faction,
+                                      RawIdentity>(*reedMentorEntity),
+                  "raw reed mentor spawns as a neutral service actor");
 
     const auto crossbow =
         spawnRawEntity(registry, defaults, "hand_crossbow", Point{5, 2});

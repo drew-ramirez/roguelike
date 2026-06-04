@@ -596,6 +596,31 @@ void runMapgenTests(TestRunner& runner)
                           roles[index].id +
                               " controls deliberate surface stairs");
         }
+
+        MapBuildOptions marshResources;
+        marshResources.biomeVariant = BiomeVariant::ReedMarsh;
+        marshResources.screenRole = LocalScreenRole::ResourceHeavy;
+        marshResources.exitMask = exitNorth | exitEast | exitSouth | exitWest;
+        Rng marshResourceRng{8080U};
+        const auto marshResourceResult = buildMapById(
+            "surface-resource-heavy", 80, 43, marshResourceRng, marshResources);
+        runner.expect(hasSpawnRequest(marshResourceResult, "marsh_root") &&
+                          hasSpawnRequest(marshResourceResult, "reed_shoot"),
+                      "surface resource screens request marsh resources");
+
+        MapBuildOptions marshCamp;
+        marshCamp.biomeVariant = BiomeVariant::ReedMarsh;
+        marshCamp.screenRole = LocalScreenRole::CampShrine;
+        marshCamp.exitMask = exitNorth | exitEast | exitSouth | exitWest;
+        Rng marshCampRng{8081U};
+        const auto marshCampResult = buildMapById("surface-camp-shrine",
+                                                  80,
+                                                  43,
+                                                  marshCampRng,
+                                                  marshCamp);
+        runner.expect(hasSpawnRequest(marshCampResult, "reed_camp") &&
+                          hasSpawnRequest(marshCampResult, "reed_mentor"),
+                      "surface camp screens request marsh service content");
     }
 
     {
