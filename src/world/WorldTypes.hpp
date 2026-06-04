@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <optional>
 #include <string>
@@ -65,6 +66,37 @@ struct WorldLandmark {
     std::string id;
     std::string name;
     bool fastTravelUnlocked = false;
+    std::string regionId;
+    Point localScreen{1, 1};
+};
+
+struct RouteLink {
+    std::string destinationRegionId;
+    std::string name;
+    std::string routeTag;
+    int hungerCost = 0;
+    bool discovered = true;
+};
+
+struct WorldRegionDescriptor {
+    std::string id;
+    std::string name;
+    BiomeVariant biome = BiomeVariant::DryWoods;
+    std::string builderId = "woods";
+    Point macro;
+    Point landmarkScreen{1, 1};
+    std::uint32_t localSeed = 0;
+    int dangerTier = 0;
+    int baseSafety = 0;
+    bool discovered = false;
+    bool visited = false;
+    bool hasSettlement = false;
+    bool hasCamp = false;
+    bool hasShrine = false;
+    bool fastTravelLandmark = false;
+    std::vector<std::string> factionInfluence;
+    std::vector<RouteLink> routes;
+    std::vector<std::string> localMemoryTags;
 };
 
 struct WorldCellDescriptor {
@@ -72,10 +104,15 @@ struct WorldCellDescriptor {
     WorldCellFields fields;
     BiomeVariant biome = BiomeVariant::DryWoods;
     std::string name;
+    std::string builderId = "woods";
     char32_t glyph = U'.';
     Color foreground = Color::white();
+    std::uint32_t localSeed = 0;
+    int dangerTier = 0;
+    int baseSafety = 0;
     bool discovered = false;
     bool visited = false;
+    std::string regionId;
     std::optional<WorldLandmark> landmark;
 };
 
@@ -126,8 +163,10 @@ struct WorldMapState {
     Point currentScreen{1, 1};
     bool currentDangerEncounter = false;
     Point cursor;
+    std::string currentRegionId;
     int undergroundEntryDepth = 3;
     std::vector<WorldCellDescriptor> cells;
+    std::map<std::string, WorldRegionDescriptor> regions;
     std::map<SurfaceScreenKey, SurfaceScreenState> surfaceScreens;
     std::optional<Point> pendingLocalTravel;
 };
