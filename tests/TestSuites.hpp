@@ -14,6 +14,7 @@ void runEquipmentTests(TestRunner& runner);
 void runFactionTests(TestRunner& runner);
 void runInputTests(TestRunner& runner);
 void runInventoryTests(TestRunner& runner);
+void runItemDetailsTests(TestRunner& runner);
 void runLevelSnapshotTests(TestRunner& runner);
 void runLogTests(TestRunner& runner);
 void runMapgenTests(TestRunner& runner);

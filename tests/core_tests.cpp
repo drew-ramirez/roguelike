@@ -31,6 +31,7 @@ int main()
     runSuite(runner, "ai_tests", rl::test::runAiTests);
     runSuite(runner, "input_tests", rl::test::runInputTests);
     runSuite(runner, "inventory_tests", rl::test::runInventoryTests);
+    runSuite(runner, "item_details_tests", rl::test::runItemDetailsTests);
     runSuite(runner, "effects_tests", rl::test::runEffectsTests);
     runSuite(runner, "spell_tests", rl::test::runSpellTests);
     runSuite(runner, "ranged_combat_tests", rl::test::runRangedCombatTests);

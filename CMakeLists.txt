@@ -128,6 +128,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/faction_tests.cpp
     tests/input_tests.cpp
     tests/inventory_tests.cpp
+    tests/item_details_tests.cpp
     tests/level_snapshot_tests.cpp
     tests/log_tests.cpp
     tests/mapgen_tests.cpp
