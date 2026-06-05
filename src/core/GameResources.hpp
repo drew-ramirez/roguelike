@@ -34,6 +34,10 @@ struct PendingVendor {
     VendorMode mode = VendorMode::Buy;
 };
 
+struct PendingCamp {
+    entt::entity camp = entt::null;
+};
+
 enum class ItemSelectionMode { Identify, RemoveCurse };
 
 struct PendingItemSelection {
@@ -65,10 +69,12 @@ struct GameResources {
     WorldMapState world;
     int inventorySelection = 0;
     int vendorSelection = 0;
+    int campSelection = 0;
     int spellSelection = 0;
     int itemSelection = 0;
     std::optional<PendingTargeting> pendingTargeting;
     std::optional<PendingVendor> pendingVendor;
+    std::optional<PendingCamp> pendingCamp;
     std::optional<PendingItemSelection> pendingItemSelection;
     GameProgress progress;
     bool townPortalActive = false;

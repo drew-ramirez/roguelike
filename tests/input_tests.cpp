@@ -183,6 +183,28 @@ void runInputTests(TestRunner& runner)
                       "bumping a prop does not queue melee");
     }
 
+    {
+        auto campMap = openMap();
+        entt::registry campRegistry;
+        GameResources campResources;
+        campResources.player = spawnPlayer(campRegistry, Point{2, 2});
+
+        const auto camp = campRegistry.create();
+        campRegistry.emplace<Position>(camp, Position{3, 2});
+        campRegistry.emplace<Name>(camp, Name{"Campfire"});
+        campRegistry.emplace<BlocksTile>(camp);
+        campRegistry.emplace<Prop>(camp);
+        campRegistry.emplace<CampSite>(camp, CampSite{"test_camp", 2});
+
+        runner.expect(
+            handleMapInput(campRegistry, campResources, campMap, moveRight) ==
+                PlayerInputResult::OpenCamp,
+            "bumping a camp opens the camp menu");
+        runner.expect(campResources.pendingCamp.has_value() &&
+                          campResources.pendingCamp->camp == camp,
+                      "bumping a camp records the active camp");
+    }
+
     Map sightMap{6, 3, TileType::Floor};
     sightMap.setTile(2, 1, TileType::ClosedDoor);
     ShadowcastingFov fov;

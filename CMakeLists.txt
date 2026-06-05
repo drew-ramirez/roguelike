@@ -92,6 +92,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/systems/VendorSystem.cpp
     src/systems/VisibilitySystem.cpp
     src/systems/WorldTravelSystem.cpp
+    src/ui/CampMenu.cpp
     src/ui/Hud.cpp
     src/ui/InventoryMenu.cpp
     src/ui/ItemSelectionMenu.cpp
@@ -242,6 +243,7 @@ set(ROGUELIKE_HEADERS
     src/systems/VendorSystem.hpp
     src/systems/VisibilitySystem.hpp
     src/systems/WorldTravelSystem.hpp
+    src/ui/CampMenu.hpp
     src/ui/Hud.hpp
     src/ui/InventoryMenu.hpp
     src/ui/ItemSelectionMenu.hpp

@@ -43,6 +43,7 @@
 #include "systems/VendorSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
 #include "systems/WorldTravelSystem.hpp"
+#include "ui/CampMenu.hpp"
 #include "ui/Hud.hpp"
 #include "ui/InventoryMenu.hpp"
 #include "ui/ItemSelectionMenu.hpp"
@@ -275,6 +276,8 @@ void Game::tick(const std::vector<InputEvent>& events)
             resolvePlayerTurn();
         } else if (input == PlayerInputResult::OpenInventory) {
             state_ = RunState::ShowInventory;
+        } else if (input == PlayerInputResult::OpenCamp) {
+            state_ = RunState::ShowCamp;
         } else if (input == PlayerInputResult::OpenVendor) {
             state_ = RunState::ShowVendor;
         } else if (input == PlayerInputResult::OpenSpellMenu) {
@@ -326,6 +329,13 @@ void Game::tick(const std::vector<InputEvent>& events)
             state_ = RunState::ShowItemSelection;
         } else if (input == InventoryInputResult::TookTurn) {
             resolvePlayerTurn();
+        }
+    } else if (state_ == RunState::ShowCamp) {
+        const auto input = handleCampInput(registry_, resources_, events);
+        if (input == CampInputResult::Close) {
+            state_ = RunState::AwaitingInput;
+        } else if (input == CampInputResult::TookTurn) {
+            resolvePlayerTurn(false);
         }
     } else if (state_ == RunState::ShowItemSelection) {
         const auto input =
@@ -423,6 +433,8 @@ void Game::render()
     drawHud(console_, resources_, registry_, state_);
     if (state_ == RunState::ShowInventory) {
         drawInventoryMenu(console_, registry_, resources_);
+    } else if (state_ == RunState::ShowCamp) {
+        drawCampMenu(console_, registry_, resources_);
     } else if (state_ == RunState::ShowItemSelection) {
         drawItemSelectionMenu(console_, registry_, resources_);
     } else if (state_ == RunState::ShowVendor) {

@@ -221,6 +221,11 @@ PlayerInputResult handleMapInput(entt::registry& registry,
                 tileContentAt(registry, target, resources.player);
             if (targetContent.blocker.has_value()) {
                 const auto blocker = *targetContent.blocker;
+                if (registry.all_of<CampSite>(blocker)) {
+                    resources.pendingCamp = PendingCamp{blocker};
+                    resources.campSelection = 0;
+                    return PlayerInputResult::OpenCamp;
+                }
                 if (registry.all_of<Vendor>(blocker)) {
                     resources.pendingVendor =
                         PendingVendor{blocker, VendorMode::Buy};
