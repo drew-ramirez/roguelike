@@ -69,9 +69,8 @@ WorldMapInputResult handleWorldMapInput(GameResources& resources,
 
         const auto delta = movementDeltaForKey(event.key);
         if (delta.has_value()) {
-            world.cursor = clampedCursor(
-                Point{world.cursor.x + delta->x, world.cursor.y + delta->y});
-            return WorldMapInputResult::None;
+            world.pendingLocalTravel = *delta;
+            return WorldMapInputResult::MoveCursor;
         }
     }
 

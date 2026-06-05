@@ -25,6 +25,15 @@ equippedRangedWeapon(const entt::registry& registry, entt::entity owner)
     return std::nullopt;
 }
 
+[[nodiscard]] bool isSurfaceEdgeTravel(const GameResources& resources,
+                                       const Map& map,
+                                       Point target) noexcept
+{
+    return resources.world.active && resources.world.onSurface &&
+           (target.x <= 0 || target.y <= 0 || target.x >= map.width() - 1 ||
+            target.y >= map.height() - 1);
+}
+
 } // namespace
 
 std::optional<Point> movementDeltaForKey(Key key)
@@ -192,6 +201,10 @@ PlayerInputResult handleMapInput(entt::registry& registry,
 
             const auto& position = registry.get<Position>(resources.player);
             const Point target{position.x + delta->x, position.y + delta->y};
+            if (isSurfaceEdgeTravel(resources, map, target)) {
+                resources.world.pendingLocalTravel = *delta;
+                return PlayerInputResult::TravelLocalEdge;
+            }
             if (map.inBounds(target.x, target.y) &&
                 map.tileAt(target.x, target.y) == TileType::ClosedDoor) {
                 map.setTile(target.x, target.y, TileType::OpenDoor);

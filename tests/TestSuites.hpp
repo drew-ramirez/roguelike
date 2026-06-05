@@ -31,5 +31,6 @@ void runTargetingTests(TestRunner& runner);
 void runUiTests(TestRunner& runner);
 void runVendorTests(TestRunner& runner);
 void runWorldGenerationTests(TestRunner& runner);
+void runWorldSurvivalTests(TestRunner& runner);
 
 } // namespace rl::test

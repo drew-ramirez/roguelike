@@ -88,6 +88,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/systems/TrapSystem.cpp
     src/systems/VendorSystem.cpp
     src/systems/VisibilitySystem.cpp
+    src/systems/WorldTravelSystem.cpp
     src/ui/Hud.cpp
     src/ui/InventoryMenu.cpp
     src/ui/ItemSelectionMenu.cpp
@@ -134,6 +135,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/targeting_tests.cpp
     tests/ui_tests.cpp
     tests/vendor_tests.cpp
+    tests/world_survival_tests.cpp
     tests/world_generation_tests.cpp
 )
 
@@ -233,6 +235,7 @@ set(ROGUELIKE_HEADERS
     src/systems/TrapSystem.hpp
     src/systems/VendorSystem.hpp
     src/systems/VisibilitySystem.hpp
+    src/systems/WorldTravelSystem.hpp
     src/ui/Hud.hpp
     src/ui/InventoryMenu.hpp
     src/ui/ItemSelectionMenu.hpp

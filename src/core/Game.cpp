@@ -42,6 +42,7 @@
 #include "systems/TrapSystem.hpp"
 #include "systems/VendorSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
+#include "systems/WorldTravelSystem.hpp"
 #include "ui/Hud.hpp"
 #include "ui/InventoryMenu.hpp"
 #include "ui/ItemSelectionMenu.hpp"
@@ -282,6 +283,16 @@ void Game::tick(const std::vector<InputEvent>& events)
             state_ = RunState::ShowTargeting;
         } else if (input == PlayerInputResult::OpenWorldMap) {
             state_ = RunState::ShowWorldMap;
+        } else if (input == PlayerInputResult::TravelLocalEdge) {
+            if (resources_.world.pendingLocalTravel.has_value() &&
+                tryTravelByEdge(registry_,
+                                resources_,
+                                map_,
+                                fovProvider_,
+                                *resources_.world.pendingLocalTravel)) {
+                state_ = RunState::AwaitingInput;
+            }
+            resources_.world.pendingLocalTravel.reset();
         } else if (input == PlayerInputResult::UsePortal) {
             if (tryUseReturnPortal(registry_, resources_, map_, fovProvider_)) {
                 state_ = RunState::AwaitingInput;
@@ -353,13 +364,19 @@ void Game::tick(const std::vector<InputEvent>& events)
         const auto input = handleWorldMapInput(resources_, events);
         if (input == WorldMapInputResult::Close) {
             state_ = RunState::AwaitingInput;
+        } else if (input == WorldMapInputResult::MoveCursor) {
+            if (resources_.world.pendingLocalTravel.has_value() &&
+                moveWorldMapCursor(registry_,
+                                   resources_,
+                                   map_,
+                                   fovProvider_,
+                                   *resources_.world.pendingLocalTravel)) {
+                state_ = RunState::AwaitingInput;
+            }
+            resources_.world.pendingLocalTravel.reset();
         } else if (input == WorldMapInputResult::EnterSelected) {
-            if (tryEnterSurfaceScreen(registry_,
-                                      resources_,
-                                      map_,
-                                      fovProvider_,
-                                      resources_.world.cursor,
-                                      Point{1, 1})) {
+            if (enterWorldMapSelection(
+                    registry_, resources_, map_, fovProvider_)) {
                 state_ = RunState::AwaitingInput;
             }
         }

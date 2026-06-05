@@ -17,7 +17,7 @@ class ConsoleBuffer;
 struct GameResources;
 struct WorldMapState;
 
-enum class WorldMapInputResult { None, Close, EnterSelected };
+enum class WorldMapInputResult { None, Close, MoveCursor, EnterSelected };
 
 [[nodiscard]] WorldMapInputResult
 handleWorldMapInput(GameResources& resources,

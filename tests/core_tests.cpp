@@ -54,6 +54,7 @@ int main()
     runSuite(runner, "progression_tests", rl::test::runProgressionTests);
     runSuite(
         runner, "world_generation_tests", rl::test::runWorldGenerationTests);
+    runSuite(runner, "world_survival_tests", rl::test::runWorldSurvivalTests);
     runSuite(runner, "mapgen_tests", rl::test::runMapgenTests);
     return runner.failures == 0 ? 0 : 1;
 }

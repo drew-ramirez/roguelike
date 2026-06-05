@@ -1,6 +1,7 @@
 #include "TestSuites.hpp"
 
 #include <algorithm>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -71,14 +72,26 @@ void runInputTests(TestRunner& runner)
     const std::vector<InputEvent> moveCursor{
         {InputEventType::KeyDown, Key::Right}};
     runner.expect(handleWorldMapInput(worldMapResources, moveCursor) ==
-                          WorldMapInputResult::None &&
+                          WorldMapInputResult::MoveCursor &&
+                      worldMapResources.world.pendingLocalTravel ==
+                          std::optional<Point>{Point{1, 0}} &&
                       worldMapResources.world.cursor ==
-                          Point{greenholtWorldPosition().x + 1,
-                                greenholtWorldPosition().y},
-                  "world map movement changes the cursor");
+                          greenholtWorldPosition(),
+                  "world map movement records pending macro travel");
     runner.expect(handleWorldMapInput(worldMapResources, descend) ==
                       WorldMapInputResult::EnterSelected,
                   "world map descend key enters the selected cell");
+
+    GameResources edgeResources;
+    edgeResources.world = generateWorldMap(Rng::Seed{12U});
+    edgeResources.player = resources.player;
+    auto edgeMap = openMap(40, 25);
+    registry.get<Position>(resources.player) = Position{38, 12};
+    runner.expect(handleMapInput(registry, edgeResources, edgeMap, moveRight) ==
+                          PlayerInputResult::TravelLocalEdge &&
+                      edgeResources.world.pendingLocalTravel ==
+                          std::optional<Point>{Point{1, 0}},
+                  "surface edge movement requests local screen travel");
 
     auto surfaceMap = openMap(40, 25);
     entt::registry surfaceRegistry;
