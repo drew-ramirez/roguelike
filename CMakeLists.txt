@@ -97,6 +97,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/ui/CampMenu.cpp
     src/ui/Hud.cpp
     src/ui/InventoryMenu.cpp
+    src/ui/ItemDetails.cpp
     src/ui/ItemSelectionMenu.cpp
     src/ui/MainMenu.cpp
     src/ui/SettlementServiceMenu.cpp
@@ -252,6 +253,7 @@ set(ROGUELIKE_HEADERS
     src/ui/CampMenu.hpp
     src/ui/Hud.hpp
     src/ui/InventoryMenu.hpp
+    src/ui/ItemDetails.hpp
     src/ui/ItemSelectionMenu.hpp
     src/ui/MainMenu.hpp
     src/ui/MenuResult.hpp
