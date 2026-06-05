@@ -12,6 +12,9 @@
 #include "input/InputEvent.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/InputSystem.hpp"
+#include "systems/MapTransitionSystem.hpp"
+#include "ui/WorldMapMenu.hpp"
+#include "world/WorldGeneration.hpp"
 
 namespace rl::test {
 
@@ -46,6 +49,55 @@ void runInputTests(TestRunner& runner)
     runner.expect(handleMapInput(registry, resources, map, ascend) ==
                       PlayerInputResult::Ascend,
                   "ascend key requests up transition");
+
+    GameResources surfaceResources;
+    surfaceResources.world = generateWorldMap(Rng::Seed{42U});
+    surfaceResources.world.currentMacro = reedfenWorldPosition();
+    surfaceResources.world.cursor = greenholtWorldPosition();
+    runner.expect(handleMapInput(registry, surfaceResources, map, ascend) ==
+                          PlayerInputResult::OpenWorldMap &&
+                      surfaceResources.world.cursor == reedfenWorldPosition(),
+                  "surface ascend key opens the world map");
+
+    GameResources undergroundResources;
+    undergroundResources.world = generateWorldMap(Rng::Seed{42U});
+    undergroundResources.world.onSurface = false;
+    runner.expect(handleMapInput(registry, undergroundResources, map, ascend) ==
+                      PlayerInputResult::Ascend,
+                  "underground ascend key keeps stair behavior");
+
+    GameResources worldMapResources;
+    worldMapResources.world = generateWorldMap(Rng::Seed{11U});
+    const std::vector<InputEvent> moveCursor{
+        {InputEventType::KeyDown, Key::Right}};
+    runner.expect(handleWorldMapInput(worldMapResources, moveCursor) ==
+                          WorldMapInputResult::None &&
+                      worldMapResources.world.cursor ==
+                          Point{greenholtWorldPosition().x + 1,
+                                greenholtWorldPosition().y},
+                  "world map movement changes the cursor");
+    runner.expect(handleWorldMapInput(worldMapResources, descend) ==
+                      WorldMapInputResult::EnterSelected,
+                  "world map descend key enters the selected cell");
+
+    auto surfaceMap = openMap(40, 25);
+    entt::registry surfaceRegistry;
+    GameResources entryResources;
+    entryResources.world = generateWorldMap(Rng::Seed{12U});
+    entryResources.player = spawnPlayer(surfaceRegistry, Point{2, 2});
+    ShadowcastingFov surfaceFov;
+    runner.expect(tryEnterSurfaceScreen(surfaceRegistry,
+                                        entryResources,
+                                        surfaceMap,
+                                        surfaceFov,
+                                        reedfenWorldPosition(),
+                                        Point{1, 1}) &&
+                      entryResources.world.currentMacro ==
+                          reedfenWorldPosition() &&
+                      entryResources.world.currentScreen == Point{1, 1} &&
+                      worldCellAt(entryResources.world, reedfenWorldPosition())
+                          ->discovered,
+                  "world map entry generates and discovers a local screen");
 
     const std::vector<InputEvent> wallMove{{InputEventType::KeyDown, Key::W}};
     auto& position = registry.get<Position>(resources.player);

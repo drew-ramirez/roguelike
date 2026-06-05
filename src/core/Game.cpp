@@ -49,6 +49,8 @@
 #include "ui/SpellMenu.hpp"
 #include "ui/Targeting.hpp"
 #include "ui/VendorMenu.hpp"
+#include "ui/WorldMapMenu.hpp"
+#include "world/WorldGeneration.hpp"
 
 namespace rl {
 namespace {
@@ -103,6 +105,7 @@ void Game::startNewGame(std::optional<Rng::Seed> seed)
     map_ = Map{map_.width(), map_.height(), TileType::Wall};
     resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
     std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
+    resources_.world = generateWorldMap(resources_.rng.seed());
 
     const auto options = MapBuildOptions{false, resources_.depth};
     if (resources_.mapBuilderId == "normal") {
@@ -128,6 +131,7 @@ void Game::beginVisualMapgen(std::optional<Rng::Seed> seed)
     map_ = Map{map_.width(), map_.height(), TileType::Wall};
     resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
     std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
+    resources_.world = generateWorldMap(resources_.rng.seed());
 
     const auto options = MapBuildOptions{true, resources_.depth};
     auto build = resources_.mapBuilderId == "normal"
@@ -276,6 +280,8 @@ void Game::tick(const std::vector<InputEvent>& events)
             state_ = RunState::ShowSpellMenu;
         } else if (input == PlayerInputResult::StartedTargeting) {
             state_ = RunState::ShowTargeting;
+        } else if (input == PlayerInputResult::OpenWorldMap) {
+            state_ = RunState::ShowWorldMap;
         } else if (input == PlayerInputResult::UsePortal) {
             if (tryUseReturnPortal(registry_, resources_, map_, fovProvider_)) {
                 state_ = RunState::AwaitingInput;
@@ -343,6 +349,20 @@ void Game::tick(const std::vector<InputEvent>& events)
         } else if (input == TargetingInputResult::TookTurn) {
             resolvePlayerTurn();
         }
+    } else if (state_ == RunState::ShowWorldMap) {
+        const auto input = handleWorldMapInput(resources_, events);
+        if (input == WorldMapInputResult::Close) {
+            state_ = RunState::AwaitingInput;
+        } else if (input == WorldMapInputResult::EnterSelected) {
+            if (tryEnterSurfaceScreen(registry_,
+                                      resources_,
+                                      map_,
+                                      fovProvider_,
+                                      resources_.world.cursor,
+                                      Point{1, 1})) {
+                state_ = RunState::AwaitingInput;
+            }
+        }
     }
 
     render();
@@ -392,6 +412,8 @@ void Game::render()
         drawVendorMenu(console_, registry_, resources_);
     } else if (state_ == RunState::ShowSpellMenu) {
         drawSpellMenu(console_, registry_, resources_);
+    } else if (state_ == RunState::ShowWorldMap) {
+        drawWorldMapMenu(console_, resources_.world);
     }
 }
 

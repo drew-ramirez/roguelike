@@ -9,6 +9,8 @@
 
 #include <entt/entt.hpp>
 
+#include "core/Point.hpp"
+
 namespace rl {
 
 struct GameResources;
@@ -39,5 +41,13 @@ enum class LevelArrivalMode { DownStairs, UpStairs, PortalReturn };
                                             GameResources& resources,
                                             Map& map,
                                             IFovProvider& fovProvider);
+
+[[nodiscard]] bool tryEnterSurfaceScreen(entt::registry& registry,
+                                         GameResources& resources,
+                                         Map& map,
+                                         IFovProvider& fovProvider,
+                                         Point macro,
+                                         Point screen,
+                                         bool dangerEncounter = false);
 
 } // namespace rl

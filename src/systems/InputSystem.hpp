@@ -27,6 +27,7 @@ enum class PlayerInputResult {
     OpenVendor,
     OpenSpellMenu,
     StartedTargeting,
+    OpenWorldMap,
     UsePortal,
     Descend,
     Ascend,

@@ -7,6 +7,7 @@
 #include "map/Map.hpp"
 #include "systems/ItemSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
+#include "world/WorldTypes.hpp"
 
 namespace rl {
 namespace {
@@ -174,6 +175,10 @@ PlayerInputResult handleMapInput(entt::registry& registry,
             return PlayerInputResult::Descend;
         }
         if (event.key == Key::Ascend) {
+            if (resources.world.active && resources.world.onSurface) {
+                resources.world.cursor = resources.world.currentMacro;
+                return PlayerInputResult::OpenWorldMap;
+            }
             return PlayerInputResult::Ascend;
         }
 
