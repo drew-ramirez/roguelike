@@ -12,6 +12,7 @@
 #include "save/SaveGame.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
+#include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/MapTransitionSystem.hpp"
 
@@ -44,6 +45,34 @@ namespace {
     return count;
 }
 
+[[nodiscard]] bool hasNamedCamp(const entt::registry& registry,
+                                const std::string& name)
+{
+    const auto camps =
+        registry.view<const CampSite, const CookingStation, const Name>();
+    for (const auto entity : camps) {
+        if (camps.get<const Name>(entity).value == name) {
+            return true;
+        }
+    }
+    return false;
+}
+
+[[nodiscard]] bool hasNamedMealIngredient(const entt::registry& registry,
+                                          const std::string& name,
+                                          const std::string& recipeId)
+{
+    const auto ingredients =
+        registry.view<const Ingredient, const Meal, const Name>();
+    for (const auto entity : ingredients) {
+        if (ingredients.get<const Name>(entity).value == name &&
+            ingredients.get<const Meal>(entity).recipeId == recipeId) {
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace
 
 void runLevelSnapshotTests(TestRunner& runner)
@@ -56,6 +85,14 @@ void runLevelSnapshotTests(TestRunner& runner)
         const auto player = spawnPlayer(registry, Point{2, 2});
         [[maybe_unused]] const auto droppedPotion =
             spawnHealingPotion(registry, Point{3, 3});
+        [[maybe_unused]] const auto camp = spawnRawEntity(
+            registry, defaultRawDatabase(), "greenholt_hearth", Point{5, 5});
+        const auto droppedFish = spawnRawEntity(
+            registry, defaultRawDatabase(), "pond_fish", Point{6, 5});
+        if (droppedFish.has_value()) {
+            registry.emplace<Meal>(*droppedFish, Meal{"marsh_stew"});
+            registry.get<Ingredient>(*droppedFish).originBiome = "reed_marsh";
+        }
         const auto backpackPotion = spawnHealingPotion(registry, Point{4, 3});
         registry.remove<Position>(backpackPotion);
         registry.emplace<InBackpack>(backpackPotion, InBackpack{player});
@@ -79,6 +116,11 @@ void runLevelSnapshotTests(TestRunner& runner)
                       "snapshot restore preserves map memory");
         runner.expect(countNamedItems(registry, "Healing Potion") == 2,
                       "snapshot restore recreates level-local items");
+        runner.expect(hasNamedCamp(registry, "Greenholt Hearth"),
+                      "snapshot restore preserves camp cooking props");
+        runner.expect(
+            hasNamedMealIngredient(registry, "Pond Fish", "marsh_stew"),
+            "snapshot restore preserves survival item components");
         runner.expect(countNamedMonsters(registry, "Goblin") == 0,
                       "snapshot restore omits defeated monsters");
     }

@@ -190,4 +190,62 @@ void putBool(Json& json, const char* key, bool value)
     return entry;
 }
 
+[[nodiscard]] Json ingredientToJson(const Ingredient& ingredient)
+{
+    return Json{{"tags", ingredient.tags},
+                {"origin_biome", ingredient.originBiome},
+                {"origin_region_id", ingredient.originRegionId},
+                {"potency", ingredient.potency},
+                {"risk", ingredient.risk}};
+}
+
+[[nodiscard]] Ingredient ingredientFromJson(const Json& json)
+{
+    return Ingredient{
+        json.value("tags", std::vector<std::string>{}),
+        json.value("origin_biome", std::string{}),
+        json.value("origin_region_id", std::string{}),
+        json.value("potency", 1),
+        json.value("risk", 0),
+    };
+}
+
+[[nodiscard]] Json mealToJson(const Meal& meal)
+{
+    return Json{{"recipe_id", meal.recipeId}};
+}
+
+[[nodiscard]] Meal mealFromJson(const Json& json)
+{
+    return Meal{json.value("recipe_id", std::string{})};
+}
+
+[[nodiscard]] Json campSiteToJson(const CampSite& camp)
+{
+    return Json{{"camp_type", camp.campType},
+                {"safety_bonus", camp.safetyBonus}};
+}
+
+[[nodiscard]] CampSite campSiteFromJson(const Json& json)
+{
+    return CampSite{json.value("camp_type", std::string{}),
+                    json.value("safety_bonus", 0)};
+}
+
+[[nodiscard]] Json cookingStationToJson(const CookingStation& station)
+{
+    return Json{{"station_id", station.stationId},
+                {"methods", station.methods},
+                {"place_tags", station.placeTags}};
+}
+
+[[nodiscard]] CookingStation cookingStationFromJson(const Json& json)
+{
+    return CookingStation{
+        json.value("station_id", std::string{}),
+        json.value("methods", std::vector<std::string>{}),
+        json.value("place_tags", std::vector<std::string>{}),
+    };
+}
+
 } // namespace rl::save

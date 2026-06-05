@@ -77,6 +77,12 @@ namespace rl::save {
     if (entity.providesNutrition.has_value()) {
         json["provides_nutrition"] = entity.providesNutrition->amount;
     }
+    if (entity.ingredient.has_value()) {
+        json["ingredient"] = ingredientToJson(*entity.ingredient);
+    }
+    if (entity.meal.has_value()) {
+        json["meal"] = mealToJson(*entity.meal);
+    }
     if (entity.ranged.has_value()) {
         json["ranged"] = entity.ranged->range;
     }
@@ -138,6 +144,12 @@ namespace rl::save {
     if (entity.vendor.has_value()) {
         json["vendor"] = Json{{"category", entity.vendor->category},
                               {"gold", entity.vendor->gold}};
+    }
+    if (entity.campSite.has_value()) {
+        json["camp_site"] = campSiteToJson(*entity.campSite);
+    }
+    if (entity.cookingStation.has_value()) {
+        json["cooking_station"] = cookingStationToJson(*entity.cookingStation);
     }
     if (entity.faction.has_value()) {
         json["faction"] = entity.faction->id;
@@ -238,6 +250,12 @@ namespace rl::save {
         entity.providesNutrition =
             ProvidesNutrition{json.at("provides_nutrition").get<int>()};
     }
+    if (json.contains("ingredient")) {
+        entity.ingredient = ingredientFromJson(json.at("ingredient"));
+    }
+    if (json.contains("meal")) {
+        entity.meal = mealFromJson(json.at("meal"));
+    }
     if (json.contains("ranged")) {
         entity.ranged = Ranged{json.at("ranged").get<int>()};
     }
@@ -308,6 +326,13 @@ namespace rl::save {
         const auto& vendor = json.at("vendor");
         entity.vendor = Vendor{vendor.value("category", std::string{}),
                                vendor.value("gold", 0)};
+    }
+    if (json.contains("camp_site")) {
+        entity.campSite = campSiteFromJson(json.at("camp_site"));
+    }
+    if (json.contains("cooking_station")) {
+        entity.cookingStation =
+            cookingStationFromJson(json.at("cooking_station"));
     }
     if (json.contains("faction")) {
         entity.faction = Faction{json.at("faction").get<std::string>()};

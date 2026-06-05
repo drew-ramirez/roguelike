@@ -61,6 +61,12 @@ void runSaveLoadTests(TestRunner& runner)
     StoredEntity cachedEntity;
     cachedEntity.name = Name{"Cached reed cache"};
     cachedEntity.position = Position{2, 2};
+    cachedEntity.ingredient =
+        Ingredient{{"fish", "marsh"}, "reed_marsh", "reedfen_ford", 2, 1};
+    cachedEntity.meal = Meal{"marsh_stew"};
+    cachedEntity.campSite = CampSite{"reed_blind", 1};
+    cachedEntity.cookingStation =
+        CookingStation{"marsh_fire", {"boiled"}, {"reed_marsh"}};
     cachedSurface.entities.push_back(cachedEntity);
     resources.world.surfaceScreens.emplace(cachedSurface.key,
                                            std::move(cachedSurface));
@@ -95,6 +101,23 @@ void runSaveLoadTests(TestRunner& runner)
     const auto magic = spawnNamedEntity(
         registry, defaultRawDatabase(), "cursed_dagger", Point{5, 2});
     registry.emplace<Confusion>(magic, Confusion{2});
+    const auto pondFish = spawnRawEntity(
+        registry, defaultRawDatabase(), "pond_fish", Point{2, 3});
+    if (pondFish.has_value()) {
+        registry.remove<Position>(*pondFish);
+        registry.emplace<InBackpack>(*pondFish, InBackpack{resources.player});
+        registry.get<Ingredient>(*pondFish).originBiome = "reed_marsh";
+        registry.get<Ingredient>(*pondFish).originRegionId = "reedfen_ford";
+    }
+    const auto cookedMeal = spawnRawEntity(
+        registry, defaultRawDatabase(), "cooked_meal", Point{2, 4});
+    if (cookedMeal.has_value()) {
+        registry.remove<Position>(*cookedMeal);
+        registry.emplace<InBackpack>(*cookedMeal, InBackpack{resources.player});
+        registry.emplace<Meal>(*cookedMeal, Meal{"marsh_stew"});
+    }
+    (void)spawnRawEntity(
+        registry, defaultRawDatabase(), "greenholt_hearth", Point{6, 2});
 
     const auto text = serializeGame(registry, resources, map);
     const int nextOriginal = resources.rng.rangeInclusive(1, 100000);
@@ -141,7 +164,12 @@ void runSaveLoadTests(TestRunner& runner)
             cached->second.map.isRevealed(2, 2) &&
             cached->second.entities.size() == 1 &&
             cached->second.entities.front().name.has_value() &&
-            cached->second.entities.front().name->value == "Cached reed cache",
+            cached->second.entities.front().name->value ==
+                "Cached reed cache" &&
+            cached->second.entities.front().ingredient.has_value() &&
+            cached->second.entities.front().meal.has_value() &&
+            cached->second.entities.front().campSite.has_value() &&
+            cached->second.entities.front().cookingStation.has_value(),
         "load restores cached surface screen snapshots");
     runner.expect(loadedResources.log.counter("kills") == 2,
                   "load restores log progress counters");
@@ -179,7 +207,7 @@ void runSaveLoadTests(TestRunner& runner)
                   "load restores RNG engine continuation");
 
     const auto items = inventoryItems(loadedRegistry, loadedResources.player);
-    runner.expect(items.size() == 3, "load restores backpack and equipment");
+    runner.expect(items.size() == 5, "load restores backpack and equipment");
     runner.expect(
         std::any_of(items.begin(),
                     items.end(),
@@ -202,6 +230,34 @@ void runSaveLoadTests(TestRunner& runner)
                        loadedRegistry.get<WeaponStats>(item).damage == "1d8+1";
             }),
         "load restores raw equipment stat components");
+    bool loadedIngredient = false;
+    bool loadedMeal = false;
+    for (const auto item : items) {
+        if (loadedRegistry.all_of<Ingredient>(item) &&
+            loadedRegistry.get<Ingredient>(item).originRegionId ==
+                "reedfen_ford") {
+            loadedIngredient = true;
+        }
+        if (loadedRegistry.all_of<Meal>(item) &&
+            loadedRegistry.get<Meal>(item).recipeId == "marsh_stew") {
+            loadedMeal = true;
+        }
+    }
+    runner.expect(loadedIngredient && loadedMeal,
+                  "load restores active camp survival item components");
+
+    bool loadedCamp = false;
+    const auto loadedCamps =
+        loadedRegistry.view<const CampSite, const CookingStation>();
+    for (const auto entity : loadedCamps) {
+        if (loadedRegistry.get<CampSite>(entity).campType == "ember_camp" &&
+            loadedRegistry.get<CookingStation>(entity).stationId ==
+                "campfire") {
+            loadedCamp = true;
+        }
+    }
+    runner.expect(loadedCamp,
+                  "load restores active camp and cooking station components");
 
     int monsterCount = 0;
     bool loadedRewardedMonster = false;

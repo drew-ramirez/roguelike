@@ -120,6 +120,13 @@ void ensureSaveIds(entt::registry& registry)
         components["provides_nutrition"] =
             registry.get<ProvidesNutrition>(entity).amount;
     }
+    if (registry.all_of<Ingredient>(entity)) {
+        components["ingredient"] =
+            ingredientToJson(registry.get<Ingredient>(entity));
+    }
+    if (registry.all_of<Meal>(entity)) {
+        components["meal"] = mealToJson(registry.get<Meal>(entity));
+    }
     if (registry.all_of<MagicMapper>(entity)) {
         components["magic_mapper"] = true;
     }
@@ -227,6 +234,14 @@ void ensureSaveIds(entt::registry& registry)
         const auto& vendor = registry.get<Vendor>(entity);
         components["vendor"] =
             Json{{"category", vendor.category}, {"gold", vendor.gold}};
+    }
+    if (registry.all_of<CampSite>(entity)) {
+        components["camp_site"] =
+            campSiteToJson(registry.get<CampSite>(entity));
+    }
+    if (registry.all_of<CookingStation>(entity)) {
+        components["cooking_station"] =
+            cookingStationToJson(registry.get<CookingStation>(entity));
     }
     if (registry.all_of<Faction>(entity)) {
         components["faction"] = registry.get<Faction>(entity).id;
@@ -359,6 +374,13 @@ void loadEntityImmediateComponents(entt::registry& registry,
             entity,
             ProvidesNutrition{components.at("provides_nutrition").get<int>()});
     }
+    if (components.contains("ingredient")) {
+        registry.emplace<Ingredient>(
+            entity, ingredientFromJson(components.at("ingredient")));
+    }
+    if (components.contains("meal")) {
+        registry.emplace<Meal>(entity, mealFromJson(components.at("meal")));
+    }
     if (components.contains("magic_mapper")) {
         registry.emplace<MagicMapper>(entity);
     }
@@ -472,6 +494,14 @@ void loadEntityImmediateComponents(entt::registry& registry,
         registry.emplace<Vendor>(entity,
                                  Vendor{json.value("category", std::string{}),
                                         json.value("gold", 0)});
+    }
+    if (components.contains("camp_site")) {
+        registry.emplace<CampSite>(
+            entity, campSiteFromJson(components.at("camp_site")));
+    }
+    if (components.contains("cooking_station")) {
+        registry.emplace<CookingStation>(
+            entity, cookingStationFromJson(components.at("cooking_station")));
     }
     if (components.contains("faction")) {
         registry.emplace<Faction>(

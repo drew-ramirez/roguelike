@@ -41,6 +41,8 @@ struct StoredEntity {
     std::optional<Pools> pools;
     std::optional<ProvidesHealing> providesHealing;
     std::optional<ProvidesNutrition> providesNutrition;
+    std::optional<Ingredient> ingredient;
+    std::optional<Meal> meal;
     bool providesIdentify = false;
     bool providesRemoveCurse = false;
     std::optional<Ranged> ranged;
@@ -59,6 +61,8 @@ struct StoredEntity {
     bool identifiedItem = false;
     bool cursedItem = false;
     std::optional<Vendor> vendor;
+    std::optional<CampSite> campSite;
+    std::optional<CookingStation> cookingStation;
     std::optional<Faction> faction;
     bool townPortal = false;
     std::optional<Confusion> confusion;
