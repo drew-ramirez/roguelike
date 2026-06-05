@@ -148,6 +148,10 @@ namespace rl::save {
     if (entity.campSite.has_value()) {
         json["camp_site"] = campSiteToJson(*entity.campSite);
     }
+    if (entity.settlementService.has_value()) {
+        json["settlement_service"] =
+            settlementServiceToJson(*entity.settlementService);
+    }
     if (entity.cookingStation.has_value()) {
         json["cooking_station"] = cookingStationToJson(*entity.cookingStation);
     }
@@ -329,6 +333,10 @@ namespace rl::save {
     }
     if (json.contains("camp_site")) {
         entity.campSite = campSiteFromJson(json.at("camp_site"));
+    }
+    if (json.contains("settlement_service")) {
+        entity.settlementService =
+            settlementServiceFromJson(json.at("settlement_service"));
     }
     if (json.contains("cooking_station")) {
         entity.cookingStation =

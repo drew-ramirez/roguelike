@@ -205,6 +205,35 @@ void runInputTests(TestRunner& runner)
                       "bumping a camp records the active camp");
     }
 
+    {
+        auto serviceMap = openMap();
+        entt::registry serviceRegistry;
+        GameResources serviceResources;
+        serviceResources.world = generateWorldMap(Rng::Seed{33U});
+        serviceResources.world.currentMacro = reedfenWorldPosition();
+        serviceResources.world.currentScreen = Point{1, 1};
+        updateCurrentWorldRegion(serviceResources.world);
+        serviceResources.player = spawnPlayer(serviceRegistry, Point{2, 2});
+
+        const auto provider = serviceRegistry.create();
+        serviceRegistry.emplace<Position>(provider, Position{3, 2});
+        serviceRegistry.emplace<Name>(provider, Name{"Reed Mentor"});
+        serviceRegistry.emplace<BlocksTile>(provider);
+        serviceRegistry.emplace<Neutral>(provider);
+        serviceRegistry.emplace<SettlementService>(
+            provider, SettlementService{"teach_recipe", "marsh_stew"});
+
+        runner.expect(
+            handleMapInput(
+                serviceRegistry, serviceResources, serviceMap, moveRight) ==
+                PlayerInputResult::OpenSettlementService,
+            "bumping a settlement service opens the service menu");
+        runner.expect(serviceResources.pendingSettlementService.has_value() &&
+                          serviceResources.pendingSettlementService->provider ==
+                              provider,
+                      "bumping a service records the active provider");
+    }
+
     Map sightMap{6, 3, TileType::Floor};
     sightMap.setTile(2, 1, TileType::ClosedDoor);
     ShadowcastingFov fov;

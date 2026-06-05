@@ -85,6 +85,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/systems/PortalSystem.cpp
     src/systems/RangedCombatSystem.cpp
     src/systems/RenderSystem.cpp
+    src/systems/SettlementServiceSystem.cpp
     src/systems/SpatialIndexSystem.cpp
     src/systems/SpellSystem.cpp
     src/systems/SystemScheduler.cpp
@@ -97,6 +98,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/ui/InventoryMenu.cpp
     src/ui/ItemSelectionMenu.cpp
     src/ui/MainMenu.cpp
+    src/ui/SettlementServiceMenu.cpp
     src/ui/SpellMenu.cpp
     src/ui/Targeting.cpp
     src/ui/VendorMenu.cpp
@@ -236,6 +238,7 @@ set(ROGUELIKE_HEADERS
     src/systems/PortalSystem.hpp
     src/systems/RangedCombatSystem.hpp
     src/systems/RenderSystem.hpp
+    src/systems/SettlementServiceSystem.hpp
     src/systems/SpatialIndexSystem.hpp
     src/systems/SpellSystem.hpp
     src/systems/SystemScheduler.hpp
@@ -249,6 +252,7 @@ set(ROGUELIKE_HEADERS
     src/ui/ItemSelectionMenu.hpp
     src/ui/MainMenu.hpp
     src/ui/MenuResult.hpp
+    src/ui/SettlementServiceMenu.hpp
     src/ui/SpellMenu.hpp
     src/ui/Targeting.hpp
     src/ui/VendorMenu.hpp

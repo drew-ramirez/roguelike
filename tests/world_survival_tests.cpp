@@ -1,8 +1,8 @@
 #include "TestSuites.hpp"
 
 #include <algorithm>
-#include <string>
 #include <entt/entt.hpp>
+#include <string>
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
@@ -14,6 +14,7 @@
 #include "systems/CampSystem.hpp"
 #include "systems/CookingSystem.hpp"
 #include "systems/ForageSystem.hpp"
+#include "systems/SettlementServiceSystem.hpp"
 #include "systems/WorldTravelSystem.hpp"
 #include "world/WorldGeneration.hpp"
 
@@ -299,6 +300,37 @@ void runWorldSurvivalTests(TestRunner& runner)
             "camp cooking creates a carried meal");
         runner.expect(carriedIngredients(registry, resources.player).empty(),
                       "camp cooking consumes selected ingredients");
+    }
+
+    {
+        entt::registry registry;
+        GameResources resources;
+        resources.world = generateWorldMap(Rng::Seed{707U});
+        moveWorldToReedfen(resources.world);
+        resources.player = spawnPlayer(registry, Point{4, 4});
+        const auto provider = spawnRawEntity(
+            registry, defaultRawDatabase(), "reed_mentor", Point{5, 4});
+
+        runner.expect(provider.has_value() &&
+                          registry.all_of<SettlementService>(*provider),
+                      "raw mentor spawns a settlement service component");
+        runner.expect(
+            provider.has_value() &&
+                settlementServiceAvailable(resources, registry, *provider),
+            "settlement service is available at the landmark");
+
+        const int before = hungerDuration(registry, resources.player);
+        runner.expect(provider.has_value() &&
+                          useSettlementService(registry, resources, *provider),
+                      "settlement service teaches its recipe");
+        runner.expect(hungerDuration(registry, resources.player) == before - 5,
+                      "settlement service spends hunger");
+
+        resources.world.currentScreen = Point{0, 0};
+        runner.expect(
+            provider.has_value() &&
+                !settlementServiceAvailable(resources, registry, *provider),
+            "settlement service is gated by local screen role");
     }
 }
 

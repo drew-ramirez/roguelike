@@ -65,6 +65,8 @@ void runSaveLoadTests(TestRunner& runner)
         Ingredient{{"fish", "marsh"}, "reed_marsh", "reedfen_ford", 2, 1};
     cachedEntity.meal = Meal{"marsh_stew"};
     cachedEntity.campSite = CampSite{"reed_blind", 1};
+    cachedEntity.settlementService =
+        SettlementService{"teach_recipe", "marsh_stew"};
     cachedEntity.cookingStation =
         CookingStation{"marsh_fire", {"boiled"}, {"reed_marsh"}};
     cachedSurface.entities.push_back(cachedEntity);
@@ -118,6 +120,13 @@ void runSaveLoadTests(TestRunner& runner)
     }
     (void)spawnRawEntity(
         registry, defaultRawDatabase(), "greenholt_hearth", Point{6, 2});
+    const auto mentor = registry.create();
+    registry.emplace<Name>(mentor, Name{"Saved Reed Mentor"});
+    registry.emplace<Position>(mentor, Position{7, 2});
+    registry.emplace<BlocksTile>(mentor);
+    registry.emplace<Neutral>(mentor);
+    registry.emplace<SettlementService>(
+        mentor, SettlementService{"teach_recipe", "marsh_stew"});
 
     const auto text = serializeGame(registry, resources, map);
     const int nextOriginal = resources.rng.rangeInclusive(1, 100000);
@@ -169,6 +178,7 @@ void runSaveLoadTests(TestRunner& runner)
             cached->second.entities.front().ingredient.has_value() &&
             cached->second.entities.front().meal.has_value() &&
             cached->second.entities.front().campSite.has_value() &&
+            cached->second.entities.front().settlementService.has_value() &&
             cached->second.entities.front().cookingStation.has_value(),
         "load restores cached surface screen snapshots");
     runner.expect(loadedResources.log.counter("kills") == 2,
@@ -258,6 +268,16 @@ void runSaveLoadTests(TestRunner& runner)
     }
     runner.expect(loadedCamp,
                   "load restores active camp and cooking station components");
+    bool loadedService = false;
+    const auto loadedServices = loadedRegistry.view<const SettlementService>();
+    for (const auto entity : loadedServices) {
+        if (loadedRegistry.get<SettlementService>(entity).recipeId ==
+            "marsh_stew") {
+            loadedService = true;
+        }
+    }
+    runner.expect(loadedService,
+                  "load restores active settlement service components");
 
     int monsterCount = 0;
     bool loadedRewardedMonster = false;

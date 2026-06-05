@@ -147,6 +147,11 @@ struct CampSite {
     int safetyBonus = 0;
 };
 
+struct SettlementService {
+    std::string serviceId;
+    std::string recipeId;
+};
+
 struct CookingStation {
     std::string stationId;
     std::vector<std::string> methods;

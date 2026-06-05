@@ -232,6 +232,18 @@ void putBool(Json& json, const char* key, bool value)
                     json.value("safety_bonus", 0)};
 }
 
+[[nodiscard]] Json settlementServiceToJson(const SettlementService& service)
+{
+    return Json{{"service_id", service.serviceId},
+                {"recipe_id", service.recipeId}};
+}
+
+[[nodiscard]] SettlementService settlementServiceFromJson(const Json& json)
+{
+    return SettlementService{json.value("service_id", std::string{}),
+                             json.value("recipe_id", std::string{})};
+}
+
 [[nodiscard]] Json cookingStationToJson(const CookingStation& station)
 {
     return Json{{"station_id", station.stationId},

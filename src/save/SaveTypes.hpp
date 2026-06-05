@@ -42,6 +42,8 @@ void putBool(Json& json, const char* key, bool value);
 [[nodiscard]] Meal mealFromJson(const Json& json);
 [[nodiscard]] Json campSiteToJson(const CampSite& camp);
 [[nodiscard]] CampSite campSiteFromJson(const Json& json);
+[[nodiscard]] Json settlementServiceToJson(const SettlementService& service);
+[[nodiscard]] SettlementService settlementServiceFromJson(const Json& json);
 [[nodiscard]] Json cookingStationToJson(const CookingStation& station);
 [[nodiscard]] CookingStation cookingStationFromJson(const Json& json);
 

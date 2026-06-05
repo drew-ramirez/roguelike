@@ -6,6 +6,7 @@
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
 #include "systems/ItemSystem.hpp"
+#include "systems/SettlementServiceSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 #include "world/WorldTypes.hpp"
 
@@ -225,6 +226,13 @@ PlayerInputResult handleMapInput(entt::registry& registry,
                     resources.pendingCamp = PendingCamp{blocker};
                     resources.campSelection = 0;
                     return PlayerInputResult::OpenCamp;
+                }
+                if (registry.all_of<SettlementService>(blocker) &&
+                    settlementServiceAvailable(resources, registry, blocker)) {
+                    resources.pendingSettlementService =
+                        PendingSettlementService{blocker};
+                    resources.settlementServiceSelection = 0;
+                    return PlayerInputResult::OpenSettlementService;
                 }
                 if (registry.all_of<Vendor>(blocker)) {
                     resources.pendingVendor =

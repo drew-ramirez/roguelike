@@ -181,6 +181,12 @@ void applyRoles(entt::registry& registry,
         registry.emplace<CampSite>(entity,
                                    CampSite{camp.campType, camp.safetyBonus});
     }
+    if (raw.settlementService.has_value()) {
+        const auto& service = *raw.settlementService;
+        registry.emplace<SettlementService>(
+            entity, SettlementService{service.serviceId, service.recipeId});
+        registry.emplace_or_replace<Neutral>(entity);
+    }
     if (raw.cookingStation.has_value()) {
         const auto& station = *raw.cookingStation;
         registry.emplace<CookingStation>(entity,

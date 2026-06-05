@@ -9,6 +9,7 @@ enum class RunState {
     MonsterTurn,
     ShowInventory,
     ShowCamp,
+    ShowSettlementService,
     ShowVendor,
     ShowSpellMenu,
     ShowItemSelection,
