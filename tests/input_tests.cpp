@@ -234,6 +234,34 @@ void runInputTests(TestRunner& runner)
                       "bumping a service records the active provider");
     }
 
+    {
+        auto shrineMap = openMap();
+        entt::registry shrineRegistry;
+        GameResources shrineResources;
+        shrineResources.world = generateWorldMap(Rng::Seed{34U});
+        shrineResources.world.currentMacro = reedfenWorldPosition();
+        shrineResources.world.currentScreen = Point{1, 1};
+        updateCurrentWorldRegion(shrineResources.world);
+        shrineResources.player = spawnPlayer(shrineRegistry, Point{2, 2});
+
+        const auto shrine = shrineRegistry.create();
+        shrineRegistry.emplace<Position>(shrine, Position{3, 2});
+        shrineRegistry.emplace<Name>(shrine, Name{"Stillwater Shrine"});
+        shrineRegistry.emplace<BlocksTile>(shrine);
+        shrineRegistry.emplace<Prop>(shrine);
+        shrineRegistry.emplace<Shrine>(
+            shrine, Shrine{"stillwater", {"fish", "food"}, 2});
+
+        runner.expect(
+            handleMapInput(
+                shrineRegistry, shrineResources, shrineMap, moveRight) ==
+                PlayerInputResult::OpenShrine,
+            "bumping a shrine opens the shrine menu");
+        runner.expect(shrineResources.pendingShrine.has_value() &&
+                          shrineResources.pendingShrine->shrine == shrine,
+                      "bumping a shrine records the active shrine");
+    }
+
     Map sightMap{6, 3, TileType::Floor};
     sightMap.setTile(2, 1, TileType::ClosedDoor);
     ShadowcastingFov fov;

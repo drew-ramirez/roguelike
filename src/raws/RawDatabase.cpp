@@ -278,6 +278,17 @@ void parseStringList(const Json& json, std::vector<std::string>& out)
         json.value("recipe", std::string{})};
 }
 
+[[nodiscard]] RawShrine parseShrine(const Json& json)
+{
+    RawShrine shrine;
+    shrine.powerId = json.value("power", std::string{});
+    if (json.contains("offerings")) {
+        parseStringList(json.at("offerings"), shrine.acceptedOfferingTags);
+    }
+    shrine.blessingHp = json.value("blessing_hp", 0);
+    return shrine;
+}
+
 [[nodiscard]] RawEntityTemplate parseEntity(const Json& json,
                                             RawEntityKind kind)
 {
@@ -316,6 +327,9 @@ void parseStringList(const Json& json, std::vector<std::string>& out)
     if (json.contains("settlement_service")) {
         entity.settlementService =
             parseSettlementService(json.at("settlement_service"));
+    }
+    if (json.contains("shrine")) {
+        entity.shrine = parseShrine(json.at("shrine"));
     }
     if (json.contains("combat")) {
         entity.combat = parseCombat(json.at("combat"));
@@ -783,6 +797,10 @@ std::vector<std::string> RawDatabase::validate() const
                 errors.push_back(name + " service references unknown recipe: " +
                                  service.recipeId);
             }
+        }
+        if (entityTemplate.shrine.has_value() &&
+            entityTemplate.shrine->powerId.empty()) {
+            errors.push_back(name + " shrine is missing a power id");
         }
         for (const auto& item : entityTemplate.equipped) {
             if (entity(item) == nullptr) {

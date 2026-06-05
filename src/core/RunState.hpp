@@ -10,6 +10,7 @@ enum class RunState {
     ShowInventory,
     ShowCamp,
     ShowSettlementService,
+    ShowShrine,
     ShowVendor,
     ShowSpellMenu,
     ShowItemSelection,

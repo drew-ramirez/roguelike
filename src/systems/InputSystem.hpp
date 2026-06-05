@@ -26,6 +26,7 @@ enum class PlayerInputResult {
     OpenInventory,
     OpenCamp,
     OpenSettlementService,
+    OpenShrine,
     OpenVendor,
     OpenSpellMenu,
     StartedTargeting,

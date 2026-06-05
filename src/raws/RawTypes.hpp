@@ -109,6 +109,12 @@ struct RawSettlementService {
     std::string recipeId;
 };
 
+struct RawShrine {
+    std::string powerId;
+    std::vector<std::string> acceptedOfferingTags;
+    int blessingHp = 0;
+};
+
 struct RawEntityTemplate {
     std::string id;
     std::string name;
@@ -126,6 +132,7 @@ struct RawEntityTemplate {
     std::optional<RawCampSite> campSite;
     std::optional<RawCookingStation> cookingStation;
     std::optional<RawSettlementService> settlementService;
+    std::optional<RawShrine> shrine;
     std::optional<RawCombatStats> combat;
     std::optional<RawAttributes> attributes;
     std::optional<RawPools> pools;

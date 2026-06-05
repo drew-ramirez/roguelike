@@ -243,6 +243,9 @@ void ensureSaveIds(entt::registry& registry)
         components["settlement_service"] =
             settlementServiceToJson(registry.get<SettlementService>(entity));
     }
+    if (registry.all_of<Shrine>(entity)) {
+        components["shrine"] = shrineToJson(registry.get<Shrine>(entity));
+    }
     if (registry.all_of<CookingStation>(entity)) {
         components["cooking_station"] =
             cookingStationToJson(registry.get<CookingStation>(entity));
@@ -507,6 +510,10 @@ void loadEntityImmediateComponents(entt::registry& registry,
         registry.emplace<SettlementService>(
             entity,
             settlementServiceFromJson(components.at("settlement_service")));
+    }
+    if (components.contains("shrine")) {
+        registry.emplace<Shrine>(entity,
+                                 shrineFromJson(components.at("shrine")));
     }
     if (components.contains("cooking_station")) {
         registry.emplace<CookingStation>(

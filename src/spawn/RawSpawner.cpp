@@ -187,6 +187,13 @@ void applyRoles(entt::registry& registry,
             entity, SettlementService{service.serviceId, service.recipeId});
         registry.emplace_or_replace<Neutral>(entity);
     }
+    if (raw.shrine.has_value()) {
+        const auto& shrine = *raw.shrine;
+        registry.emplace<Shrine>(entity,
+                                 Shrine{shrine.powerId,
+                                        shrine.acceptedOfferingTags,
+                                        shrine.blessingHp});
+    }
     if (raw.cookingStation.has_value()) {
         const auto& station = *raw.cookingStation;
         registry.emplace<CookingStation>(entity,

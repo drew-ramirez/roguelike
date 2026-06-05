@@ -244,6 +244,22 @@ void putBool(Json& json, const char* key, bool value)
                              json.value("recipe_id", std::string{})};
 }
 
+[[nodiscard]] Json shrineToJson(const Shrine& shrine)
+{
+    return Json{{"power_id", shrine.powerId},
+                {"accepted_offering_tags", shrine.acceptedOfferingTags},
+                {"blessing_hp", shrine.blessingHp}};
+}
+
+[[nodiscard]] Shrine shrineFromJson(const Json& json)
+{
+    return Shrine{
+        json.value("power_id", std::string{}),
+        json.value("accepted_offering_tags", std::vector<std::string>{}),
+        json.value("blessing_hp", 0),
+    };
+}
+
 [[nodiscard]] Json cookingStationToJson(const CookingStation& station)
 {
     return Json{{"station_id", station.stationId},

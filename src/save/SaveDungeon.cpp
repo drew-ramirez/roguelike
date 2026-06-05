@@ -152,6 +152,9 @@ namespace rl::save {
         json["settlement_service"] =
             settlementServiceToJson(*entity.settlementService);
     }
+    if (entity.shrine.has_value()) {
+        json["shrine"] = shrineToJson(*entity.shrine);
+    }
     if (entity.cookingStation.has_value()) {
         json["cooking_station"] = cookingStationToJson(*entity.cookingStation);
     }
@@ -337,6 +340,9 @@ namespace rl::save {
     if (json.contains("settlement_service")) {
         entity.settlementService =
             settlementServiceFromJson(json.at("settlement_service"));
+    }
+    if (json.contains("shrine")) {
+        entity.shrine = shrineFromJson(json.at("shrine"));
     }
     if (json.contains("cooking_station")) {
         entity.cookingStation =

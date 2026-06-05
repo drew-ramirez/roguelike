@@ -63,6 +63,7 @@ struct StoredEntity {
     std::optional<Vendor> vendor;
     std::optional<CampSite> campSite;
     std::optional<SettlementService> settlementService;
+    std::optional<Shrine> shrine;
     std::optional<CookingStation> cookingStation;
     std::optional<Faction> faction;
     bool townPortal = false;

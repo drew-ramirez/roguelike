@@ -7,6 +7,7 @@
 #include "map/Map.hpp"
 #include "systems/ItemSystem.hpp"
 #include "systems/SettlementServiceSystem.hpp"
+#include "systems/ShrineRiteSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 #include "world/WorldTypes.hpp"
 
@@ -233,6 +234,12 @@ PlayerInputResult handleMapInput(entt::registry& registry,
                         PendingSettlementService{blocker};
                     resources.settlementServiceSelection = 0;
                     return PlayerInputResult::OpenSettlementService;
+                }
+                if (registry.all_of<Shrine>(blocker) &&
+                    shrineAvailable(resources, registry, blocker)) {
+                    resources.pendingShrine = PendingShrine{blocker};
+                    resources.shrineSelection = 0;
+                    return PlayerInputResult::OpenShrine;
                 }
                 if (registry.all_of<Vendor>(blocker)) {
                     resources.pendingVendor =

@@ -117,6 +117,9 @@ namespace {
     if (registry.all_of<SettlementService>(entity)) {
         stored.settlementService = registry.get<SettlementService>(entity);
     }
+    if (registry.all_of<Shrine>(entity)) {
+        stored.shrine = registry.get<Shrine>(entity);
+    }
     if (registry.all_of<CookingStation>(entity)) {
         stored.cookingStation = registry.get<CookingStation>(entity);
     }
@@ -273,6 +276,9 @@ void restoreEntity(entt::registry& registry, const StoredEntity& stored)
     }
     if (stored.settlementService.has_value()) {
         registry.emplace<SettlementService>(entity, *stored.settlementService);
+    }
+    if (stored.shrine.has_value()) {
+        registry.emplace<Shrine>(entity, *stored.shrine);
     }
     if (stored.cookingStation.has_value()) {
         registry.emplace<CookingStation>(entity, *stored.cookingStation);

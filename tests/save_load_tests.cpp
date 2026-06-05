@@ -67,6 +67,7 @@ void runSaveLoadTests(TestRunner& runner)
     cachedEntity.campSite = CampSite{"reed_blind", 1};
     cachedEntity.settlementService =
         SettlementService{"teach_recipe", "marsh_stew"};
+    cachedEntity.shrine = Shrine{"stillwater", {"fish", "marsh"}, 2};
     cachedEntity.cookingStation =
         CookingStation{"marsh_fire", {"boiled"}, {"reed_marsh"}};
     cachedSurface.entities.push_back(cachedEntity);
@@ -127,6 +128,12 @@ void runSaveLoadTests(TestRunner& runner)
     registry.emplace<Neutral>(mentor);
     registry.emplace<SettlementService>(
         mentor, SettlementService{"teach_recipe", "marsh_stew"});
+    const auto shrine = registry.create();
+    registry.emplace<Name>(shrine, Name{"Saved Stillwater Shrine"});
+    registry.emplace<Position>(shrine, Position{8, 2});
+    registry.emplace<BlocksTile>(shrine);
+    registry.emplace<Prop>(shrine);
+    registry.emplace<Shrine>(shrine, Shrine{"stillwater", {"fish"}, 2});
 
     const auto text = serializeGame(registry, resources, map);
     const int nextOriginal = resources.rng.rangeInclusive(1, 100000);
@@ -179,6 +186,7 @@ void runSaveLoadTests(TestRunner& runner)
             cached->second.entities.front().meal.has_value() &&
             cached->second.entities.front().campSite.has_value() &&
             cached->second.entities.front().settlementService.has_value() &&
+            cached->second.entities.front().shrine.has_value() &&
             cached->second.entities.front().cookingStation.has_value(),
         "load restores cached surface screen snapshots");
     runner.expect(loadedResources.log.counter("kills") == 2,
@@ -278,6 +286,14 @@ void runSaveLoadTests(TestRunner& runner)
     }
     runner.expect(loadedService,
                   "load restores active settlement service components");
+    bool loadedShrine = false;
+    const auto loadedShrines = loadedRegistry.view<const Shrine>();
+    for (const auto entity : loadedShrines) {
+        if (loadedRegistry.get<Shrine>(entity).powerId == "stillwater") {
+            loadedShrine = true;
+        }
+    }
+    runner.expect(loadedShrine, "load restores active shrine components");
 
     int monsterCount = 0;
     bool loadedRewardedMonster = false;

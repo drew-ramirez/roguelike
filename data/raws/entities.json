@@ -684,6 +684,13 @@
       "cooking_station": {"id": "stone_hearth", "methods": ["boiled", "roasted"], "place_tags": ["campfire", "stone_nook", "limestone_cave"]}
     },
     {
+      "id": "stillwater_shrine",
+      "name": "Stillwater Shrine",
+      "renderable": {"glyph": "s", "fg": "#80C8FF", "bg": "#000000", "order": 1},
+      "blocks_tile": true,
+      "shrine": {"power": "stillwater", "offerings": ["fish", "marsh", "food", "mushroom", "mineral"], "blessing_hp": 2}
+    },
+    {
       "id": "greenholt_tree",
       "name": "Greenholt Tree",
       "renderable": {"glyph": "T", "fg": "#5FAF5F", "bg": "#000000", "order": 1},

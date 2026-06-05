@@ -15,6 +15,7 @@
 #include "systems/CookingSystem.hpp"
 #include "systems/ForageSystem.hpp"
 #include "systems/SettlementServiceSystem.hpp"
+#include "systems/ShrineRiteSystem.hpp"
 #include "systems/WorldTravelSystem.hpp"
 #include "world/WorldGeneration.hpp"
 
@@ -331,6 +332,41 @@ void runWorldSurvivalTests(TestRunner& runner)
             provider.has_value() &&
                 !settlementServiceAvailable(resources, registry, *provider),
             "settlement service is gated by local screen role");
+    }
+
+    {
+        entt::registry registry;
+        GameResources resources;
+        resources.world = generateWorldMap(Rng::Seed{808U});
+        moveWorldToReedfen(resources.world);
+        resources.player = spawnPlayer(registry, Point{4, 4});
+        registry.get<CombatStats>(resources.player).hp = 20;
+        registry.get<Pools>(resources.player).hitPoints = 20;
+        const auto shrine = spawnRawEntity(
+            registry, defaultRawDatabase(), "stillwater_shrine", Point{5, 4});
+        (void)spawnIngredientInBackpack(registry, resources, "pond_fish");
+
+        runner.expect(shrine.has_value() && registry.all_of<Shrine>(*shrine),
+                      "raw shrine prop spawns a shrine component");
+        runner.expect(shrine.has_value() &&
+                          shrineAvailable(resources, registry, *shrine),
+                      "shrine is available at a shrine landmark");
+
+        const auto before = carriedIngredients(registry, resources.player);
+        runner.expect(shrine.has_value() &&
+                          offerAtShrine(registry, resources, *shrine),
+                      "shrine offering consumes a matching ingredient");
+        runner.expect(carriedIngredients(registry, resources.player).size() +
+                              1U ==
+                          before.size(),
+                      "shrine offering removes one carried ingredient");
+        runner.expect(registry.get<CombatStats>(resources.player).hp == 22,
+                      "shrine offering applies its blessing");
+
+        resources.world.currentScreen = Point{0, 0};
+        runner.expect(shrine.has_value() &&
+                          !shrineAvailable(resources, registry, *shrine),
+                      "shrine is gated by local screen role");
     }
 }
 

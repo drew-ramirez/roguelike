@@ -49,6 +49,7 @@
 #include "ui/ItemSelectionMenu.hpp"
 #include "ui/MainMenu.hpp"
 #include "ui/SettlementServiceMenu.hpp"
+#include "ui/ShrineMenu.hpp"
 #include "ui/SpellMenu.hpp"
 #include "ui/Targeting.hpp"
 #include "ui/VendorMenu.hpp"
@@ -281,6 +282,8 @@ void Game::tick(const std::vector<InputEvent>& events)
             state_ = RunState::ShowCamp;
         } else if (input == PlayerInputResult::OpenSettlementService) {
             state_ = RunState::ShowSettlementService;
+        } else if (input == PlayerInputResult::OpenShrine) {
+            state_ = RunState::ShowShrine;
         } else if (input == PlayerInputResult::OpenVendor) {
             state_ = RunState::ShowVendor;
         } else if (input == PlayerInputResult::OpenSpellMenu) {
@@ -346,6 +349,13 @@ void Game::tick(const std::vector<InputEvent>& events)
         if (input == SettlementServiceInputResult::Close) {
             state_ = RunState::AwaitingInput;
         } else if (input == SettlementServiceInputResult::TookTurn) {
+            resolvePlayerTurn(false);
+        }
+    } else if (state_ == RunState::ShowShrine) {
+        const auto input = handleShrineInput(registry_, resources_, events);
+        if (input == ShrineInputResult::Close) {
+            state_ = RunState::AwaitingInput;
+        } else if (input == ShrineInputResult::TookTurn) {
             resolvePlayerTurn(false);
         }
     } else if (state_ == RunState::ShowItemSelection) {
@@ -448,6 +458,8 @@ void Game::render()
         drawCampMenu(console_, registry_, resources_);
     } else if (state_ == RunState::ShowSettlementService) {
         drawSettlementServiceMenu(console_, registry_, resources_);
+    } else if (state_ == RunState::ShowShrine) {
+        drawShrineMenu(console_, registry_, resources_);
     } else if (state_ == RunState::ShowItemSelection) {
         drawItemSelectionMenu(console_, registry_, resources_);
     } else if (state_ == RunState::ShowVendor) {

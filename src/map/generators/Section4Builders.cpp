@@ -661,6 +661,8 @@ MapBuildResult Section4Builders::buildSurfaceCampShrine(
     addSpawnRequestIfOpen(result, "food_ration", Point{center.x, center.y + 2});
     addSpawnRequestIfOpen(
         result, "healing_potion", Point{center.x + 3, center.y});
+    addSpawnRequestIfOpen(
+        result, "stillwater_shrine", Point{center.x + 5, center.y - 2});
     addSpawnRequestIfOpen(result,
                           campIdForBiome(options.biomeVariant),
                           Point{center.x - 1, center.y + 2});

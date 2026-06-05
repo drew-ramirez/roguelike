@@ -152,6 +152,12 @@ struct SettlementService {
     std::string recipeId;
 };
 
+struct Shrine {
+    std::string powerId;
+    std::vector<std::string> acceptedOfferingTags;
+    int blessingHp = 0;
+};
+
 struct CookingStation {
     std::string stationId;
     std::vector<std::string> methods;
