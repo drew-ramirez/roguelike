@@ -176,6 +176,18 @@ void applyRoles(entt::registry& registry,
         registry.emplace<Vendor>(entity, Vendor{vendor.category, vendor.gold});
         registry.emplace_or_replace<Neutral>(entity);
     }
+    if (raw.campSite.has_value()) {
+        const auto& camp = *raw.campSite;
+        registry.emplace<CampSite>(entity,
+                                   CampSite{camp.campType, camp.safetyBonus});
+    }
+    if (raw.cookingStation.has_value()) {
+        const auto& station = *raw.cookingStation;
+        registry.emplace<CookingStation>(entity,
+                                         CookingStation{station.stationId,
+                                                        station.methods,
+                                                        station.placeTags});
+    }
     if (!raw.faction.empty()) {
         registry.emplace<Faction>(entity, Faction{raw.faction});
     }
@@ -217,6 +229,21 @@ void applySpellData(entt::registry& registry,
     if (raw.manaCost.has_value()) {
         registry.emplace<ManaCost>(entity, ManaCost{*raw.manaCost});
     }
+}
+
+void applyIngredientData(entt::registry& registry,
+                         entt::entity entity,
+                         const RawDatabase& raws,
+                         const RawEntityTemplate& raw)
+{
+    const auto* ingredient = raws.ingredient(raw.id);
+    if (ingredient == nullptr || !ingredient->item.has_value() ||
+        *ingredient->item != raw.id) {
+        return;
+    }
+
+    registry.emplace<Ingredient>(entity,
+                                 Ingredient{ingredient->tags, {}, {}, 1, 0});
 }
 
 } // namespace
@@ -266,6 +293,7 @@ std::optional<entt::entity> spawnRawEntity(entt::registry& registry,
     applyEquipment(registry, entity, *raw);
     applyRoles(registry, entity, *raw, options);
     applySpellData(registry, entity, *raw);
+    applyIngredientData(registry, entity, raws, *raw);
 
     return entity;
 }

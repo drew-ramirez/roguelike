@@ -1,14 +1,17 @@
 #include "TestSuites.hpp"
 
 #include <algorithm>
-
 #include <entt/entt.hpp>
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "fov/ShadowcastingFov.hpp"
 #include "map/Map.hpp"
+#include "raws/RawDatabase.hpp"
+#include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
+#include "systems/CampSystem.hpp"
+#include "systems/ForageSystem.hpp"
 #include "systems/WorldTravelSystem.hpp"
 #include "world/WorldGeneration.hpp"
 
@@ -38,10 +41,40 @@ void unlockVisitedLandmark(WorldMapState& world, Point macro)
     }
 }
 
+void moveWorldToReedfen(WorldMapState& world)
+{
+    world.currentMacro = reedfenWorldPosition();
+    world.currentScreen = Point{1, 1};
+    updateCurrentWorldRegion(world);
+}
+
 } // namespace
 
 void runWorldSurvivalTests(TestRunner& runner)
 {
+    {
+        const auto& raws = defaultRawDatabase();
+        runner.expect(raws.ingredient("pond_fish") != nullptr &&
+                          raws.recipe("marsh_stew") != nullptr &&
+                          raws.biomeResourceTable("reed_marsh") != nullptr,
+                      "default raws expose camp survival content");
+    }
+
+    {
+        entt::registry registry;
+        const auto& raws = defaultRawDatabase();
+        const auto camp =
+            spawnRawEntity(registry, raws, "greenholt_hearth", Point{5, 4});
+        const auto fish =
+            spawnRawEntity(registry, raws, "pond_fish", Point{6, 4});
+
+        runner.expect(camp.has_value() &&
+                          registry.all_of<CampSite, CookingStation>(*camp),
+                      "raw camp prop spawns camp and cooking components");
+        runner.expect(fish.has_value() && registry.all_of<Ingredient>(*fish),
+                      "raw ingredient items spawn ingredient components");
+    }
+
     {
         entt::registry registry;
         GameResources resources;
@@ -178,6 +211,55 @@ void runWorldSurvivalTests(TestRunner& runner)
         runner.expect(position.x <= 2 && map.isWalkable(position.x, position.y),
                       "local edge travel places the player near the opposite "
                       "edge");
+    }
+
+    {
+        entt::registry registry;
+        GameResources resources;
+        resources.world = generateWorldMap(Rng::Seed{404U});
+        resources.player = spawnPlayer(registry, Point{4, 4});
+        const auto camp = spawnRawEntity(
+            registry, defaultRawDatabase(), "greenholt_hearth", Point{5, 4});
+
+        runner.expect(camp.has_value() &&
+                          registry.all_of<CampSite, CookingStation>(*camp),
+                      "raw camp prop spawns camp and cooking components");
+
+        registry.get<CombatStats>(resources.player).hp = 20;
+        registry.get<Pools>(resources.player).hitPoints = 20;
+        const int before = hungerDuration(registry, resources.player);
+        runner.expect(camp.has_value() &&
+                          restAtCamp(registry, resources, *camp),
+                      "rest succeeds at a safe camp");
+        runner.expect(registry.get<CombatStats>(resources.player).hp == 24 &&
+                          hungerDuration(registry, resources.player) ==
+                              before - 20,
+                      "camp rest heals and spends hunger");
+    }
+
+    {
+        entt::registry registry;
+        GameResources resources;
+        resources.world = generateWorldMap(Rng::Seed{505U});
+        moveWorldToReedfen(resources.world);
+        resources.player = spawnPlayer(registry, Point{4, 4});
+        resources.rng.reseed(7U);
+
+        const int before = hungerDuration(registry, resources.player);
+        runner.expect(forageCurrentRegion(registry, resources),
+                      "forage gathers an ingredient in a known biome");
+
+        int carriedIngredients = 0;
+        const auto items = registry.view<const InBackpack, const Ingredient>();
+        for (const auto item : items) {
+            if (items.get<const InBackpack>(item).owner == resources.player) {
+                ++carriedIngredients;
+            }
+        }
+        runner.expect(carriedIngredients > 0,
+                      "forage puts gathered ingredients in the backpack");
+        runner.expect(hungerDuration(registry, resources.player) == before - 10,
+                      "forage spends hunger");
     }
 }
 
