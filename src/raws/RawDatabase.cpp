@@ -668,6 +668,21 @@ const RawRecipe* RawDatabase::recipe(std::string_view id) const noexcept
     return found == recipes_.end() ? nullptr : &found->second;
 }
 
+std::vector<const RawRecipe*> RawDatabase::recipes() const
+{
+    std::vector<const RawRecipe*> result;
+    result.reserve(recipes_.size());
+    for (const auto& recipe : recipes_) {
+        result.push_back(&recipe.second);
+    }
+    std::sort(result.begin(),
+              result.end(),
+              [](const RawRecipe* lhs, const RawRecipe* rhs) {
+                  return lhs->id < rhs->id;
+              });
+    return result;
+}
+
 const RawBiomeResourceTable*
 RawDatabase::biomeResourceTable(std::string_view id) const noexcept
 {

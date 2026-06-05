@@ -32,6 +32,7 @@ class RawDatabase {
     [[nodiscard]] const RawIngredient*
     ingredient(std::string_view id) const noexcept;
     [[nodiscard]] const RawRecipe* recipe(std::string_view id) const noexcept;
+    [[nodiscard]] std::vector<const RawRecipe*> recipes() const;
     [[nodiscard]] const RawBiomeResourceTable*
     biomeResourceTable(std::string_view id) const noexcept;
     [[nodiscard]] std::vector<std::string>

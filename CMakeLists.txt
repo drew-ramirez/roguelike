@@ -69,6 +69,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/spawn/TrapSpawner.cpp
     src/systems/BystanderAI.cpp
     src/systems/CampSystem.cpp
+    src/systems/CookingSystem.cpp
     src/systems/DamageSystem.cpp
     src/systems/EffectSystem.cpp
     src/systems/EquipmentSystem.cpp
@@ -218,6 +219,7 @@ set(ROGUELIKE_HEADERS
     src/spawn/TrapSpawner.hpp
     src/systems/BystanderAI.hpp
     src/systems/CampSystem.hpp
+    src/systems/CookingSystem.hpp
     src/systems/DamageSystem.hpp
     src/systems/EffectSystem.hpp
     src/systems/EquipmentSystem.hpp

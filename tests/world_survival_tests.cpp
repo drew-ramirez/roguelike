@@ -1,6 +1,7 @@
 #include "TestSuites.hpp"
 
 #include <algorithm>
+#include <string>
 #include <entt/entt.hpp>
 
 #include "core/GameResources.hpp"
@@ -11,6 +12,7 @@
 #include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/CampSystem.hpp"
+#include "systems/CookingSystem.hpp"
 #include "systems/ForageSystem.hpp"
 #include "systems/WorldTravelSystem.hpp"
 #include "world/WorldGeneration.hpp"
@@ -39,6 +41,21 @@ void unlockVisitedLandmark(WorldMapState& world, Point macro)
         region->discovered = true;
         region->visited = true;
     }
+}
+
+[[nodiscard]] bool inventoryHasMeal(const entt::registry& registry,
+                                    entt::entity owner,
+                                    const std::string& recipeId)
+{
+    const auto view = registry.view<const InBackpack, const Meal>();
+    for (const auto item : view) {
+        const auto& backpack = view.get<const InBackpack>(item);
+        const auto& meal = view.get<const Meal>(item);
+        if (backpack.owner == owner && meal.recipeId == recipeId) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void moveWorldToReedfen(WorldMapState& world)
@@ -260,6 +277,28 @@ void runWorldSurvivalTests(TestRunner& runner)
                       "forage puts gathered ingredients in the backpack");
         runner.expect(hungerDuration(registry, resources.player) == before - 10,
                       "forage spends hunger");
+    }
+
+    {
+        entt::registry registry;
+        GameResources resources;
+        resources.world = generateWorldMap(Rng::Seed{606U});
+        moveWorldToReedfen(resources.world);
+        resources.player = spawnPlayer(registry, Point{4, 4});
+        (void)spawnIngredientInBackpack(registry, resources, "pond_fish");
+        (void)spawnIngredientInBackpack(registry, resources, "marsh_root");
+        (void)spawnIngredientInBackpack(registry, resources, "reed_shoot");
+        const auto camp = spawnRawEntity(
+            registry, defaultRawDatabase(), "reed_camp", Point{5, 4});
+
+        runner.expect(camp.has_value() &&
+                          cookAtCamp(registry, resources, *camp),
+                      "camp cooking consumes matching ingredients");
+        runner.expect(
+            inventoryHasMeal(registry, resources.player, "marsh_stew"),
+            "camp cooking creates a carried meal");
+        runner.expect(carriedIngredients(registry, resources.player).empty(),
+                      "camp cooking consumes selected ingredients");
     }
 }
 
