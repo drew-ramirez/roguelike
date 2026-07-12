@@ -42,7 +42,9 @@ findDiscoveredRoute(const WorldRegionDescriptor& region,
 discoveredRoutes(const WorldRegionDescriptor& region);
 bool unlockCurrentLandmarkFastTravel(WorldMapState& world);
 
+/** Samples a deterministic, smoothly interpolated macro-world scalar field. */
 [[nodiscard]] double valueNoise2d(Rng::Seed seed, double x, double y) noexcept;
+/** Layers coherent octaves for broad biome fields with local variation. */
 [[nodiscard]] double
 fbmNoise2d(Rng::Seed seed, double x, double y, int octaves = 4) noexcept;
 

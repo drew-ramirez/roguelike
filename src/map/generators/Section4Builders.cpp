@@ -54,28 +54,8 @@ void carveVertical(Map& map, int x, int y1, int y2)
     }
 }
 
-void addScatterFloors(Map& map, Rng& rng, int count, char mode)
-{
-    for (int i = 0; i < count; ++i) {
-        const int x = rng.rangeInclusive(1, map.width() - 2);
-        const int y = rng.rangeInclusive(1, map.height() - 2);
-        if (mode == 'c') {
-            for (int yy = std::max(1, y - 1);
-                 yy <= std::min(map.height() - 2, y + 1);
-                 ++yy) {
-                for (int xx = std::max(1, x - 1);
-                     xx <= std::min(map.width() - 2, x + 1);
-                     ++xx) {
-                    map.setTile(xx, yy, TileType::Floor);
-                }
-            }
-        } else {
-            map.setTile(x, y, TileType::Floor);
-        }
-    }
-}
-
-void paintEllipse(Map& map, Point center, int radiusX, int radiusY, TileType tile)
+void paintEllipse(
+    Map& map, Point center, int radiusX, int radiusY, TileType tile)
 {
     const int minX = std::max(1, center.x - radiusX);
     const int maxX = std::min(map.width() - 2, center.x + radiusX);
@@ -114,7 +94,66 @@ void clearWideVertical(Map& map, int x, int y1, int y2, int halfWidth)
     }
 }
 
-void addWallClumps(Map& map, Rng& rng, int count, int minRadius, int maxRadius)
+[[nodiscard]] TileType naturalTileForBiome(BiomeVariant biome) noexcept
+{
+    if (biome == BiomeVariant::ReedMarsh || biome == BiomeVariant::Sinklands) {
+        return TileType::DenseReeds;
+    }
+    if (biome == BiomeVariant::LimestoneRise) {
+        return TileType::Rock;
+    }
+    return TileType::Tree;
+}
+
+void smoothNaturalMask(Map& map, TileType blocker)
+{
+    Map next = map;
+    for (int y = 1; y < map.height() - 1; ++y) {
+        for (int x = 1; x < map.width() - 1; ++x) {
+            int neighbors = 0;
+            for (int yy = y - 1; yy <= y + 1; ++yy) {
+                for (int xx = x - 1; xx <= x + 1; ++xx) {
+                    if ((xx != x || yy != y) && map.tileAt(xx, yy) == blocker) {
+                        ++neighbors;
+                    }
+                }
+            }
+            if (neighbors >= 5) {
+                next.setTile(x, y, blocker);
+            } else if (neighbors <= 3) {
+                next.setTile(x, y, TileType::Floor);
+            }
+        }
+    }
+    map = std::move(next);
+}
+
+void generateNaturalMask(Map& map,
+                         Rng& rng,
+                         BiomeVariant biome,
+                         int blockerPercent)
+{
+    const TileType blocker = naturalTileForBiome(biome);
+    for (int y = 1; y < map.height() - 1; ++y) {
+        for (int x = 1; x < map.width() - 1; ++x) {
+            map.setTile(x,
+                        y,
+                        rng.rangeInclusive(1, 100) <= blockerPercent
+                            ? blocker
+                            : TileType::Floor);
+        }
+    }
+    smoothNaturalMask(map, blocker);
+    smoothNaturalMask(map, blocker);
+    cullSmallNaturalBlockerComponents(map, 8);
+}
+
+void addNaturalClumps(Map& map,
+                      Rng& rng,
+                      int count,
+                      int minRadius,
+                      int maxRadius,
+                      TileType blocker)
 {
     for (int i = 0; i < count; ++i) {
         const Point center{rng.rangeInclusive(2, map.width() - 3),
@@ -123,7 +162,7 @@ void addWallClumps(Map& map, Rng& rng, int count, int minRadius, int maxRadius)
                      center,
                      rng.rangeInclusive(minRadius, maxRadius),
                      rng.rangeInclusive(minRadius, maxRadius),
-                     TileType::Wall);
+                     blocker);
     }
 }
 
@@ -243,29 +282,22 @@ void carveSurfaceExits(Map& map, Point center, int exitMask)
 
 void shapeOpenSurface(Map& map, Rng& rng, BiomeVariant biome, Point center)
 {
-    if (isLimestoneBiome(biome)) {
-        addWallClumps(map, rng, (map.width() * map.height()) / 70, 2, 5);
-        paintEllipse(map, center, 9, 5, TileType::Floor);
-        return;
+    int blockerPercent = 50;
+    if (biome == BiomeVariant::DeepGrove) {
+        blockerPercent = 51;
+    } else if (biome == BiomeVariant::DangerousWilds) {
+        blockerPercent = 52;
+    } else if (isMarshBiome(biome)) {
+        blockerPercent = 50;
+    } else if (isLimestoneBiome(biome)) {
+        blockerPercent = 50;
     }
-
-    if (isMarshBiome(biome)) {
-        addWallClumps(map, rng, (map.width() * map.height()) / 58, 1, 4);
-        clearWideHorizontal(map, center.y, center.x - 16, center.x + 16, 2);
-        paintEllipse(map, Point{center.x - 8, center.y + 5}, 6, 3, TileType::Floor);
-        paintEllipse(map, Point{center.x + 9, center.y - 4}, 6, 3, TileType::Floor);
-        return;
-    }
-
-    const int clumpDivisor =
-        biome == BiomeVariant::DeepGrove ? 42
-        : biome == BiomeVariant::RuinedWoodland
-            ? 48
-            : 56;
-    addWallClumps(map, rng, (map.width() * map.height()) / clumpDivisor, 2, 5);
+    generateNaturalMask(map, rng, biome, blockerPercent);
     paintEllipse(map, center, 10, 6, TileType::Floor);
-    paintEllipse(map, Point{center.x - 12, center.y + 7}, 7, 4, TileType::Floor);
-    paintEllipse(map, Point{center.x + 13, center.y - 6}, 7, 4, TileType::Floor);
+    paintEllipse(
+        map, Point{center.x - 12, center.y + 7}, 7, 4, TileType::Floor);
+    paintEllipse(
+        map, Point{center.x + 13, center.y - 6}, 7, 4, TileType::Floor);
 }
 
 void shapeSurfaceRoutes(Map& map, Rng& rng, BiomeVariant biome, Point center)
@@ -281,8 +313,13 @@ void finishSurfaceRegion(MapBuildResult& result,
                          MapBuildOptions options,
                          bool hasCaveMouth = false)
 {
-    repairConnectivity(result.map, result.playerStart, rng);
-    cullUnreachable(result.map, result.playerStart);
+    const TileType blocker = naturalTileForBiome(options.biomeVariant);
+    cullSmallRegions(result.map, 12, blocker);
+    cullSmallNaturalBlockerComponents(result.map, 8);
+    repairConnectivity(
+        result.map, result.playerStart, rng, ConnectivityStyle::Surface);
+    cullUnreachable(result.map, result.playerStart, blocker);
+    cullSmallNaturalBlockerComponents(result.map, 8);
     result.builderName = std::move(builderName);
     if (hasCaveMouth) {
         setDistantStairs(result.map, result.playerStart, result.stairsPosition);
@@ -291,8 +328,10 @@ void finishSurfaceRegion(MapBuildResult& result,
     }
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);
-    recordSnapshot(
-        result.snapshots, result.map, "surface region final", options.recordSnapshots);
+    recordSnapshot(result.snapshots,
+                   result.map,
+                   "surface region final",
+                   options.recordSnapshots);
     validateBuildOrThrow(result,
                          "Surface screen generation produced an invalid map");
 }
@@ -313,7 +352,8 @@ void addBiomeFlavor(MapBuildResult& result,
     switch (biome) {
     case BiomeVariant::LimestoneRise:
     case BiomeVariant::Sinklands:
-        addSpawnRequestIfOpen(result, "cave_bat", Point{center.x - 4, center.y});
+        addSpawnRequestIfOpen(
+            result, "cave_bat", Point{center.x - 4, center.y});
         addSpawnRequestIfOpen(
             result, "limestone_column", Point{center.x + 4, center.y});
         addSpawnRequestIfOpen(
@@ -324,7 +364,8 @@ void addBiomeFlavor(MapBuildResult& result,
     case BiomeVariant::ReedMarsh:
         addSpawnRequestIfOpen(
             result, "wild_boar", Point{center.x - 4, center.y});
-        addSpawnRequestIfOpen(result, "food_ration", Point{center.x + 3, center.y});
+        addSpawnRequestIfOpen(
+            result, "food_ration", Point{center.x + 3, center.y});
         addSpawnRequestIfOpen(
             result, "reed_clump", Point{center.x + 5, center.y + 2});
         addSpawnRequestIfOpen(
@@ -431,21 +472,24 @@ MapBuildResult Section4Builders::buildTown(int width,
                                            MapBuildOptions options)
 {
     validateBuilderDimensions("town", width, height, 30, 20);
-    MapBuildResult result{Map{width, height, TileType::Wall}};
+    MapBuildResult result{Map{width, height, TileType::Floor}};
     const int midX = width / 2;
     const int midY = height / 2;
 
     carveHorizontal(result.map, midY, 1, width - 2);
     carveVertical(result.map, midX, 1, height - 2);
-    carveRect(result.map, Rect{3, 3, 12, 9});
-    carveRect(result.map, Rect{width - 13, 3, width - 4, 9});
-    carveRect(result.map, Rect{3, height - 10, 13, height - 4});
-    carveRect(result.map, Rect{width - 15, height - 10, width - 4, height - 4});
-    carveRect(result.map, Rect{midX - 4, midY - 3, midX + 5, midY + 4});
-    carveHorizontal(result.map, 6, 11, midX);
-    carveHorizontal(result.map, 6, midX, width - 13);
-    carveHorizontal(result.map, height - 7, 12, midX);
-    carveHorizontal(result.map, height - 7, midX, width - 15);
+    addBuilding(result.map, Rect{3, 3, 12, 9}, {Point{11, 6}});
+    addBuilding(
+        result.map, Rect{width - 13, 3, width - 4, 9}, {Point{width - 13, 6}});
+    addBuilding(result.map,
+                Rect{3, height - 10, 13, height - 4},
+                {Point{12, height - 7}});
+    addBuilding(result.map,
+                Rect{width - 15, height - 10, width - 4, height - 4},
+                {Point{width - 15, height - 7}});
+    addBuilding(result.map,
+                Rect{midX - 4, midY - 3, midX + 5, midY + 4},
+                {Point{midX, midY + 3}});
     sealMapEdges(result.map);
 
     result.playerStart = Point{midX, midY};
@@ -461,7 +505,8 @@ MapBuildResult Section4Builders::buildTown(int width,
     result.spawnRequests.push_back(
         SpawnRequest{"food_ration", Point{midX + 1, midY}});
 
-    finalizeRegion(result, "town", options.recordSnapshots, options.allowDownStairs);
+    finalizeRegion(
+        result, "town", options.recordSnapshots, options.allowDownStairs);
     return result;
 }
 
@@ -471,13 +516,16 @@ MapBuildResult Section4Builders::buildWoods(int width,
                                             MapBuildOptions options)
 {
     validateBuilderDimensions("woods", width, height, 30, 20);
-    MapBuildResult result{Map{width, height, TileType::Wall}};
+    MapBuildResult result{Map{width, height, TileType::Tree}};
     const int roadX = width / 2;
-    carveVertical(result.map, roadX, 1, height - 2);
-    carveHorizontal(result.map, height / 3, roadX - 8, roadX + 8);
-    addScatterFloors(result.map, rng, (width * height) / 18, 'c');
-    repairConnectivity(result.map, Point{roadX, 2}, rng);
-    cullUnreachable(result.map, Point{roadX, 2});
+    generateNaturalMask(result.map, rng, BiomeVariant::DeepGrove, 51);
+    clearWideVertical(result.map, roadX, 1, height - 2, 1);
+    paintEllipse(result.map, Point{roadX, height / 3}, 10, 6, TileType::Floor);
+    paintEllipse(
+        result.map, Point{roadX - 12, height * 2 / 3}, 7, 4, TileType::Floor);
+    repairConnectivity(
+        result.map, Point{roadX, 2}, rng, ConnectivityStyle::Cave);
+    cullUnreachable(result.map, Point{roadX, 2}, TileType::Tree);
     result.playerStart = Point{roadX, 2};
     finalizeRegion(result, "woods", options.recordSnapshots);
     const int clearingY = height / 3;

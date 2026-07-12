@@ -13,6 +13,7 @@ namespace rl {
 
 class Rng;
 
+/** Builds routed regions whose authored layout outranks algorithm purity. */
 struct Section4Builders {
     [[nodiscard]] static MapBuildResult
     buildTown(int width, int height, Rng& rng, MapBuildOptions options = {});
