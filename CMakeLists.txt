@@ -30,6 +30,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/MapConnectivity.cpp
     src/map/DungeonRegionRouter.cpp
     src/map/MapGeometry.cpp
+    src/map/MapQualityMetrics.cpp
     src/map/MasterDungeonMap.cpp
     src/map/MapValidation.cpp
     src/map/generators/BspDungeonBuilder.cpp
@@ -193,6 +194,7 @@ set(ROGUELIKE_HEADERS
     src/map/DungeonRegionRouter.hpp
     src/map/MapGeometry.hpp
     src/map/Map.hpp
+    src/map/MapQualityMetrics.hpp
     src/map/MapBuilder.hpp
     src/map/MapBuilderRegistry.hpp
     src/map/MapBuilderTypes.hpp
