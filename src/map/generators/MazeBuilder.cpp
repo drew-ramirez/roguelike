@@ -30,7 +30,7 @@ namespace {
 {
     return point.x > 0 && point.y > 0 && point.x < map.width() - 1 &&
            point.y < map.height() - 1 &&
-           map.tileAt(point.x, point.y) == TileType::Wall;
+           tileTraits(map.tileAt(point.x, point.y)).blocksMovement;
 }
 
 void shuffleDirections(std::array<Point, 4>& directions, Rng& rng)
@@ -50,7 +50,7 @@ MazeBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
 {
     validateBuilderDimensions("MazeBuilder", width, height);
 
-    MapBuildResult result{Map{width, height, TileType::Wall}, {}, {}};
+    MapBuildResult result{Map{width, height, TileType::Rock}, {}, {}};
     result.builderName = "maze";
     result.playerStart = Point{1, 1};
     result.map.setTile(1, 1, TileType::Floor);

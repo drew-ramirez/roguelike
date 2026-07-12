@@ -23,6 +23,7 @@ namespace rl {
 namespace {
 
 constexpr std::size_t maxFloatingWallFragmentSize = 8;
+constexpr int minimumSeedSpacingSquared = 16;
 
 [[nodiscard]] int
 distanceFor(Point left, Point right, VoronoiDistance algorithm) noexcept
@@ -87,7 +88,7 @@ distanceFor(Point left, Point right, VoronoiDistance algorithm) noexcept
 [[nodiscard]] bool isWall(const Map& map, Point point)
 {
     return map.inBounds(point.x, point.y) &&
-           map.tileAt(point.x, point.y) == TileType::Wall;
+           map.tileAt(point.x, point.y) == TileType::Rock;
 }
 
 int removeFloatingWallFragments(Map& map)
@@ -184,20 +185,37 @@ VoronoiBuilder::buildWithSettings(int width,
         throw std::invalid_argument("VoronoiBuilder requires positive seeds");
     }
 
+    const int readableSeedCount =
+        std::min(settings.seedCount, std::max(8, (width * height) / 100));
     std::vector<Point> seeds;
-    seeds.reserve(static_cast<std::size_t>(settings.seedCount));
-    while (static_cast<int>(seeds.size()) < settings.seedCount) {
+    seeds.reserve(static_cast<std::size_t>(readableSeedCount));
+    int placementAttempts = 0;
+    const int maximumPlacementAttempts = width * height * 4;
+    while (static_cast<int>(seeds.size()) < readableSeedCount &&
+           placementAttempts < maximumPlacementAttempts) {
         const Point candidate{rng.rangeInclusive(1, width - 2),
                               rng.rangeInclusive(1, height - 2)};
-        if (std::find(seeds.begin(), seeds.end(), candidate) == seeds.end()) {
+        const bool spaced = std::all_of(
+            seeds.begin(), seeds.end(), [candidate](Point existing) {
+                const int dx = existing.x - candidate.x;
+                const int dy = existing.y - candidate.y;
+                return (dx * dx) + (dy * dy) >= minimumSeedSpacingSquared;
+            });
+        if (spaced) {
             seeds.push_back(candidate);
         }
+        ++placementAttempts;
+    }
+    if (seeds.size() < 2U) {
+        throw std::runtime_error("VoronoiBuilder could not space its seeds");
     }
 
-    MapBuildResult result{Map{width, height, TileType::Wall}, {}, {}};
+    MapBuildResult result{Map{width, height, TileType::Rock}, {}, {}};
     result.builderName = "voronoi";
     addBuildStep(result, "base: voronoi hive");
     addBuildStep(result, "settings: " + settingLabel(settings));
+    addBuildStep(result,
+                 "readable spaced seeds: " + std::to_string(seeds.size()));
 
     for (int y = 1; y < height - 1; ++y) {
         for (int x = 1; x < width - 1; ++x) {
@@ -205,7 +223,7 @@ VoronoiBuilder::buildWithSettings(int width,
                 x,
                 y,
                 isVoronoiBoundary(Point{x, y}, seeds, settings.distance)
-                    ? TileType::Wall
+                    ? TileType::Rock
                     : TileType::Floor);
         }
     }
@@ -218,7 +236,7 @@ VoronoiBuilder::buildWithSettings(int width,
     }
     result.playerStart = *start;
     repairConnectivity(result.map, result.playerStart, rng);
-    sealMapEdges(result.map);
+    sealMapEdges(result.map, TileType::Rock);
     if (removeFloatingWallFragments(result.map) > 0) {
         addBuildStep(result, "modifier: floating wall cleanup");
     }
@@ -227,7 +245,7 @@ VoronoiBuilder::buildWithSettings(int width,
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);
     recordSnapshot(
         result.snapshots, result.map, "voronoi hive", options.recordSnapshots);
-    addBuildStep(result, "modifier: connectivity repair");
+    addBuildStep(result, "modifier: deliberate nearest-boundary gates");
     addBuildStep(result, "modifier: distant exit");
 
     validateBuildOrThrow(result, "Voronoi generation produced an invalid map");

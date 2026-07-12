@@ -1128,6 +1128,45 @@ void runMapgenTests(TestRunner& runner)
         }
     }
     {
+        const std::array<Rng::Seed, 3> seeds{1U, 42U, 4242U};
+        for (const Rng::Seed seed : seeds) {
+            Rng mazeRng{seed};
+            const auto maze =
+                buildMapById("maze", 80, 43, mazeRng, MapBuildOptions{});
+            const auto mazeMetrics = measureMapQuality(maze.map);
+            runner.expect(mazeMetrics.walkableCoverage >= 0.44 &&
+                              mazeMetrics.walkableCoverage <= 0.50 &&
+                              mazeMetrics.narrowPercent >= 0.85 &&
+                              mazeMetrics.disconnectedRegions == 0,
+                          "maze preserves perfect narrow identity for seed " +
+                              std::to_string(seed));
+
+            for (const std::string id : {"simple", "bsp", "bsp-interior"}) {
+                Rng roomRng{seed};
+                const auto result =
+                    buildMapById(id, 80, 43, roomRng, MapBuildOptions{});
+                const auto metrics = measureMapQuality(result.map);
+                runner.expect(metrics.walkableCoverage >= 0.20 &&
+                                  metrics.walkableCoverage <= 0.65 &&
+                                  metrics.disconnectedRegions == 0,
+                              id +
+                                  " stays within room-family bounds for seed " +
+                                  std::to_string(seed));
+            }
+
+            Rng voronoiRng{seed};
+            const auto voronoi =
+                buildMapById("voronoi", 80, 43, voronoiRng, MapBuildOptions{});
+            const auto voronoiMetrics = measureMapQuality(voronoi.map);
+            runner.expect(voronoiMetrics.walkableCoverage >= 0.55 &&
+                              voronoiMetrics.walkableCoverage <= 0.75 &&
+                              voronoiMetrics.disconnectedRegions == 0 &&
+                              voronoiMetrics.tinyBlockerComponents == 0,
+                          "Voronoi keeps readable connected cells for seed " +
+                              std::to_string(seed));
+        }
+    }
+    {
         struct OpennessLimit {
             std::string id;
             double maxWalkablePercent = 0.0;

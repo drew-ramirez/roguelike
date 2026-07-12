@@ -12,6 +12,7 @@
 
 namespace rl {
 
+/** Builds the classic, readable baseline of rooms joined by corridors. */
 class SimpleMapBuilder {
   public:
     /**
