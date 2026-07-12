@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -25,13 +26,39 @@ namespace {
 constexpr int minLeafSize = 8;
 constexpr int maxSplitDepth = 5;
 
-void splitRect(const Rect& rect, int depth, Rng& rng, std::vector<Rect>& leaves)
+[[nodiscard]] std::optional<Point>
+carveInteriorSubtree(Map& map,
+                     const Rect& rect,
+                     int depth,
+                     Rng& rng,
+                     std::vector<Rect>& rooms,
+                     std::vector<CorridorPath>& corridors,
+                     std::vector<MapSnapshot>& snapshots,
+                     bool recordSnapshots)
 {
     const bool canSplitHorizontal = rect.height() >= minLeafSize * 2;
     const bool canSplitVertical = rect.width() >= minLeafSize * 2;
     if (depth >= maxSplitDepth || (!canSplitHorizontal && !canSplitVertical)) {
-        leaves.push_back(rect);
-        return;
+        const int maxInsetX = std::max(2, std::min(3, (rect.width() - 3) / 2));
+        const int maxInsetY = std::max(2, std::min(3, (rect.height() - 3) / 2));
+        const int insetX = rng.rangeInclusive(2, maxInsetX);
+        const int insetY = rng.rangeInclusive(2, maxInsetY);
+        const Rect room{
+            rect.x1 + insetX,
+            rect.y1 + insetY,
+            rect.x2 - insetX,
+            rect.y2 - insetY,
+        };
+        if (room.width() < 3 || room.height() < 3) {
+            return std::nullopt;
+        }
+        [[maybe_unused]] const auto carved = carveRectRoom(map, room);
+        rooms.push_back(room);
+        recordSnapshot(snapshots,
+                       map,
+                       "bsp interior room " + std::to_string(rooms.size()),
+                       recordSnapshots);
+        return randomInteriorPointInRoom(room, rng);
     }
 
     bool splitHorizontal = rng.coinFlip();
@@ -49,22 +76,58 @@ void splitRect(const Rect& rect, int depth, Rng& rng, std::vector<Rect>& leaves)
     if (splitHorizontal) {
         const int split =
             rng.rangeInclusive(rect.y1 + minLeafSize, rect.y2 - minLeafSize);
-        splitRect(
-            Rect{rect.x1, rect.y1, rect.x2, split}, depth + 1, rng, leaves);
-        splitRect(
-            Rect{rect.x1, split, rect.x2, rect.y2}, depth + 1, rng, leaves);
-        return;
+        const auto first =
+            carveInteriorSubtree(map,
+                                 Rect{rect.x1, rect.y1, rect.x2, split},
+                                 depth + 1,
+                                 rng,
+                                 rooms,
+                                 corridors,
+                                 snapshots,
+                                 recordSnapshots);
+        const auto second =
+            carveInteriorSubtree(map,
+                                 Rect{rect.x1, split, rect.x2, rect.y2},
+                                 depth + 1,
+                                 rng,
+                                 rooms,
+                                 corridors,
+                                 snapshots,
+                                 recordSnapshots);
+        if (first.has_value() && second.has_value()) {
+            corridors.push_back(carveCorridor(
+                map, *first, *second, rng, CorridorStrategy::LShaped));
+            return rng.coinFlip() ? first : second;
+        }
+        return first.has_value() ? first : second;
     }
 
     const int split =
         rng.rangeInclusive(rect.x1 + minLeafSize, rect.x2 - minLeafSize);
-    splitRect(Rect{rect.x1, rect.y1, split, rect.y2}, depth + 1, rng, leaves);
-    splitRect(Rect{split, rect.y1, rect.x2, rect.y2}, depth + 1, rng, leaves);
-}
-
-[[nodiscard]] Rect leafRoom(const Rect& leaf)
-{
-    return Rect{leaf.x1 + 1, leaf.y1 + 1, leaf.x2 - 1, leaf.y2 - 1};
+    const auto first =
+        carveInteriorSubtree(map,
+                             Rect{rect.x1, rect.y1, split, rect.y2},
+                             depth + 1,
+                             rng,
+                             rooms,
+                             corridors,
+                             snapshots,
+                             recordSnapshots);
+    const auto second =
+        carveInteriorSubtree(map,
+                             Rect{split, rect.y1, rect.x2, rect.y2},
+                             depth + 1,
+                             rng,
+                             rooms,
+                             corridors,
+                             snapshots,
+                             recordSnapshots);
+    if (first.has_value() && second.has_value()) {
+        corridors.push_back(carveCorridor(
+            map, *first, *second, rng, CorridorStrategy::LShaped));
+        return rng.coinFlip() ? first : second;
+    }
+    return first.has_value() ? first : second;
 }
 
 [[nodiscard]] SpawnRegion walkableRoomRegion(const Map& map, const Rect& room)
@@ -83,51 +146,22 @@ MapBuildResult BspInteriorBuilder::build(int width,
     validateBuilderDimensions("BspInteriorBuilder", width, height);
 
     Map map{width, height, TileType::Wall};
-    std::vector<Rect> leaves;
     std::vector<Rect> rooms;
     std::vector<MapSnapshot> snapshots;
-    splitRect(Rect{1, 1, width - 1, height - 1}, 0, rng, leaves);
-
-    for (const Rect& leaf : leaves) {
-        const Rect room = leafRoom(leaf);
-        if (room.width() < 3 || room.height() < 3) {
-            continue;
-        }
-
-        [[maybe_unused]] const auto carved = carveRectRoom(map, room);
-        rooms.push_back(room);
-        recordSnapshot(snapshots,
-                       map,
-                       "bsp interior room " + std::to_string(rooms.size()),
-                       options.recordSnapshots);
-    }
+    std::vector<CorridorPath> corridorPaths;
+    [[maybe_unused]] const auto representative =
+        carveInteriorSubtree(map,
+                             Rect{1, 1, width - 1, height - 1},
+                             0,
+                             rng,
+                             rooms,
+                             corridorPaths,
+                             snapshots,
+                             options.recordSnapshots);
 
     if (rooms.size() < 2) {
         throw std::runtime_error(
             "BSP interior generation failed to place enough rooms");
-    }
-
-    std::sort(
-        rooms.begin(), rooms.end(), [](const Rect& left, const Rect& right) {
-            if (left.x1 == right.x1) {
-                return left.y1 < right.y1;
-            }
-            return left.x1 < right.x1;
-        });
-
-    std::vector<CorridorPath> corridorPaths;
-    for (std::size_t index = 1; index < rooms.size(); ++index) {
-        auto path =
-            carveCorridor(map,
-                          randomInteriorPointInRoom(rooms[index - 1], rng),
-                          randomInteriorPointInRoom(rooms[index], rng),
-                          rng,
-                          CorridorStrategy::LShaped);
-        corridorPaths.push_back(std::move(path));
-        recordSnapshot(snapshots,
-                       map,
-                       "bsp interior corridor " + std::to_string(index),
-                       options.recordSnapshots);
     }
 
     std::vector<SpawnRegion> spawnRegions;
@@ -154,7 +188,7 @@ MapBuildResult BspInteriorBuilder::build(int width,
                           "bsp-interior",
                           std::move(corridorPaths)};
     addBuildStep(result, "base: bsp interior leaf rooms");
-    addBuildStep(result, "connector: sorted rooms with random interior points");
+    addBuildStep(result, "connector: sibling subtrees");
 
     validateBuildOrThrow(result,
                          "BSP interior generation produced an invalid map");
