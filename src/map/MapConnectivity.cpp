@@ -8,11 +8,14 @@
 #include "map/MapConnectivity.hpp"
 
 #include <algorithm>
+#include <cstdlib>
 #include <limits>
 #include <queue>
 #include <utility>
 
 #include "map/Map.hpp"
+#include "map/MapBrush.hpp"
+#include "map/MapGeometry.hpp"
 
 namespace rl {
 namespace {
@@ -22,23 +25,6 @@ constexpr int unreachable = -1;
 [[nodiscard]] std::size_t mapIndex(const Map& map, Point point)
 {
     return static_cast<std::size_t>(map.xyIdx(point.x, point.y));
-}
-
-[[nodiscard]] Point regionCenter(const ConnectedRegion& region)
-{
-    if (region.tiles.empty()) {
-        return {};
-    }
-
-    // The arithmetic mean is a stable representative point for repair tunnels.
-    int xSum = 0;
-    int ySum = 0;
-    for (const Point point : region.tiles) {
-        xSum += point.x;
-        ySum += point.y;
-    }
-    const int count = static_cast<int>(region.tiles.size());
-    return Point{xSum / count, ySum / count};
 }
 
 [[nodiscard]] int distanceSquared(Point left, Point right) noexcept
@@ -59,7 +45,32 @@ regionsSortedBySize(std::vector<ConnectedRegion> regions)
     return regions;
 }
 
-void carveLine(Map& map, Point from, Point to, Rng& rng)
+struct RegionConnection {
+    Point from;
+    Point to;
+    std::size_t regionIndex = 0;
+    int distance = std::numeric_limits<int>::max();
+};
+
+[[nodiscard]] RegionConnection
+nearestRegionConnection(const ConnectedRegion& main,
+                        const std::vector<ConnectedRegion>& regions)
+{
+    RegionConnection best;
+    for (std::size_t index = 1; index < regions.size(); ++index) {
+        for (const Point from : main.tiles) {
+            for (const Point to : regions[index].tiles) {
+                const int distance = distanceSquared(from, to);
+                if (distance < best.distance) {
+                    best = RegionConnection{from, to, index, distance};
+                }
+            }
+        }
+    }
+    return best;
+}
+
+void carveArchitecturalConnection(Map& map, Point from, Point to, Rng& rng)
 {
     const bool horizontalFirst = rng.coinFlip();
     const auto carveHorizontal = [&map](int x1, int x2, int y) {
@@ -89,6 +100,35 @@ void carveLine(Map& map, Point from, Point to, Rng& rng)
     carveHorizontal(from.x, to.x, to.y);
 }
 
+void carveWideLine(Map& map, Point from, Point to)
+{
+    for (const Point point :
+         bresenhamLine(from, to, LineStartPolicy::IncludeStart)) {
+        paintBrush(
+            map, point, TileType::Floor, BrushShape::Square, 1, Symmetry::None);
+    }
+}
+
+void carveNaturalConnection(
+    Map& map, Point from, Point to, Rng& rng, ConnectivityStyle style)
+{
+    if (style == ConnectivityStyle::Surface) {
+        carveWideLine(map, from, to);
+        return;
+    }
+
+    const int distance =
+        std::max(1, std::abs(to.x - from.x) + std::abs(to.y - from.y));
+    const int jitter = std::min(4, distance / 4);
+    Point midpoint{(from.x + to.x) / 2, (from.y + to.y) / 2};
+    midpoint.x = std::clamp(
+        midpoint.x + rng.rangeInclusive(-jitter, jitter), 1, map.width() - 2);
+    midpoint.y = std::clamp(
+        midpoint.y + rng.rangeInclusive(-jitter, jitter), 1, map.height() - 2);
+    carveWideLine(map, from, midpoint);
+    carveWideLine(map, midpoint, to);
+}
+
 } // namespace
 
 int DistanceMap::distanceAt(Point point) const
@@ -101,7 +141,7 @@ int DistanceMap::distanceAt(Point point) const
 
 bool isConnectivityPassable(TileType tile) noexcept
 {
-    return tile != TileType::Wall;
+    return tileTraits(tile).connectivityPassable;
 }
 
 bool isConnectivityPassable(const Map& map, Point point)
@@ -275,7 +315,7 @@ std::optional<Point> farthestReachableFloor(const Map& map, Point start)
     return best;
 }
 
-int cullUnreachable(Map& map, Point start)
+int cullUnreachable(Map& map, Point start, TileType replacement)
 {
     const auto distances = buildDistanceMap(map, start);
     int culled = 0;
@@ -284,7 +324,7 @@ int cullUnreachable(Map& map, Point start)
             const Point point{x, y};
             if (isConnectivityPassable(map, point) &&
                 distances.distanceAt(point) == unreachable) {
-                map.setTile(x, y, TileType::Wall);
+                map.setTile(x, y, replacement);
                 ++culled;
             }
         }
@@ -292,7 +332,76 @@ int cullUnreachable(Map& map, Point start)
     return culled;
 }
 
-int repairConnectivity(Map& map, Point anchor, Rng& rng)
+int cullSmallRegions(Map& map, int maximumSize, TileType replacement)
+{
+    if (maximumSize < 1) {
+        return 0;
+    }
+
+    int culled = 0;
+    for (const auto& region : findConnectedRegions(map)) {
+        if (static_cast<int>(region.tiles.size()) > maximumSize) {
+            continue;
+        }
+        for (const Point point : region.tiles) {
+            map.setTile(point.x, point.y, replacement);
+            ++culled;
+        }
+    }
+    return culled;
+}
+
+int cullSmallNaturalBlockerComponents(Map& map, int maximumSize)
+{
+    if (maximumSize < 1) {
+        return 0;
+    }
+
+    std::vector<bool> visited(
+        static_cast<std::size_t>(map.width() * map.height()), false);
+    int culled = 0;
+    for (int y = 0; y < map.height(); ++y) {
+        for (int x = 0; x < map.width(); ++x) {
+            const Point start{x, y};
+            const auto startIndex = mapIndex(map, start);
+            if (visited[startIndex] || !isNaturalBlocker(map.tileAt(x, y))) {
+                continue;
+            }
+
+            std::vector<Point> component;
+            std::vector<Point> frontier{start};
+            visited[startIndex] = true;
+            while (!frontier.empty()) {
+                const Point current = frontier.back();
+                frontier.pop_back();
+                component.push_back(current);
+                for (const Point next : cardinalNeighbors(current)) {
+                    if (!map.inBounds(next.x, next.y) ||
+                        !isNaturalBlocker(map.tileAt(next.x, next.y))) {
+                        continue;
+                    }
+                    const auto index = mapIndex(map, next);
+                    if (!visited[index]) {
+                        visited[index] = true;
+                        frontier.push_back(next);
+                    }
+                }
+            }
+            if (static_cast<int>(component.size()) <= maximumSize) {
+                for (const Point point : component) {
+                    map.setTile(point.x, point.y, TileType::Floor);
+                    ++culled;
+                }
+            }
+        }
+    }
+    return culled;
+}
+
+int repairConnectivity(Map& map,
+                       Point anchor,
+                       Rng& rng,
+                       ConnectivityStyle style)
 {
     auto regions = regionsSortedBySize(findConnectedRegions(map));
     if (regions.empty()) {
@@ -300,17 +409,44 @@ int repairConnectivity(Map& map, Point anchor, Rng& rng)
     }
 
     int repaired = 0;
-    Point mainCenter = anchor;
-    if (!isConnectivityPassable(map, anchor)) {
-        mainCenter = regionCenter(regions.front());
+    if (isConnectivityPassable(map, anchor)) {
+        const auto anchorRegion = std::find_if(
+            regions.begin(), regions.end(), [anchor](const auto& region) {
+                return std::find(region.tiles.begin(),
+                                 region.tiles.end(),
+                                 anchor) != region.tiles.end();
+            });
+        if (anchorRegion != regions.end()) {
+            std::iter_swap(regions.begin(), anchorRegion);
+        }
     }
 
     while (regions.size() > 1) {
-        const Point target = regionCenter(regions.back());
-        carveLine(map, mainCenter, target, rng);
+        const auto connection =
+            nearestRegionConnection(regions.front(), regions);
+        if (connection.regionIndex == 0) {
+            break;
+        }
+        if (style == ConnectivityStyle::Architectural) {
+            carveArchitecturalConnection(
+                map, connection.from, connection.to, rng);
+        } else {
+            carveNaturalConnection(
+                map, connection.from, connection.to, rng, style);
+        }
         ++repaired;
         regions = regionsSortedBySize(findConnectedRegions(map));
-        mainCenter = regionCenter(regions.front());
+        if (isConnectivityPassable(map, anchor)) {
+            const auto anchorRegion = std::find_if(
+                regions.begin(), regions.end(), [anchor](const auto& region) {
+                    return std::find(region.tiles.begin(),
+                                     region.tiles.end(),
+                                     anchor) != region.tiles.end();
+                });
+            if (anchorRegion != regions.end()) {
+                std::iter_swap(regions.begin(), anchorRegion);
+            }
+        }
     }
 
     return repaired;
