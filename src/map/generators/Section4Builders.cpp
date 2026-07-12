@@ -267,16 +267,28 @@ void carveSurfaceExits(Map& map, Point center, int exitMask)
 {
     map.setTile(center.x, center.y, TileType::Floor);
     if ((exitMask & exitNorth) != 0) {
-        carveVertical(map, center.x, 0, center.y);
+        clearWideVertical(map, center.x, 1, center.y, 1);
+        for (int x = center.x - 1; x <= center.x + 1; ++x) {
+            map.setTile(x, 0, TileType::Floor);
+        }
     }
     if ((exitMask & exitEast) != 0) {
-        carveHorizontal(map, center.y, center.x, map.width() - 1);
+        clearWideHorizontal(map, center.y, center.x, map.width() - 2, 1);
+        for (int y = center.y - 1; y <= center.y + 1; ++y) {
+            map.setTile(map.width() - 1, y, TileType::Floor);
+        }
     }
     if ((exitMask & exitSouth) != 0) {
-        carveVertical(map, center.x, center.y, map.height() - 1);
+        clearWideVertical(map, center.x, center.y, map.height() - 2, 1);
+        for (int x = center.x - 1; x <= center.x + 1; ++x) {
+            map.setTile(x, map.height() - 1, TileType::Floor);
+        }
     }
     if ((exitMask & exitWest) != 0) {
-        carveHorizontal(map, center.y, 0, center.x);
+        clearWideHorizontal(map, center.y, 1, center.x, 1);
+        for (int y = center.y - 1; y <= center.y + 1; ++y) {
+            map.setTile(0, y, TileType::Floor);
+        }
     }
 }
 
@@ -546,7 +558,8 @@ MapBuildResult Section4Builders::buildTownOutskirts(int width,
     validateBuilderDimensions("surface-town-outskirts", width, height, 30, 20);
     MapBuildResult result{Map{width, height, TileType::Floor}};
     const Point center{width / 2, height / 2};
-    addWallClumps(result.map, rng, (width * height) / 90, 1, 3);
+    addNaturalClumps(
+        result.map, rng, (width * height) / 110, 2, 4, TileType::Tree);
     clearWideVertical(result.map, center.x, 1, height - 2, 2);
     clearWideHorizontal(result.map, center.y, 1, width - 2, 2);
     addBuilding(result.map, Rect{4, 4, 13, 10}, {Point{12, 7}});
@@ -556,7 +569,7 @@ MapBuildResult Section4Builders::buildTownOutskirts(int width,
     addBuilding(result.map,
                 Rect{center.x - 7, center.y - 4, center.x + 8, center.y + 4},
                 {Point{center.x, center.y + 3}});
-    sealMapEdges(result.map);
+    sealMapEdges(result.map, TileType::Tree);
     carveSurfaceExits(result.map, center, resolvedExitMask(options));
     result.playerStart = center;
 
@@ -571,17 +584,14 @@ MapBuildResult Section4Builders::buildTownOutskirts(int width,
 }
 
 MapBuildResult Section4Builders::buildSurfaceCardinalTransition(
-    int width,
-    int height,
-    Rng& rng,
-    MapBuildOptions options)
+    int width, int height, Rng& rng, MapBuildOptions options)
 {
     validateBuilderDimensions(
         "surface-cardinal-transition", width, height, 30, 20);
     MapBuildResult result{Map{width, height, TileType::Floor}};
     const Point center{width / 2, height / 2};
     shapeSurfaceRoutes(result.map, rng, options.biomeVariant, center);
-    sealMapEdges(result.map);
+    sealMapEdges(result.map, naturalTileForBiome(options.biomeVariant));
     carveSurfaceExits(result.map, center, resolvedExitMask(options));
     result.playerStart = center;
 
@@ -592,10 +602,7 @@ MapBuildResult Section4Builders::buildSurfaceCardinalTransition(
 }
 
 MapBuildResult Section4Builders::buildSurfaceCornerWilderness(
-    int width,
-    int height,
-    Rng& rng,
-    MapBuildOptions options)
+    int width, int height, Rng& rng, MapBuildOptions options)
 {
     validateBuilderDimensions(
         "surface-corner-wilderness", width, height, 30, 20);
@@ -603,9 +610,14 @@ MapBuildResult Section4Builders::buildSurfaceCornerWilderness(
     const Point center{width / 2, height / 2};
     shapeOpenSurface(result.map, rng, options.biomeVariant, center);
     if (options.biomeVariant == BiomeVariant::DangerousWilds) {
-        addWallClumps(result.map, rng, (width * height) / 85, 1, 3);
+        addNaturalClumps(result.map,
+                         rng,
+                         (width * height) / 100,
+                         2,
+                         4,
+                         naturalTileForBiome(options.biomeVariant));
     }
-    sealMapEdges(result.map);
+    sealMapEdges(result.map, naturalTileForBiome(options.biomeVariant));
     carveSurfaceExits(result.map, center, resolvedExitMask(options));
     result.playerStart = center;
 
@@ -616,30 +628,30 @@ MapBuildResult Section4Builders::buildSurfaceCornerWilderness(
     return result;
 }
 
-MapBuildResult Section4Builders::buildSurfaceRuinPocket(
-    int width,
-    int height,
-    Rng& rng,
-    MapBuildOptions options)
+MapBuildResult Section4Builders::buildSurfaceRuinPocket(int width,
+                                                        int height,
+                                                        Rng& rng,
+                                                        MapBuildOptions options)
 {
     validateBuilderDimensions("surface-ruin-pocket", width, height, 30, 20);
-    MapBuildResult result{Map{width, height, TileType::Wall}};
+    MapBuildResult result{
+        Map{width, height, naturalTileForBiome(options.biomeVariant)}};
     const Point center{width / 2, height / 2};
+    generateNaturalMask(result.map, rng, options.biomeVariant, 50);
+    paintEllipse(result.map, center, 12, 7, TileType::Floor);
+    addBuilding(result.map,
+                Rect{center.x - 9, center.y - 5, center.x - 2, center.y + 1},
+                {Point{center.x - 2, center.y - 1}});
+    addBuilding(result.map,
+                Rect{center.x + 3, center.y - 1, center.x + 10, center.y + 5},
+                {Point{center.x + 3, center.y + 2}});
     carveSurfaceExits(result.map, center, resolvedExitMask(options));
-    carveRect(result.map,
-              Rect{center.x - 12, center.y - 7, center.x - 2, center.y + 2});
-    carveRect(result.map,
-              Rect{center.x + 2, center.y - 2, center.x + 12, center.y + 7});
-    carveRect(result.map,
-              Rect{center.x - 5, center.y + 3, center.x + 5, center.y + 7});
-    carveHorizontal(result.map, center.y, center.x - 4, center.x + 4);
-    carveVertical(result.map, center.x, center.y - 4, center.y + 4);
-    addScatterFloors(result.map, rng, (width * height) / 34, 'c');
     result.playerStart = center;
 
     finishSurfaceRegion(result, rng, "surface-ruin-pocket", options);
     addSpawnRequestIfOpen(result, "goblin", Point{center.x - 5, center.y - 2});
-    addSpawnRequestIfOpen(result, "dwarf_rubble", Point{center.x + 5, center.y + 2});
+    addSpawnRequestIfOpen(
+        result, "dwarf_rubble", Point{center.x + 5, center.y + 2});
     addSpawnRequestIfOpen(
         result, "cursed_dagger", Point{center.x + 2, center.y});
     addBuildStep(result, "role: ruin pocket");
@@ -652,20 +664,14 @@ MapBuildResult Section4Builders::buildSurfaceCaveMouth(int width,
                                                        MapBuildOptions options)
 {
     validateBuilderDimensions("surface-cave-mouth", width, height, 30, 20);
-    MapBuildResult result{Map{width, height, TileType::Wall}};
+    MapBuildResult result{Map{width, height, TileType::Rock}};
     const Point center{width / 2, height / 2};
+    generateNaturalMask(result.map, rng, BiomeVariant::LimestoneRise, 50);
     paintEllipse(result.map, center, 10, 6, TileType::Floor);
-    paintEllipse(result.map,
-                 Point{center.x - 11, center.y + 5},
-                 7,
-                 4,
-                 TileType::Floor);
-    paintEllipse(result.map,
-                 Point{center.x + 12, center.y - 5},
-                 7,
-                 4,
-                 TileType::Floor);
-    addScatterFloors(result.map, rng, (width * height) / 32, 'c');
+    paintEllipse(
+        result.map, Point{center.x - 11, center.y + 5}, 7, 4, TileType::Floor);
+    paintEllipse(
+        result.map, Point{center.x + 12, center.y - 5}, 7, 4, TileType::Floor);
     carveSurfaceExits(result.map, center, resolvedExitMask(options));
     result.playerStart = center;
 
@@ -683,11 +689,10 @@ MapBuildResult Section4Builders::buildSurfaceCaveMouth(int width,
     return result;
 }
 
-MapBuildResult Section4Builders::buildSurfaceCampShrine(
-    int width,
-    int height,
-    Rng& rng,
-    MapBuildOptions options)
+MapBuildResult Section4Builders::buildSurfaceCampShrine(int width,
+                                                        int height,
+                                                        Rng& rng,
+                                                        MapBuildOptions options)
 {
     validateBuilderDimensions("surface-camp-shrine", width, height, 30, 20);
     MapBuildResult result{Map{width, height, TileType::Floor}};
@@ -700,7 +705,7 @@ MapBuildResult Section4Builders::buildSurfaceCampShrine(
     addBuilding(result.map,
                 Rect{center.x + 4, center.y - 5, center.x + 10, center.y + 1},
                 {Point{center.x + 7, center.y + 1}});
-    sealMapEdges(result.map);
+    sealMapEdges(result.map, naturalTileForBiome(options.biomeVariant));
     carveSurfaceExits(result.map, center, resolvedExitMask(options));
     result.playerStart = center;
 
@@ -723,33 +728,25 @@ MapBuildResult Section4Builders::buildSurfaceCampShrine(
 }
 
 MapBuildResult Section4Builders::buildSurfaceResourceHeavy(
-    int width,
-    int height,
-    Rng& rng,
-    MapBuildOptions options)
+    int width, int height, Rng& rng, MapBuildOptions options)
 {
     validateBuilderDimensions("surface-resource-heavy", width, height, 30, 20);
     MapBuildResult result{Map{width, height, TileType::Floor}};
     const Point center{width / 2, height / 2};
     shapeOpenSurface(result.map, rng, options.biomeVariant, center);
     paintEllipse(result.map, center, 7, 4, TileType::Floor);
-    paintEllipse(result.map,
-                 Point{center.x - 13, center.y + 6},
-                 6,
-                 3,
-                 TileType::Floor);
-    paintEllipse(result.map,
-                 Point{center.x + 12, center.y - 6},
-                 6,
-                 3,
-                 TileType::Floor);
-    sealMapEdges(result.map);
+    paintEllipse(
+        result.map, Point{center.x - 13, center.y + 6}, 6, 3, TileType::Floor);
+    paintEllipse(
+        result.map, Point{center.x + 12, center.y - 6}, 6, 3, TileType::Floor);
+    sealMapEdges(result.map, naturalTileForBiome(options.biomeVariant));
     carveSurfaceExits(result.map, center, resolvedExitMask(options));
     result.playerStart = center;
 
     finishSurfaceRegion(result, rng, "surface-resource-heavy", options);
     addBiomeFlavor(result, options.biomeVariant, center, false);
-    addSpawnRequestIfOpen(result, "food_ration", Point{center.x - 2, center.y + 2});
+    addSpawnRequestIfOpen(
+        result, "food_ration", Point{center.x - 2, center.y + 2});
     addSpawnRequestIfOpen(
         result, "healing_potion", Point{center.x + 2, center.y + 2});
     if (isMarshBiome(options.biomeVariant)) {
@@ -773,26 +770,25 @@ MapBuildResult Section4Builders::buildSurfaceResourceHeavy(
 }
 
 MapBuildResult Section4Builders::buildSurfaceDangerEncounter(
-    int width,
-    int height,
-    Rng& rng,
-    MapBuildOptions options)
+    int width, int height, Rng& rng, MapBuildOptions options)
 {
-    validateBuilderDimensions("surface-danger-encounter", width, height, 30, 20);
-    MapBuildResult result{Map{width, height, TileType::Wall}};
+    validateBuilderDimensions(
+        "surface-danger-encounter", width, height, 30, 20);
+    MapBuildResult result{
+        Map{width, height, naturalTileForBiome(options.biomeVariant)}};
     const Point center{width / 2, height / 2};
-    carveRect(result.map,
-              Rect{center.x - 13, center.y - 8, center.x + 14, center.y + 9});
-    paintEllipse(result.map, Point{center.x - 9, center.y + 5}, 5, 3, TileType::Wall);
-    paintEllipse(result.map, Point{center.x + 10, center.y - 5}, 5, 3, TileType::Wall);
-    paintEllipse(result.map, center, 7, 4, TileType::Floor);
+    generateNaturalMask(result.map, rng, options.biomeVariant, 54);
+    paintEllipse(result.map, center, 13, 8, TileType::Floor);
+    addNaturalClumps(
+        result.map, rng, 3, 3, 5, naturalTileForBiome(options.biomeVariant));
+    paintEllipse(result.map, center, 8, 5, TileType::Floor);
     carveSurfaceExits(result.map, center, resolvedExitMask(options));
-    addScatterFloors(result.map, rng, (width * height) / 34, 'p');
     result.playerStart = center;
 
     finishSurfaceRegion(result, rng, "surface-danger-encounter", options);
     addBiomeFlavor(result, options.biomeVariant, center, true);
-    addSpawnRequestIfOpen(result, "fireball_scroll", Point{center.x, center.y + 4});
+    addSpawnRequestIfOpen(
+        result, "fireball_scroll", Point{center.x, center.y + 4});
     addBuildStep(result, "role: danger encounter");
     return result;
 }

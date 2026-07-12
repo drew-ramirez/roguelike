@@ -272,6 +272,31 @@ void setChunkTile(wfc::ChunkPattern& pattern, int x, int y, TileType tile)
     return false;
 }
 
+[[nodiscard]] bool surfaceExitIsThreeTilesWide(const Map& map, int exit)
+{
+    const Point center{map.width() / 2, map.height() / 2};
+    for (int offset = -1; offset <= 1; ++offset) {
+        Point edge;
+        Point inside;
+        if (exit == exitNorth || exit == exitSouth) {
+            const int y = exit == exitNorth ? 0 : map.height() - 1;
+            const int insideY = exit == exitNorth ? 1 : map.height() - 2;
+            edge = Point{center.x + offset, y};
+            inside = Point{center.x + offset, insideY};
+        } else {
+            const int x = exit == exitWest ? 0 : map.width() - 1;
+            const int insideX = exit == exitWest ? 1 : map.width() - 2;
+            edge = Point{x, center.y + offset};
+            inside = Point{insideX, center.y + offset};
+        }
+        if (!isConnectivityPassable(map, edge) ||
+            !isConnectivityPassable(map, inside)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace
 
 void runMapgenTests(TestRunner& runner)
@@ -606,9 +631,12 @@ void runMapgenTests(TestRunner& runner)
                           roles[index].id + " reports its surface id");
             runner.expect(hasBuildStepContaining(result, "role:"),
                           roles[index].id + " records its local role");
-            runner.expect(surfaceExitIsOpen(result.map, exitNorth) &&
-                              surfaceExitIsOpen(result.map, exitEast),
-                          roles[index].id + " preserves requested exits");
+            runner.expect(
+                surfaceExitIsOpen(result.map, exitNorth) &&
+                    surfaceExitIsOpen(result.map, exitEast) &&
+                    surfaceExitIsThreeTilesWide(result.map, exitNorth) &&
+                    surfaceExitIsThreeTilesWide(result.map, exitEast),
+                roles[index].id + " preserves three-tile requested exits");
             runner.expect(hasSpawnRequest(result, roles[index].firstSpawn) &&
                               hasSpawnRequest(result, roles[index].secondSpawn),
                           roles[index].id +
@@ -1166,6 +1194,68 @@ void runMapgenTests(TestRunner& runner)
                               std::to_string(seed));
         }
     }
+
+    {
+        struct SurfaceTarget {
+            std::string id;
+            BiomeVariant biome = BiomeVariant::DryWoods;
+        };
+        const std::vector<SurfaceTarget> targets{
+            {"surface-cardinal-transition", BiomeVariant::DryWoods},
+            {"surface-corner-wilderness", BiomeVariant::DeepGrove},
+            {"surface-ruin-pocket", BiomeVariant::RuinedWoodland},
+            {"surface-cave-mouth", BiomeVariant::LimestoneRise},
+            {"surface-camp-shrine", BiomeVariant::WetWoods},
+            {"surface-resource-heavy", BiomeVariant::LimestoneRise},
+        };
+        const std::array<Rng::Seed, 3> seeds{1U, 42U, 4242U};
+        for (const auto& target : targets) {
+            for (const Rng::Seed seed : seeds) {
+                MapBuildOptions options;
+                options.biomeVariant = target.biome;
+                options.exitMask = exitNorth | exitEast | exitSouth | exitWest;
+                Rng rng{seed};
+                const auto result =
+                    buildMapById(target.id, 80, 43, rng, options);
+                const auto metrics = measureMapQuality(result.map);
+                runner.expect(metrics.walkableCoverage >= 0.50 &&
+                                  metrics.walkableCoverage <= 0.68 &&
+                                  metrics.narrowPercent <= 0.18 &&
+                                  metrics.disconnectedRegions == 0 &&
+                                  metrics.tinyBlockerComponents == 0,
+                              target.id +
+                                  " meets surface quality targets for seed " +
+                                  std::to_string(seed));
+            }
+        }
+
+        for (const Rng::Seed seed : seeds) {
+            MapBuildOptions options;
+            options.biomeVariant = BiomeVariant::DryWoods;
+            options.exitMask = exitNorth | exitEast | exitSouth | exitWest;
+            Rng townRng{seed};
+            const auto town = buildMapById(
+                "surface-town-outskirts", 80, 43, townRng, options);
+            const auto townMetrics = measureMapQuality(town.map);
+            runner.expect(townMetrics.walkableCoverage >= 0.65 &&
+                              townMetrics.walkableCoverage <= 0.82,
+                          "town outskirts preserves broad streets for seed " +
+                              std::to_string(seed));
+
+            options.biomeVariant = BiomeVariant::DangerousWilds;
+            options.dangerEncounter = true;
+            Rng dangerRng{seed};
+            const auto danger = buildMapById(
+                "surface-danger-encounter", 80, 43, dangerRng, options);
+            const auto dangerMetrics = measureMapQuality(danger.map);
+            runner.expect(dangerMetrics.narrowPercent <= 0.28 &&
+                              dangerMetrics.disconnectedRegions == 0 &&
+                              dangerMetrics.tinyBlockerComponents == 0,
+                          "danger surface keeps a traversable arena for seed " +
+                              std::to_string(seed));
+        }
+    }
+
     {
         struct OpennessLimit {
             std::string id;
