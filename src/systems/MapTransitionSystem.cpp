@@ -340,9 +340,9 @@ bool tryEnterSurfaceScreen(entt::registry& registry,
     }
 
     const auto* entered = worldCellAt(resources.world, macro);
-    const bool landmarkWasUnlocked =
-        entered != nullptr && entered->landmark.has_value() &&
-        entered->landmark->fastTravelUnlocked;
+    const bool landmarkWasUnlocked = entered != nullptr &&
+                                     entered->landmark.has_value() &&
+                                     entered->landmark->fastTravelUnlocked;
     updateCurrentWorldRegion(resources.world);
     if (!landmarkWasUnlocked &&
         unlockCurrentLandmarkFastTravel(resources.world)) {
@@ -352,6 +352,58 @@ bool tryEnterSurfaceScreen(entt::registry& registry,
         resources.log.add("Entered " + entered->name + ".");
     }
     updateVisibility(registry, map, resources.player, fovProvider);
+    return true;
+}
+
+bool regenerateCurrentSurfaceScreen(entt::registry& registry,
+                                    GameResources& resources,
+                                    Map& map)
+{
+    if (!resources.world.active || !resources.world.onSurface ||
+        !resources.world.surfaceRegenerationRequired) {
+        return true;
+    }
+
+    const auto* cell =
+        worldCellAt(resources.world, resources.world.currentMacro);
+    if (cell == nullptr || resources.player == entt::null ||
+        !registry.valid(resources.player) ||
+        !registry.all_of<Position>(resources.player)) {
+        return false;
+    }
+
+    const auto descriptor =
+        describeLocalScreen(resources.world,
+                            resources.world.currentMacro,
+                            resources.world.currentScreen,
+                            resources.world.currentDangerEncounter);
+    destroyLevelLocalEntities(registry, resources.player);
+    Rng localRng{surfaceScreenSeed(*cell,
+                                   resources.world.currentScreen,
+                                   resources.world.currentDangerEncounter)};
+    auto build = buildMapById(descriptor.builderId,
+                              map.width(),
+                              map.height(),
+                              localRng,
+                              surfaceBuildOptions(*cell, descriptor));
+    map = std::move(build.map);
+    [[maybe_unused]] const auto requested =
+        spawnRequestedEntities(registry,
+                               build.spawnRequests,
+                               map,
+                               build.playerStart,
+                               build.stairsPosition);
+    populateAllVendorStock(registry, defaultRawDatabase());
+
+    auto& position = registry.get<Position>(resources.player);
+    position.x = build.playerStart.x;
+    position.y = build.playerStart.y;
+    if (registry.all_of<Viewshed>(resources.player)) {
+        registry.patch<Viewshed>(resources.player, [](Viewshed& viewshed) {
+            viewshed.dirty = true;
+        });
+    }
+    resources.world.surfaceRegenerationRequired = false;
     return true;
 }
 

@@ -24,6 +24,7 @@ namespace rl {
 inline constexpr int worldMapWidth = 8;
 inline constexpr int worldMapHeight = 6;
 inline constexpr int localScreenGridSize = 3;
+inline constexpr int currentSurfaceGenerationVersion = 2;
 
 inline constexpr int exitNorth = 1 << 0;
 inline constexpr int exitEast = 1 << 1;
@@ -169,6 +170,8 @@ struct WorldMapState {
     std::map<std::string, WorldRegionDescriptor> regions;
     std::map<SurfaceScreenKey, SurfaceScreenState> surfaceScreens;
     std::optional<Point> pendingLocalTravel;
+    int surfaceGenerationVersion = currentSurfaceGenerationVersion;
+    bool surfaceRegenerationRequired = false;
 };
 
 } // namespace rl

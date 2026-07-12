@@ -332,6 +332,70 @@ void runSaveLoadTests(TestRunner& runner)
     }
     runner.expect(loadedMagic,
                   "load restores magic curse and status components");
+
+    {
+        entt::registry oldRegistry;
+        GameResources oldResources;
+        oldResources.player = spawnPlayer(oldRegistry, Point{2, 2});
+        oldResources.world = generateWorldMap(oldResources.rng.seed());
+        oldResources.world.active = true;
+        oldResources.world.onSurface = true;
+        oldResources.world.currentMacro = reedfenWorldPosition();
+        oldResources.world.currentScreen = Point{0, 1};
+        oldResources.world.currentDangerEncounter = false;
+        updateCurrentWorldRegion(oldResources.world);
+
+        const auto obsolete = oldRegistry.create();
+        oldRegistry.emplace<Name>(obsolete, Name{"Obsolete surface marker"});
+        oldRegistry.emplace<Position>(obsolete, Position{4, 4});
+        oldRegistry.emplace<Prop>(obsolete);
+
+        SurfaceScreenState stale;
+        stale.key =
+            SurfaceScreenKey{reedfenWorldPosition(), Point{1, 1}, false};
+        stale.builderId = "surface-camp-shrine";
+        stale.map = Map{80, 43, TileType::Wall};
+        oldResources.world.surfaceScreens.emplace(stale.key, std::move(stale));
+
+        Map oldSurface{80, 43, TileType::Floor};
+        auto archive = save::Json::parse(
+            serializeGame(oldRegistry, oldResources, oldSurface));
+        archive["version"] = 8;
+        archive["resources"]["world"].erase("surface_generation_version");
+
+        entt::registry migratedRegistry;
+        GameResources migratedResources;
+        Map migratedMap{1, 1};
+        runner.expect(deserializeGame(archive.dump(),
+                                      migratedRegistry,
+                                      migratedResources,
+                                      migratedMap),
+                      "older surface save migrates successfully");
+
+        bool foundObsoleteMarker = false;
+        for (const auto entity : migratedRegistry.view<const Name>()) {
+            foundObsoleteMarker = foundObsoleteMarker ||
+                                  migratedRegistry.get<Name>(entity).value ==
+                                      "Obsolete surface marker";
+        }
+        int reeds = 0;
+        for (int y = 0; y < migratedMap.height(); ++y) {
+            for (int x = 0; x < migratedMap.width(); ++x) {
+                reeds +=
+                    migratedMap.tileAt(x, y) == TileType::DenseReeds ? 1 : 0;
+            }
+        }
+        const auto& migratedPosition =
+            migratedRegistry.get<Position>(migratedResources.player);
+        runner.expect(
+            migratedResources.world.surfaceScreens.empty() &&
+                !migratedResources.world.surfaceRegenerationRequired &&
+                !foundObsoleteMarker && reeds > 0 &&
+                migratedPosition.x == migratedMap.width() / 2 &&
+                migratedPosition.y == migratedMap.height() / 2,
+            "surface migration discards stale screens and local "
+            "entities then regenerates deterministic terrain");
+    }
 }
 
 } // namespace rl::test

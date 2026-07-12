@@ -50,4 +50,9 @@ enum class LevelArrivalMode { DownStairs, UpStairs, PortalReturn };
                                          Point screen,
                                          bool dangerEncounter = false);
 
+/** Rebuilds the active surface screen after a generation-version migration. */
+[[nodiscard]] bool regenerateCurrentSurfaceScreen(entt::registry& registry,
+                                                  GameResources& resources,
+                                                  Map& map);
+
 } // namespace rl

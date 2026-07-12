@@ -187,6 +187,7 @@ void applyRegionProgress(WorldMapState& world, const Json& json)
                 {"cursor", pointToJson(world.cursor)},
                 {"current_region_id", world.currentRegionId},
                 {"underground_entry_depth", world.undergroundEntryDepth},
+                {"surface_generation_version", currentSurfaceGenerationVersion},
                 {"cells", std::move(cells)},
                 {"regions", std::move(regions)},
                 {"surface_screens", std::move(surfaceScreens)}};
@@ -241,11 +242,18 @@ void applyRegionProgress(WorldMapState& world, const Json& json)
         applyRegionProgress(world, region);
     }
 
+    const int savedSurfaceVersion = json.value("surface_generation_version", 0);
+    world.surfaceGenerationVersion = currentSurfaceGenerationVersion;
+    world.surfaceRegenerationRequired =
+        savedSurfaceVersion != currentSurfaceGenerationVersion &&
+        world.onSurface;
     world.surfaceScreens.clear();
-    for (const auto& savedScreen :
-         json.value("surface_screens", Json::array())) {
-        auto screen = surfaceScreenFromJson(savedScreen);
-        world.surfaceScreens.emplace(screen.key, std::move(screen));
+    if (savedSurfaceVersion == currentSurfaceGenerationVersion) {
+        for (const auto& savedScreen :
+             json.value("surface_screens", Json::array())) {
+            auto screen = surfaceScreenFromJson(savedScreen);
+            world.surfaceScreens.emplace(screen.key, std::move(screen));
+        }
     }
 
     if (currentWorldRegion(world) == nullptr) {
