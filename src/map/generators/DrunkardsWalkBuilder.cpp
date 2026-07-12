@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <stdexcept>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "map/MapBrush.hpp"
 #include "map/MapBuilderCommon.hpp"
@@ -20,14 +22,31 @@
 namespace rl {
 namespace {
 
-[[nodiscard]] Point startDigger(
-    Point playerStart, int width, int height, DrunkSpawnMode mode, Rng& rng)
+[[nodiscard]] Point
+startDigger(const Map& map, Point playerStart, DrunkSpawnMode mode, Rng& rng)
 {
     if (mode == DrunkSpawnMode::StartingPoint) {
         return playerStart;
     }
 
-    return randomInteriorPoint(width, height, rng);
+    std::vector<Point> frontierFloors;
+    for (const Point floor : floorTiles(map)) {
+        bool touchesRock = false;
+        for (const Point neighbor : cardinalNeighbors(floor)) {
+            if (map.inBounds(neighbor.x, neighbor.y) &&
+                tileTraits(map.tileAt(neighbor.x, neighbor.y)).blocksMovement) {
+                touchesRock = true;
+                break;
+            }
+        }
+        if (touchesRock) {
+            frontierFloors.push_back(floor);
+        }
+    }
+    const auto starts =
+        frontierFloors.empty() ? floorTiles(map) : std::move(frontierFloors);
+    return starts[static_cast<std::size_t>(
+        rng.rangeInclusive(0, static_cast<int>(starts.size()) - 1))];
 }
 
 [[nodiscard]] std::string settingLabel(const DrunkardSettings& settings)
@@ -39,6 +58,29 @@ namespace {
     label += " floor " + std::to_string(settings.floorPercent);
     label += " brush " + std::to_string(settings.brushSize);
     return label;
+}
+
+void staggerPersistent(
+    Point& point, Point& heading, int width, int height, Rng& rng)
+{
+    if (heading == Point{} || rng.rangeInclusive(1, 100) <= 28) {
+        switch (rng.rangeInclusive(0, 3)) {
+        case 0:
+            heading = Point{1, 0};
+            break;
+        case 1:
+            heading = Point{-1, 0};
+            break;
+        case 2:
+            heading = Point{0, 1};
+            break;
+        default:
+            heading = Point{0, -1};
+            break;
+        }
+    }
+    point.x = std::clamp(point.x + heading.x, 1, width - 2);
+    point.y = std::clamp(point.y + heading.y, 1, height - 2);
 }
 
 } // namespace
@@ -69,7 +111,7 @@ DrunkardSettings DrunkardsWalkBuilder::windingPassagesSettings() noexcept
 {
     return DrunkardSettings{
         DrunkSpawnMode::Random,
-        100,
+        60,
         0.4,
         1,
         Symmetry::None,
@@ -94,7 +136,7 @@ DrunkardSettings DrunkardsWalkBuilder::fearfulSymmetrySettings() noexcept
         100,
         0.4,
         1,
-        Symmetry::Both,
+        Symmetry::Quad,
     };
 }
 
@@ -120,7 +162,7 @@ DrunkardsWalkBuilder::buildWithSettings(int width,
         throw std::invalid_argument("Invalid drunkard walk settings");
     }
 
-    MapBuildResult result{Map{width, height, TileType::Wall}, {}, {}};
+    MapBuildResult result{Map{width, height, TileType::Rock}, {}, {}};
     result.builderName = "drunkard";
     result.playerStart = Point{width / 2, height / 2};
     result.map.setTile(
@@ -137,10 +179,14 @@ DrunkardsWalkBuilder::buildWithSettings(int width,
            diggerCount < diggerLimit) {
         bool didSomething = false;
         Point digger = startDigger(
-            result.playerStart, width, height, settings.spawnMode, rng);
+            result.map, result.playerStart, settings.spawnMode, rng);
+        Point heading;
+        const bool winding = settings.spawnMode == DrunkSpawnMode::Random &&
+                             settings.drunkenLifetime <= 100;
 
         for (int life = settings.drunkenLifetime; life > 0; --life) {
-            if (result.map.tileAt(digger.x, digger.y) == TileType::Wall) {
+            if (tileTraits(result.map.tileAt(digger.x, digger.y))
+                    .blocksMovement) {
                 didSomething = true;
             }
             paintBrushSize(result.map,
@@ -148,7 +194,14 @@ DrunkardsWalkBuilder::buildWithSettings(int width,
                            TileType::Floor,
                            settings.brushSize,
                            settings.symmetry);
-            staggerCardinal(digger, width, height, rng);
+            if (countFloorTiles(result.map) >= desiredFloors) {
+                break;
+            }
+            if (winding) {
+                staggerPersistent(digger, heading, width, height, rng);
+            } else {
+                staggerCardinal(digger, width, height, rng);
+            }
         }
 
         if (didSomething) {
@@ -161,8 +214,8 @@ DrunkardsWalkBuilder::buildWithSettings(int width,
         ++diggerCount;
     }
 
-    cullUnreachable(result.map, result.playerStart);
-    sealMapEdges(result.map);
+    cullUnreachable(result.map, result.playerStart, TileType::Rock);
+    sealMapEdges(result.map, TileType::Rock);
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);

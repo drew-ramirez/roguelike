@@ -13,8 +13,10 @@
 
 namespace rl {
 
+/** Selects whether each digger begins centrally or on reachable frontier. */
 enum class DrunkSpawnMode { StartingPoint, Random };
 
+/** Controls coverage, passage width, and symmetry for walker-carved caves. */
 struct DrunkardSettings {
     DrunkSpawnMode spawnMode = DrunkSpawnMode::StartingPoint;
     int drunkenLifetime = 400;
@@ -23,6 +25,7 @@ struct DrunkardSettings {
     Symmetry symmetry = Symmetry::None;
 };
 
+/** Builds contiguous water-carved caverns with a selected passage identity. */
 class DrunkardsWalkBuilder {
   public:
     [[nodiscard]] static MapBuildResult
@@ -38,10 +41,15 @@ class DrunkardsWalkBuilder {
                       const DrunkardSettings& settings,
                       MapBuildOptions options = MapBuildOptions{});
 
+    /** Favors one broad cave grown from the central start. */
     [[nodiscard]] static DrunkardSettings openAreaSettings() noexcept;
+    /** Distributes long-lived diggers across reachable open halls. */
     [[nodiscard]] static DrunkardSettings openHallsSettings() noexcept;
+    /** Uses short-lived diggers for narrow, winding passages. */
     [[nodiscard]] static DrunkardSettings windingPassagesSettings() noexcept;
+    /** Widens winding passages with a larger carving brush. */
     [[nodiscard]] static DrunkardSettings fatPassagesSettings() noexcept;
+    /** Mirrors winding excavation across both axes for a designed space. */
     [[nodiscard]] static DrunkardSettings fearfulSymmetrySettings() noexcept;
 };
 

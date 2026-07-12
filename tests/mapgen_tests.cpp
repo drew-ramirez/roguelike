@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -1086,6 +1087,44 @@ void runMapgenTests(TestRunner& runner)
                           "cellular removes disconnected floors and rock "
                           "specks for seed " +
                               std::to_string(seed));
+        }
+    }
+    {
+        struct Target {
+            std::string id;
+            double coverage = 0.0;
+            double tolerance = 0.0;
+        };
+        const std::vector<Target> targets{
+            {"drunkard", 0.40, 0.03},
+            {"drunkard-open-area", 0.50, 0.03},
+            {"drunkard-open-halls", 0.50, 0.03},
+            {"drunkard-winding-passages", 0.40, 0.03},
+            {"drunkard-fat-passages", 0.40, 0.03},
+            {"drunkard-symmetry", 0.40, 0.03},
+            {"dla", 0.25, 0.02},
+            {"dla-walk-inwards", 0.25, 0.02},
+            {"dla-walk-outwards", 0.25, 0.02},
+            {"dla-central-attractor", 0.25, 0.02},
+            {"dla-insectoid", 0.25, 0.02},
+        };
+        const std::array<Rng::Seed, 3> seeds{1U, 42U, 4242U};
+        for (const auto& target : targets) {
+            for (const Rng::Seed seed : seeds) {
+                Rng rng{seed};
+                const auto result =
+                    buildMapById(target.id, 80, 43, rng, MapBuildOptions{});
+                const auto metrics = measureMapQuality(result.map);
+                runner.expect(
+                    std::abs(metrics.walkableCoverage - target.coverage) <=
+                        target.tolerance,
+                    target.id + " reaches retained floor target for seed " +
+                        std::to_string(seed));
+                runner.expect(metrics.disconnectedRegions == 0,
+                              target.id +
+                                  " keeps random growth connected for seed " +
+                                  std::to_string(seed));
+            }
         }
     }
     {
