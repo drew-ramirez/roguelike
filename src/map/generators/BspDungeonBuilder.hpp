@@ -12,6 +12,7 @@
 
 namespace rl {
 
+/** Builds evenly distributed constructed rooms through recursive division. */
 class BspDungeonBuilder {
   public:
     [[nodiscard]] static MapBuildResult
