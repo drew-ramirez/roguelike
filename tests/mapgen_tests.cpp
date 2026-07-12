@@ -504,6 +504,26 @@ void runMapgenTests(TestRunner& runner)
     }
 
     {
+        Map map{7, 5, TileType::Floor};
+        map.setTile(1, 2, TileType::Tree);
+        map.setTile(3, 2, TileType::DenseReeds);
+        map.setTile(5, 2, TileType::Rock);
+        runner.expect(map.blocksMovement(1, 2) && map.blocksSight(1, 2) &&
+                          map.blocksMovement(3, 2) && map.blocksSight(3, 2) &&
+                          map.blocksMovement(5, 2) && map.blocksSight(5, 2),
+                      "natural terrain blocks movement and sight");
+        runner.expect(!isConnectivityPassable(TileType::Tree) &&
+                          !isConnectivityPassable(TileType::DenseReeds) &&
+                          !isConnectivityPassable(TileType::Rock),
+                      "natural terrain is excluded from connectivity");
+        runner.expect(isNaturalBlocker(TileType::Tree) &&
+                          isNaturalBlocker(TileType::DenseReeds) &&
+                          isNaturalBlocker(TileType::Rock) &&
+                          !isNaturalBlocker(TileType::Wall),
+                      "tile traits distinguish natural and constructed walls");
+    }
+
+    {
         struct SurfaceRoleContent {
             std::string id;
             BiomeVariant biome = BiomeVariant::DryWoods;

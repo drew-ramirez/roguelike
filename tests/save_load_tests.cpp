@@ -9,6 +9,7 @@
 #include "ecs/Components.hpp"
 #include "raws/RawDatabase.hpp"
 #include "save/SaveGame.hpp"
+#include "save/SaveTypes.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/RawSpawner.hpp"
@@ -26,6 +27,9 @@ void runSaveLoadTests(TestRunner& runner)
     map.setTile(6, 3, TileType::UpStairs);
     map.setTile(3, 3, TileType::ClosedDoor);
     map.setTile(4, 3, TileType::OpenDoor);
+    map.setTile(1, 4, TileType::Tree);
+    map.setTile(2, 4, TileType::DenseReeds);
+    map.setTile(3, 4, TileType::Rock);
     map.setRevealed(2, 2, true);
 
     entt::registry registry;
@@ -208,6 +212,10 @@ void runSaveLoadTests(TestRunner& runner)
     runner.expect(loadedMap.tileAt(3, 3) == TileType::ClosedDoor &&
                       loadedMap.tileAt(4, 3) == TileType::OpenDoor,
                   "load restores door tile state");
+    runner.expect(loadedMap.tileAt(1, 4) == TileType::Tree &&
+                      loadedMap.tileAt(2, 4) == TileType::DenseReeds &&
+                      loadedMap.tileAt(3, 4) == TileType::Rock,
+                  "load round-trips every natural terrain tile");
     runner.expect(loadedMap.isRevealed(2, 2), "load restores revealed memory");
     runner.expect(loadedRegistry.valid(loadedResources.player),
                   "load restores player entity");

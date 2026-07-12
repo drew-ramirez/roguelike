@@ -23,6 +23,12 @@ namespace rl::save {
         return "closed_door";
     case TileType::OpenDoor:
         return "open_door";
+    case TileType::Tree:
+        return "tree";
+    case TileType::DenseReeds:
+        return "dense_reeds";
+    case TileType::Rock:
+        return "rock";
     }
     return "wall";
 }
@@ -43,6 +49,15 @@ namespace rl::save {
     }
     if (value == "open_door") {
         return TileType::OpenDoor;
+    }
+    if (value == "tree") {
+        return TileType::Tree;
+    }
+    if (value == "dense_reeds") {
+        return TileType::DenseReeds;
+    }
+    if (value == "rock") {
+        return TileType::Rock;
     }
     return TileType::Wall;
 }
