@@ -880,14 +880,19 @@ MapBuildResult Section4Builders::buildDragonLair(int width,
                                                  MapBuildOptions options)
 {
     validateBuilderDimensions("dragon-lair", width, height, 30, 20);
-    MapBuildResult result{Map{width, height, TileType::Wall}};
+    MapBuildResult result{Map{width, height, TileType::Rock}};
     result.playerStart = Point{width / 2, 2};
-    carveVertical(result.map, width / 2, 2, height - 6);
-    carveRect(result.map,
-              Rect{width / 2 - 8, height - 12, width / 2 + 9, height - 3});
-    addScatterFloors(result.map, rng, (width * height) / 18, 'p');
-    repairConnectivity(result.map, result.playerStart, rng);
-    cullUnreachable(result.map, result.playerStart);
+    generateNaturalMask(result.map, rng, BiomeVariant::LimestoneRise, 53);
+    clearWideVertical(result.map, width / 2, 1, height - 7, 1);
+    paintEllipse(
+        result.map, Point{width / 2, height - 8}, 10, 6, TileType::Floor);
+    paintEllipse(
+        result.map, Point{width / 2 - 13, height - 12}, 5, 3, TileType::Floor);
+    paintEllipse(
+        result.map, Point{width / 2 + 13, height - 12}, 5, 3, TileType::Floor);
+    repairConnectivity(
+        result.map, result.playerStart, rng, ConnectivityStyle::Cave);
+    cullUnreachable(result.map, result.playerStart, TileType::Rock);
     result.spawnRequests.push_back(
         SpawnRequest{"dragon", Point{width / 2, height - 8}});
     addSpawnRequestIfOpen(
@@ -906,13 +911,20 @@ MapBuildResult Section4Builders::buildMushroomEntrance(int width,
                                                        MapBuildOptions options)
 {
     validateBuilderDimensions("mushroom-entrance", width, height, 30, 20);
-    MapBuildResult result{Map{width, height, TileType::Wall}};
+    MapBuildResult result{Map{width, height, TileType::Rock}};
     result.playerStart = Point{width / 2, 2};
-    carveVertical(result.map, width / 2, 2, height - 3);
-    carveHorizontal(result.map, height / 2, width / 2 - 10, width / 2 + 10);
-    addScatterFloors(result.map, rng, (width * height) / 18, 'c');
-    repairConnectivity(result.map, result.playerStart, rng);
-    cullUnreachable(result.map, result.playerStart);
+    generateNaturalMask(result.map, rng, BiomeVariant::LimestoneRise, 51);
+    clearWideVertical(result.map, width / 2, 1, height - 3, 1);
+    paintEllipse(
+        result.map, Point{width / 2, height / 2}, 11, 6, TileType::Floor);
+    paintEllipse(result.map,
+                 Point{width / 2 - 12, height * 2 / 3},
+                 6,
+                 4,
+                 TileType::Floor);
+    repairConnectivity(
+        result.map, result.playerStart, rng, ConnectivityStyle::Cave);
+    cullUnreachable(result.map, result.playerStart, TileType::Rock);
     finalizeRegion(result, "mushroom-entrance", options.recordSnapshots);
     addSpawnRequestIfOpen(
         result, "mushroom_patch", Point{width / 2 - 6, height / 2});
@@ -931,12 +943,22 @@ MapBuildResult Section4Builders::buildMushroomForest(int width,
                                                      MapBuildOptions options)
 {
     validateBuilderDimensions("mushroom-forest", width, height, 30, 20);
-    MapBuildResult result{Map{width, height, TileType::Wall}};
+    MapBuildResult result{Map{width, height, TileType::Rock}};
     result.playerStart = Point{width / 2, 2};
-    carveVertical(result.map, width / 2, 2, height - 3);
-    addScatterFloors(result.map, rng, (width * height) / 20, 'c');
-    repairConnectivity(result.map, result.playerStart, rng);
-    cullUnreachable(result.map, result.playerStart);
+    generateNaturalMask(result.map, rng, BiomeVariant::LimestoneRise, 52);
+    clearWideVertical(result.map, width / 2, 1, height - 3, 1);
+    paintEllipse(
+        result.map, Point{width / 2 - 11, height / 3}, 8, 5, TileType::Floor);
+    paintEllipse(
+        result.map, Point{width / 2 + 12, height / 2}, 9, 5, TileType::Floor);
+    paintEllipse(result.map,
+                 Point{width / 2 - 8, height * 2 / 3},
+                 8,
+                 5,
+                 TileType::Floor);
+    repairConnectivity(
+        result.map, result.playerStart, rng, ConnectivityStyle::Cave);
+    cullUnreachable(result.map, result.playerStart, TileType::Rock);
     finalizeRegion(result, "mushroom-forest", options.recordSnapshots);
     result.spawnRegions = partitionCavernSpawnRegions(
         result.map, result.playerStart, result.stairsPosition);
@@ -955,15 +977,18 @@ MapBuildResult Section4Builders::buildMushroomExit(int width,
                                                    MapBuildOptions options)
 {
     validateBuilderDimensions("mushroom-exit", width, height, 30, 20);
-    MapBuildResult result{Map{width, height, TileType::Wall}};
+    MapBuildResult result{Map{width, height, TileType::Rock}};
     result.playerStart = Point{width / 2, 2};
-    carveVertical(result.map, width / 2, 2, height - 3);
-    carveHorizontal(result.map, height - 7, width / 2 - 12, width / 2 + 12);
-    carveRect(result.map,
-              Rect{width / 2 - 6, height - 11, width / 2 + 7, height - 4});
-    addScatterFloors(result.map, rng, (width * height) / 18, 'c');
-    repairConnectivity(result.map, result.playerStart, rng);
-    cullUnreachable(result.map, result.playerStart);
+    generateNaturalMask(result.map, rng, BiomeVariant::LimestoneRise, 51);
+    clearWideVertical(result.map, width / 2, 1, height - 9, 1);
+    paintEllipse(
+        result.map, Point{width / 2, height - 8}, 13, 6, TileType::Floor);
+    addBuilding(result.map,
+                Rect{width / 2 - 7, height - 12, width / 2 + 8, height - 4},
+                {Point{width / 2, height - 12}});
+    repairConnectivity(
+        result.map, result.playerStart, rng, ConnectivityStyle::Cave);
+    cullUnreachable(result.map, result.playerStart, TileType::Rock);
     finalizeRegion(result, "mushroom-exit", options.recordSnapshots);
     addSpawnRequestIfOpen(
         result, "dark_elf_scout_a", Point{width / 2 - 5, height - 8});
@@ -982,17 +1007,18 @@ MapBuildResult Section4Builders::buildDarkElfCity(int width,
                                                   MapBuildOptions options)
 {
     validateBuilderDimensions("dark-elf-city", width, height, 30, 20);
-    MapBuildResult result{Map{width, height, TileType::Wall}};
+    MapBuildResult result{Map{width, height, TileType::Floor}};
     const int midX = width / 2;
     const int midY = height / 2;
     carveHorizontal(result.map, midY, 1, width - 2);
     carveVertical(result.map, midX, 1, height - 2);
     for (int y = 3; y < height - 6; y += 8) {
         for (int x = 3; x < width - 10; x += 12) {
-            carveRect(result.map, Rect{x, y, x + 7, y + 5});
-            carveHorizontal(result.map, y + 2, x + 6, midX);
+            addBuilding(
+                result.map, Rect{x, y, x + 7, y + 5}, {Point{x + 6, y + 2}});
         }
     }
+    sealMapEdges(result.map);
     result.playerStart = Point{midX, 2};
     addSpawnRequestIfOpen(result, "dark_elf_marksman_a", Point{midX - 6, midY});
     addSpawnRequestIfOpen(result, "dark_elf_blade_b", Point{midX + 6, midY});
