@@ -16,6 +16,7 @@
 #include "map/MapBuilderRegistry.hpp"
 #include "map/MapConnectivity.hpp"
 #include "map/MapGeometry.hpp"
+#include "map/MapQualityMetrics.hpp"
 #include "map/MapValidation.hpp"
 #include "map/generators/BspDungeonBuilder.hpp"
 #include "map/generators/BspInteriorBuilder.hpp"
@@ -1069,6 +1070,24 @@ void runMapgenTests(TestRunner& runner)
         }
     }
 
+    {
+        const std::array<Rng::Seed, 5> seeds{1U, 2U, 7U, 42U, 4242U};
+        for (const Rng::Seed seed : seeds) {
+            Rng rng{seed};
+            const auto result =
+                buildMapById("cellular", 80, 43, rng, MapBuildOptions{});
+            const auto metrics = measureMapQuality(result.map);
+            runner.expect(metrics.walkableCoverage >= 0.28 &&
+                              metrics.walkableCoverage <= 0.50,
+                          "cellular coverage stays cave-like for seed " +
+                              std::to_string(seed));
+            runner.expect(metrics.disconnectedRegions == 0 &&
+                              metrics.tinyBlockerComponents == 0,
+                          "cellular removes disconnected floors and rock "
+                          "specks for seed " +
+                              std::to_string(seed));
+        }
+    }
     {
         struct OpennessLimit {
             std::string id;
