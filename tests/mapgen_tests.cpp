@@ -468,6 +468,42 @@ void runMapgenTests(TestRunner& runner)
     }
 
     {
+        const auto catalog = mapBuilderCatalog();
+        std::vector<std::string_view> catalogIds;
+        catalogIds.reserve(catalog.size());
+        for (const auto& descriptor : catalog) {
+            catalogIds.push_back(descriptor.id);
+        }
+        auto uniqueIds = catalogIds;
+        std::ranges::sort(uniqueIds);
+        uniqueIds.erase(std::ranges::unique(uniqueIds).begin(),
+                        uniqueIds.end());
+        const auto available = availableMapBuilders();
+        const bool catalogMatchesAvailable = std::equal(
+            catalog.begin(),
+            catalog.end(),
+            available.begin(),
+            available.end(),
+            [](const MapBuilderDescriptor& descriptor, const std::string& id) {
+                return descriptor.id == id;
+            });
+        runner.expect(catalog.size() == 41U && uniqueIds.size() == 41U &&
+                          available.size() == catalog.size() &&
+                          catalogMatchesAvailable,
+                      "map builder catalog contains 41 unique builders");
+        runner.expect(
+            mapBuilderDescriptor("simple")->category ==
+                    MapBuilderCategory::Algorithm &&
+                mapBuilderDescriptor("cavern-vaults")->category ==
+                    MapBuilderCategory::Composition &&
+                mapBuilderDescriptor("surface-cave-mouth")->category ==
+                    MapBuilderCategory::Surface &&
+                mapBuilderDescriptor("dragon-lair")->category ==
+                    MapBuilderCategory::DungeonRegion,
+            "map builder catalog groups algorithms, chains, and regions");
+    }
+
+    {
         Map map{9, 9, TileType::Wall};
         const auto both = paintBrush(map,
                                      Point{2, 3},
