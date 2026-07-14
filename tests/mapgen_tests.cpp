@@ -1017,6 +1017,26 @@ void runMapgenTests(TestRunner& runner)
                       "mapgen viewer prints builder id");
         runner.expect(text.find("Validation: ok") != std::string::npos,
                       "mapgen viewer prints validation result");
+        runner.expect(text.find("Quality: coverage") != std::string::npos,
+                      "mapgen viewer prints structural quality metrics");
+
+        MapgenViewerOptions biomeOptions{
+            "surface-corner-wilderness", Rng::Seed{888U}, false, 40, 25};
+        biomeOptions.biomeVariant = BiomeVariant::DryWoods;
+        std::ostringstream dryWoodsOutput;
+        std::ostringstream repeatedDryWoodsOutput;
+        static_cast<void>(runMapgenViewer(biomeOptions, dryWoodsOutput));
+        static_cast<void>(
+            runMapgenViewer(biomeOptions, repeatedDryWoodsOutput));
+
+        biomeOptions.biomeVariant = BiomeVariant::ReedMarsh;
+        std::ostringstream reedMarshOutput;
+        static_cast<void>(runMapgenViewer(biomeOptions, reedMarshOutput));
+
+        runner.expect(dryWoodsOutput.str() == repeatedDryWoodsOutput.str(),
+                      "mapgen viewer remains deterministic for a fixed biome");
+        runner.expect(dryWoodsOutput.str() != reedMarshOutput.str(),
+                      "mapgen viewer applies the selected surface biome");
     }
 
     {

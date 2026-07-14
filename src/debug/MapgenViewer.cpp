@@ -7,11 +7,13 @@
 
 #include "debug/MapgenViewer.hpp"
 
+#include <iomanip>
 #include <ostream>
 #include <stdexcept>
 
 #include "map/Map.hpp"
 #include "map/MapBuilderRegistry.hpp"
+#include "map/MapQualityMetrics.hpp"
 #include "map/MapValidation.hpp"
 #include "map/TileType.hpp"
 
@@ -27,10 +29,18 @@ namespace {
         return '.';
     case TileType::DownStairs:
         return '>';
+    case TileType::UpStairs:
+        return '<';
     case TileType::ClosedDoor:
         return '+';
     case TileType::OpenDoor:
         return '/';
+    case TileType::Tree:
+        return 'T';
+    case TileType::DenseReeds:
+        return '~';
+    case TileType::Rock:
+        return '^';
     }
     return '#';
 }
@@ -54,6 +64,14 @@ void printValidation(std::ostream& output,
     output << "Validation: " << (validation.valid ? "ok" : "failed") << '\n';
     output << "Walkable: " << validation.walkableTiles
            << " Reachable: " << validation.reachableTiles << '\n';
+    const auto metrics = measureMapQuality(map);
+    output << std::fixed << std::setprecision(1) << "Quality: coverage "
+           << metrics.walkableCoverage * 100.0 << "% broad-open "
+           << metrics.broadOpenPercent * 100.0 << "% narrow "
+           << metrics.narrowPercent * 100.0 << "% regions "
+           << metrics.disconnectedRegions + 1 << " chokepoints "
+           << metrics.chokepoints << " tiny-blockers "
+           << metrics.tinyBlockerComponents << '\n';
     for (const auto& error : validation.errors) {
         output << "Error: " << error << '\n';
     }
@@ -75,7 +93,11 @@ int runMapgenViewer(const MapgenViewerOptions& options, std::ostream& output)
 
     Rng rng{options.seed.value_or(Rng::makeSeed())};
     const auto seed = rng.seed();
-    const MapBuildOptions buildOptions{options.showSnapshots};
+    MapBuildOptions buildOptions;
+    buildOptions.recordSnapshots = options.showSnapshots;
+    if (options.biomeVariant.has_value()) {
+        buildOptions.biomeVariant = *options.biomeVariant;
+    }
     const auto result = buildMapById(
         options.builderId, options.width, options.height, rng, buildOptions);
 

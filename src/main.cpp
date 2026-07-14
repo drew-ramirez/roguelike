@@ -36,6 +36,7 @@
 #include "systems/SpatialIndexSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
 #include "ui/Hud.hpp"
+#include "world/WorldGeneration.hpp"
 
 namespace {
 
@@ -111,6 +112,19 @@ parseStringArgument(int argc, char* argv[], std::string_view name)
 std::optional<std::string_view> parseBuilderArgument(int argc, char* argv[])
 {
     return parseStringArgument(argc, argv, "--builder");
+}
+
+std::optional<rl::BiomeVariant> parseBiomeArgument(int argc, char* argv[])
+{
+    const auto biome = parseStringArgument(argc, argv, "--biome");
+    if (!biome.has_value()) {
+        return std::nullopt;
+    }
+    const auto parsed = rl::biomeVariantFromId(*biome);
+    if (rl::biomeVariantId(parsed) != *biome) {
+        throw std::invalid_argument("Unknown biome: " + std::string{*biome});
+    }
+    return parsed;
 }
 
 int parsePositiveIntValue(std::string_view value, std::string_view name)
@@ -594,6 +608,7 @@ int main(int argc, char* argv[])
             options.width = parsePositiveIntArgument(argc, argv, "--width", 40);
             options.height =
                 parsePositiveIntArgument(argc, argv, "--height", 25);
+            options.biomeVariant = parseBiomeArgument(argc, argv);
             return rl::runMapgenViewer(options, std::cout);
         }
 
