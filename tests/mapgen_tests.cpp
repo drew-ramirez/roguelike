@@ -42,6 +42,26 @@ struct OpennessMetrics {
     double openNeighborhoodPercent = 0.0;
 };
 
+[[nodiscard]] bool bufferContains(const ConsoleBuffer& console,
+                                  std::string_view text)
+{
+    if (text.empty()) {
+        return true;
+    }
+    for (int y = 0; y < console.height(); ++y) {
+        std::string row;
+        row.reserve(static_cast<std::size_t>(console.width()));
+        for (int x = 0; x < console.width(); ++x) {
+            const auto glyph = console.cellAt(x, y).glyph;
+            row.push_back(glyph <= 127 ? static_cast<char>(glyph) : '?');
+        }
+        if (row.find(text) != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
 [[nodiscard]] int passableNeighborCount(const Map& map, Point point)
 {
     int count = 0;
@@ -521,6 +541,67 @@ void runMapgenTests(TestRunner& runner)
         runner.expect(selectedMapgenGalleryBuilder(gallery).id == "simple" &&
                           gallery.validation.valid,
                       "gallery exposes its selected validated builder");
+
+        const std::vector<InputEvent> nextBuilder{
+            {InputEventType::KeyDown, Key::Down}};
+        static_cast<void>(updateMapgenGallery(gallery, nextBuilder, 0));
+        runner.expect(selectedMapgenGalleryBuilder(gallery).id == "bsp" &&
+                          gallery.seed == 123U,
+                      "gallery switches builders while preserving the seed");
+
+        const std::vector<InputEvent> play{
+            {InputEventType::KeyDown, Key::Space}};
+        static_cast<void>(updateMapgenGallery(gallery, play, 0));
+        runner.expect(!gallery.paused && gallery.frameIndex == 0U,
+                      "gallery restarts playback when playing from final");
+        static_cast<void>(updateMapgenGallery(gallery, {}, 300));
+        runner.expect(gallery.frameIndex > 0U || gallery.paused,
+                      "gallery advances playback using elapsed time");
+
+        const std::vector<InputEvent> finalFrame{
+            {InputEventType::KeyDown, Key::Enter}};
+        static_cast<void>(updateMapgenGallery(gallery, finalFrame, 0));
+        runner.expect(gallery.paused &&
+                          gallery.frameIndex + 1U == gallery.frames.size(),
+                      "gallery Enter returns to the final frame");
+
+        const std::vector<InputEvent> picker{{InputEventType::KeyDown, Key::B}};
+        static_cast<void>(updateMapgenGallery(gallery, picker, 0));
+        const std::vector<InputEvent> nextCategory{
+            {InputEventType::KeyDown, Key::Right}};
+        static_cast<void>(updateMapgenGallery(gallery, nextCategory, 0));
+        runner.expect(gallery.pickerOpen &&
+                          pickerMapgenGalleryBuilder(gallery).category ==
+                              MapBuilderCategory::Composition,
+                      "gallery picker navigates grouped builder categories");
+        const std::vector<InputEvent> closePicker{
+            {InputEventType::KeyDown, Key::Escape}};
+        static_cast<void>(updateMapgenGallery(gallery, closePicker, 0));
+        runner.expect(!gallery.pickerOpen &&
+                          selectedMapgenGalleryBuilder(gallery).id == "bsp",
+                      "closing the picker preserves the active preview");
+
+        ConsoleBuffer console{80, 50};
+        console.clear();
+        drawMapgenGallery(console, gallery);
+        runner.expect(bufferContains(console, "Gallery") &&
+                          bufferContains(console, "bsp") &&
+                          bufferContains(console, "seed 123") &&
+                          bufferContains(console, "valid"),
+                      "gallery renderer shows builder, seed, and validation");
+
+        const auto oldSeed = gallery.seed;
+        const std::vector<InputEvent> newSeed{
+            {InputEventType::KeyDown, Key::N}};
+        static_cast<void>(updateMapgenGallery(gallery, newSeed, 0));
+        runner.expect(gallery.seed != oldSeed && gallery.error.empty(),
+                      "gallery generates a new shared seed on N");
+
+        const std::vector<InputEvent> escape{
+            {InputEventType::KeyDown, Key::Escape}};
+        runner.expect(updateMapgenGallery(gallery, escape, 0) ==
+                          MapgenGalleryCommand::ReturnToTitle,
+                      "gallery preview returns to the title menu");
     }
 
     {

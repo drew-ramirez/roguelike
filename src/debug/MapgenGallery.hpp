@@ -21,6 +21,10 @@
 
 namespace rl {
 
+class ConsoleBuffer;
+
+enum class MapgenGalleryCommand { None, ReturnToTitle };
+
 struct MapgenGalleryOptions {
     std::string initialBuilderId = "simple";
     std::optional<Rng::Seed> seed;
@@ -51,7 +55,22 @@ struct MapgenGalleryState {
 void openMapgenGallery(MapgenGalleryState& gallery,
                        const MapgenGalleryOptions& options);
 
+/** Updates gallery navigation and deterministic snapshot playback. */
+[[nodiscard]] MapgenGalleryCommand
+updateMapgenGallery(MapgenGalleryState& gallery,
+                    const std::vector<InputEvent>& events,
+                    int elapsedMs,
+                    int frameDurationMs = 300);
+
+/** Draws either the grouped builder picker or current map preview. */
+void drawMapgenGallery(ConsoleBuffer& console,
+                       const MapgenGalleryState& gallery);
+
 [[nodiscard]] const MapBuilderDescriptor&
 selectedMapgenGalleryBuilder(const MapgenGalleryState& gallery);
+[[nodiscard]] const MapBuilderDescriptor&
+pickerMapgenGalleryBuilder(const MapgenGalleryState& gallery);
+[[nodiscard]] const MapSnapshot*
+currentMapgenGalleryFrame(const MapgenGalleryState& gallery);
 
 } // namespace rl
