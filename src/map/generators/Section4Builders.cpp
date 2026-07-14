@@ -242,8 +242,7 @@ bool addSpawnRequestIfOpen(MapBuildResult& result, std::string id, Point point)
 
 [[nodiscard]] bool isMarshBiome(BiomeVariant biome) noexcept
 {
-    return biome == BiomeVariant::ReedMarsh ||
-           biome == BiomeVariant::Sinklands;
+    return biome == BiomeVariant::ReedMarsh || biome == BiomeVariant::Sinklands;
 }
 
 [[nodiscard]] bool isLimestoneBiome(BiomeVariant biome) noexcept

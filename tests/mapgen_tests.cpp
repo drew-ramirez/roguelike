@@ -812,11 +812,8 @@ void runMapgenTests(TestRunner& runner)
         marshCamp.screenRole = LocalScreenRole::CampShrine;
         marshCamp.exitMask = exitNorth | exitEast | exitSouth | exitWest;
         Rng marshCampRng{8081U};
-        const auto marshCampResult = buildMapById("surface-camp-shrine",
-                                                  80,
-                                                  43,
-                                                  marshCampRng,
-                                                  marshCamp);
+        const auto marshCampResult = buildMapById(
+            "surface-camp-shrine", 80, 43, marshCampRng, marshCamp);
         runner.expect(hasSpawnRequest(marshCampResult, "reed_camp") &&
                           hasSpawnRequest(marshCampResult, "reed_mentor"),
                       "surface camp screens request marsh service content");
@@ -1286,6 +1283,7 @@ void runMapgenTests(TestRunner& runner)
                               std::to_string(seed));
         }
     }
+
     {
         struct Target {
             std::string id;
@@ -1324,6 +1322,7 @@ void runMapgenTests(TestRunner& runner)
             }
         }
     }
+
     {
         const std::array<Rng::Seed, 3> seeds{1U, 42U, 4242U};
         for (const Rng::Seed seed : seeds) {
