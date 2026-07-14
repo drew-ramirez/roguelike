@@ -296,6 +296,17 @@ void runPolishPressureTests(TestRunner& runner)
                 MainMenuAction::NewGame,
             "main menu Enter starts a new game by default");
 
+        const std::vector<InputEvent> gallery{
+            {InputEventType::KeyDown, Key::G}};
+        runner.expect(handleMainMenuInput(
+                          gallery, false, MainMenuMode::Title, selection) ==
+                          MainMenuAction::Gallery,
+                      "main menu g opens the map generation gallery");
+        runner.expect(handleMainMenuInput(
+                          gallery, false, MainMenuMode::GameOver, selection) ==
+                          MainMenuAction::None,
+                      "game-over menu does not expose the gallery shortcut");
+
         const std::vector<InputEvent> quit{{InputEventType::KeyDown, Key::Q}};
         runner.expect(
             handleMainMenuInput(quit, true, MainMenuMode::Title, selection) ==

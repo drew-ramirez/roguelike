@@ -18,6 +18,7 @@ enum class RunState {
     ShowTargeting,
     ShowWorldMap,
     MapGeneration,
+    MapGallery,
     GameOver
 };
 

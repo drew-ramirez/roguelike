@@ -71,14 +71,24 @@ Game::Game(std::optional<Rng::Seed> seed,
            int mapWidth,
            int mapHeight,
            bool visualMapgen,
-           MapTheme mapTheme)
+           MapTheme mapTheme,
+           bool startInGallery,
+           BiomeVariant galleryBiome,
+           std::string galleryBuilderId)
     : initialSeed_(seed), builderId_(std::move(builderId)),
-      visualMapgen_(visualMapgen), mapTheme_(std::move(mapTheme)),
+      visualMapgen_(visualMapgen), galleryBiome_(galleryBiome),
+      galleryBuilderId_(std::move(galleryBuilderId)),
+      mapTheme_(std::move(mapTheme)),
       camera_(console_.width(), console_.height() - hudHeight),
       map_(mapWidth, mapHeight, TileType::Wall),
       renderer_(
           std::make_unique<SdlRenderer>(console_.width(), console_.height()))
 {
+    if (startInGallery) {
+        showMapgenGallery();
+        return;
+    }
+
     if (loadExisting &&
         loadGame(defaultSavePath(), registry_, resources_, map_)) {
         resources_.log.add("Loaded saved game.");
@@ -99,6 +109,20 @@ Game::Game(std::optional<Rng::Seed> seed,
     if (visualMapgen_) {
         beginVisualMapgen(seed);
     }
+}
+
+void Game::showMapgenGallery()
+{
+    if (!mapgenGallery_.initialized) {
+        MapgenGalleryOptions options;
+        options.initialBuilderId = galleryBuilderId_;
+        options.seed = initialSeed_;
+        options.width = map_.width();
+        options.height = map_.height();
+        options.buildOptions.biomeVariant = galleryBiome_;
+        openMapgenGallery(mapgenGallery_, options);
+    }
+    state_ = RunState::MapGallery;
 }
 
 void Game::startNewGame(std::optional<Rng::Seed> seed)
@@ -220,6 +244,15 @@ void Game::tickMapGeneration(const std::vector<InputEvent>& events)
     render();
 }
 
+void Game::tickMapgenGallery(const std::vector<InputEvent>& events)
+{
+    if (updateMapgenGallery(mapgenGallery_, events, tickFrameMs) ==
+        MapgenGalleryCommand::ReturnToTitle) {
+        state_ = RunState::MainMenu;
+    }
+    render();
+}
+
 void Game::run()
 {
     while (running_ && !renderer_->shouldQuit()) {
@@ -245,6 +278,11 @@ void Game::tick(const std::vector<InputEvent>& events)
         return;
     }
 
+    if (state_ == RunState::MapGallery) {
+        tickMapgenGallery(events);
+        return;
+    }
+
     if (state_ == RunState::MainMenu || state_ == RunState::GameOver) {
         const bool loadAvailable = std::filesystem::exists(defaultSavePath());
         const MainMenuMode mode = state_ == RunState::MainMenu
@@ -265,6 +303,8 @@ void Game::tick(const std::vector<InputEvent>& events)
                     registry_, map_, resources_.player, fovProvider_);
                 state_ = RunState::AwaitingInput;
             }
+        } else if (action == MainMenuAction::Gallery) {
+            showMapgenGallery();
         } else if (action == MainMenuAction::Quit) {
             running_ = false;
         }
@@ -427,6 +467,11 @@ void Game::render()
     console_.clear();
     if (state_ == RunState::MapGeneration) {
         renderMapGeneration();
+        return;
+    }
+
+    if (state_ == RunState::MapGallery) {
+        drawMapgenGallery(console_, mapgenGallery_);
         return;
     }
 

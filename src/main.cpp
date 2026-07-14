@@ -598,7 +598,17 @@ int main(int argc, char* argv[])
             return runSmoke();
         }
 
-        if (hasArgument(argc, argv, "--mapgen")) {
+        const bool mapgenMode = hasArgument(argc, argv, "--mapgen");
+        const bool galleryMode = hasArgument(argc, argv, "--gallery");
+        const bool loadExisting = hasArgument(argc, argv, "--load");
+        const bool visualMapgen = hasArgument(argc, argv, "--visual-mapgen");
+        if (galleryMode && (mapgenMode || loadExisting || visualMapgen)) {
+            throw std::invalid_argument(
+                "--gallery cannot be combined with --mapgen, --load, or "
+                "--visual-mapgen");
+        }
+
+        if (mapgenMode) {
             rl::MapgenViewerOptions options;
             if (const auto builder = parseBuilderArgument(argc, argv)) {
                 options.builderId = std::string{*builder};
@@ -612,13 +622,29 @@ int main(int argc, char* argv[])
             return rl::runMapgenViewer(options, std::cout);
         }
 
-        std::string builderId = "normal";
-        if (const auto builder = parseBuilderArgument(argc, argv)) {
-            builderId = std::string{*builder};
-        }
+        const auto requestedBuilder = parseBuilderArgument(argc, argv);
+        const std::string galleryBuilderId =
+            galleryMode && requestedBuilder.has_value()
+                ? std::string{*requestedBuilder}
+                : "simple";
+        const std::string builderId =
+            !galleryMode && requestedBuilder.has_value()
+                ? std::string{*requestedBuilder}
+                : "normal";
         if (builderId != "normal" && !rl::isKnownMapBuilder(builderId)) {
             throw std::invalid_argument("Unknown map builder: " + builderId);
         }
+        if (galleryMode && galleryBuilderId == "normal") {
+            throw std::invalid_argument(
+                "Gallery requires a registered builder, not normal routing");
+        }
+        if (galleryMode && !rl::isKnownMapBuilder(galleryBuilderId)) {
+            throw std::invalid_argument("Unknown map builder: " +
+                                        galleryBuilderId);
+        }
+
+        const auto galleryBiome =
+            galleryMode ? parseBiomeArgument(argc, argv) : std::nullopt;
 
         std::string mapThemeId = "default";
         if (const auto mapTheme =
@@ -627,12 +653,15 @@ int main(int argc, char* argv[])
         }
 
         rl::Game game{parseSeedArgument(argc, argv),
-                      hasArgument(argc, argv, "--load"),
+                      loadExisting,
                       builderId,
                       parsePositiveIntArgument(argc, argv, "--width", 80),
                       parsePositiveIntArgument(argc, argv, "--height", 43),
-                      hasArgument(argc, argv, "--visual-mapgen"),
-                      rl::mapThemeById(mapThemeId)};
+                      visualMapgen,
+                      rl::mapThemeById(mapThemeId),
+                      galleryMode,
+                      galleryBiome.value_or(rl::BiomeVariant::DryWoods),
+                      galleryBuilderId};
         game.run();
         return 0;
     } catch (const std::exception& error) {

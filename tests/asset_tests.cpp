@@ -218,7 +218,8 @@ void runAssetTests(TestRunner& runner)
         runner.expect(console.cellAt(2, 2).glyph == U'*',
                       "main menu renders rexpaint title background");
         runner.expect(bufferContains(console, "> New Game") &&
-                          bufferContains(console, "Load Game"),
+                          bufferContains(console, "Load Game") &&
+                          bufferContains(console, "Gallery"),
                       "main menu keeps selectable text over xp background");
 
         std::filesystem::remove(titleText);

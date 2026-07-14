@@ -32,6 +32,9 @@ struct MenuOption {
     if (loadAvailable) {
         options.push_back(MenuOption{"Load Game", MainMenuAction::LoadGame});
     }
+    if (mode == MainMenuMode::Title) {
+        options.push_back(MenuOption{"Gallery", MainMenuAction::Gallery});
+    }
     options.push_back(MenuOption{"Quit", MainMenuAction::Quit});
     return options;
 }
@@ -154,6 +157,8 @@ MainMenuAction handleMainMenuInput(const std::vector<InputEvent>& events,
             return MainMenuAction::NewGame;
         } else if (event.key == Key::L && loadAvailable) {
             return MainMenuAction::LoadGame;
+        } else if (event.key == Key::G && mode == MainMenuMode::Title) {
+            return MainMenuAction::Gallery;
         } else if (event.key == Key::Q || event.key == Key::Escape) {
             return MainMenuAction::Quit;
         }
