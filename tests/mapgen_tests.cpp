@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "core/Rng.hpp"
+#include "debug/MapgenGallery.hpp"
 #include "debug/MapgenPlayback.hpp"
 #include "debug/MapgenViewer.hpp"
 #include "map/MapBrush.hpp"
@@ -501,6 +502,37 @@ void runMapgenTests(TestRunner& runner)
                 mapBuilderDescriptor("dragon-lair")->category ==
                     MapBuilderCategory::DungeonRegion,
             "map builder catalog groups algorithms, chains, and regions");
+    }
+
+    {
+        MapgenGalleryState gallery;
+        MapgenGalleryOptions options;
+        options.initialBuilderId = "simple";
+        options.seed = Rng::Seed{123U};
+        options.width = 40;
+        options.height = 25;
+        openMapgenGallery(gallery, options);
+
+        runner.expect(gallery.seed == 123U && gallery.paused &&
+                          !gallery.frames.empty() &&
+                          gallery.frameIndex + 1U == gallery.frames.size() &&
+                          gallery.error.empty(),
+                      "gallery opens paused on the final generated map");
+        runner.expect(selectedMapgenGalleryBuilder(gallery).id == "simple" &&
+                          gallery.validation.valid,
+                      "gallery exposes its selected validated builder");
+    }
+
+    {
+        MapgenGalleryState gallery;
+        MapgenGalleryOptions options;
+        options.initialBuilderId = "simple";
+        options.seed = Rng::Seed{321U};
+        options.width = 5;
+        options.height = 5;
+        openMapgenGallery(gallery, options);
+        runner.expect(!gallery.error.empty() && gallery.frames.empty(),
+                      "gallery reports builder failures without throwing");
     }
 
     {

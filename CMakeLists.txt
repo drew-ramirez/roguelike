@@ -20,6 +20,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/core/GameLog.cpp
     src/core/Morgue.cpp
     src/core/Rng.cpp
+    src/debug/MapgenGallery.cpp
     src/debug/MapgenPlayback.cpp
     src/debug/MapgenViewer.cpp
     src/fov/ShadowcastingFov.cpp
@@ -167,6 +168,7 @@ set(ROGUELIKE_HEADERS
     src/core/Point.hpp
     src/core/Rng.hpp
     src/core/RunState.hpp
+    src/debug/MapgenGallery.hpp
     src/debug/MapgenPlayback.hpp
     src/debug/MapgenViewer.hpp
     src/ecs/Components.hpp
