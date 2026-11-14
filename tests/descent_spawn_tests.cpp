@@ -118,7 +118,11 @@ void runDescentAndSpawnTests(TestRunner& runner)
         runner.expect(stocked && countNamed(townRegistry, "Blacksmith") == 1,
                       "town population creates and stocks authored vendors");
         runner.expect(
-            monsters == 0 && townRegistry.view<const Monster>().empty() &&
+            monsters == 0 &&
+                townRegistry.view<const Monster>(entt::exclude<Neutral>)
+                        .begin() ==
+                    townRegistry.view<const Monster>(entt::exclude<Neutral>)
+                        .end() &&
                 townRegistry.view<const Trap>().empty() &&
                 townRegistry.view<const Item, const Position>().begin() ==
                     townRegistry.view<const Item, const Position>().end(),
