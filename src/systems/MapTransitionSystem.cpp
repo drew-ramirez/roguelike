@@ -12,10 +12,7 @@
 #include "map/MasterDungeonMap.hpp"
 #include "map/TileType.hpp"
 #include "raws/RawDatabase.hpp"
-#include "spawn/ItemSpawner.hpp"
-#include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "spawn/TrapSpawner.hpp"
 #include "systems/VendorSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
 #include "world/WorldGeneration.hpp"
@@ -64,42 +61,6 @@ buildTargetLevel(GameResources& resources, Map& map, int targetDepth)
                         map.height(),
                         resources.rng,
                         MapBuildOptions{false, targetDepth});
-}
-
-void spawnGeneratedLevelEntities(entt::registry& registry,
-                                 GameResources& resources,
-                                 Map& map,
-                                 const MapBuildResult& build)
-{
-    [[maybe_unused]] const auto requested =
-        spawnRequestedEntities(registry,
-                               build.spawnRequests,
-                               map,
-                               build.playerStart,
-                               build.stairsPosition);
-    populateAllVendorStock(registry, defaultRawDatabase());
-    if (resources.mapBuilderId == "normal" && resources.depth == 1) {
-        return;
-    }
-    [[maybe_unused]] const auto monsters = spawnMonsters(registry,
-                                                         build.spawnRegions,
-                                                         map,
-                                                         resources.rng,
-                                                         build.playerStart,
-                                                         resources.depth);
-    [[maybe_unused]] const auto items = spawnItems(registry,
-                                                   build.spawnRegions,
-                                                   map,
-                                                   resources.rng,
-                                                   build.playerStart,
-                                                   resources.depth);
-    [[maybe_unused]] const auto traps = spawnTraps(registry,
-                                                   build.spawnRegions,
-                                                   map,
-                                                   resources.rng,
-                                                   build.playerStart,
-                                                   build.stairsPosition,
-                                                   resources.depth);
 }
 
 [[nodiscard]] Point arrivalPosition(const Map& map,
@@ -213,7 +174,8 @@ bool tryChangeLevel(entt::registry& registry,
     } else {
         generated = buildTargetLevel(resources, map, targetDepth);
         map = std::move(generated->map);
-        spawnGeneratedLevelEntities(registry, resources, map, *generated);
+        [[maybe_unused]] const auto monsters =
+            populateGeneratedLevel(registry, resources, map, *generated);
     }
 
     const Point arrival = arrivalPosition(

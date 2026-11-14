@@ -1,6 +1,7 @@
 #include "TestSuites.hpp"
 
 #include <algorithm>
+#include <iterator>
 #include <string>
 
 #include <entt/entt.hpp>
@@ -16,6 +17,7 @@
 #include "spawn/Spawner.hpp"
 #include "systems/EquipmentSystem.hpp"
 #include "systems/MapTransitionSystem.hpp"
+#include "systems/VendorSystem.hpp"
 
 namespace rl::test {
 namespace {
@@ -89,6 +91,60 @@ void runDescentAndSpawnTests(TestRunner& runner)
                     monsterSpawnTable().end(),
                     [](const SpawnEntry& entry) { return entry.minDepth > 1; }),
         "spawn table has depth-gated entries");
+
+    {
+        Rng buildRng{606U};
+        auto townBuild = SimpleMapBuilder::build(40, 25, buildRng);
+        const auto& tiles = townBuild.spawnRegions[1].tiles;
+        const auto vendorPoint =
+            *std::find_if(tiles.begin(), tiles.end(), [&](Point point) {
+                return point != townBuild.playerStart &&
+                       point != townBuild.stairsPosition &&
+                       townBuild.map.isWalkable(point.x, point.y);
+            });
+        townBuild.spawnRequests.push_back({"blacksmith", vendorPoint});
+        entt::registry townRegistry;
+        GameResources townResources;
+        townResources.rng.reseed(42U);
+        Rng untouchedRng{42U};
+        townResources.player = spawnPlayer(townRegistry, townBuild.playerStart);
+        const auto monsters = populateGeneratedLevel(
+            townRegistry, townResources, townBuild.map, townBuild);
+        const auto vendors = townRegistry.view<const Vendor>();
+        bool stocked = false;
+        for (const auto vendor : vendors) {
+            stocked = stocked || !vendorStock(townRegistry, vendor).empty();
+        }
+        runner.expect(stocked && countNamed(townRegistry, "Blacksmith") == 1,
+                      "town population creates and stocks authored vendors");
+        runner.expect(
+            monsters == 0 && townRegistry.view<const Monster>().empty() &&
+                townRegistry.view<const Trap>().empty() &&
+                townRegistry.view<const Item, const Position>().begin() ==
+                    townRegistry.view<const Item, const Position>().end(),
+            "town population skips random level entities");
+        runner.expect(townResources.rng.rangeInclusive(0, 100000) ==
+                          untouchedRng.rangeInclusive(0, 100000),
+                      "town population does not consume random spawn rolls");
+    }
+
+    {
+        Rng buildRng{12345U};
+        auto dungeonBuild = SimpleMapBuilder::build(40, 25, buildRng);
+        entt::registry dungeonRegistry;
+        GameResources dungeonResources;
+        dungeonResources.mapBuilderId = "simple";
+        dungeonResources.rng.reseed(9876U);
+        dungeonResources.player =
+            spawnPlayer(dungeonRegistry, dungeonBuild.playerStart);
+        const auto monsters = populateGeneratedLevel(
+            dungeonRegistry, dungeonResources, dungeonBuild.map, dungeonBuild);
+        const auto view = dungeonRegistry.view<const Monster>();
+        const auto actual =
+            static_cast<std::size_t>(std::distance(view.begin(), view.end()));
+        runner.expect(monsters >= 2 && monsters == actual,
+                      "dungeon population reports its spawned monster count");
+    }
 
     Rng itemRng{2222U};
     const auto itemBuild = SimpleMapBuilder::build(40, 25, itemRng);

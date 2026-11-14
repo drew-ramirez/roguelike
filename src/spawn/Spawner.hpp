@@ -10,6 +10,14 @@
 
 namespace rl {
 
+struct GameResources;
+
+/// Populate a generated level and return its random monster count.
+[[nodiscard]] std::size_t populateGeneratedLevel(entt::registry& registry,
+                                                 GameResources& resources,
+                                                 const Map& map,
+                                                 const MapBuildResult& build);
+
 [[nodiscard]] entt::entity spawnPlayer(entt::registry& registry,
                                        Point position);
 [[nodiscard]] std::size_t

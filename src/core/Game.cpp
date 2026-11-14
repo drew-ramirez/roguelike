@@ -19,13 +19,9 @@
 
 #include "ecs/Components.hpp"
 #include "map/MapBuilderRegistry.hpp"
-#include "raws/RawDatabase.hpp"
 #include "render/SdlRenderer.hpp"
 #include "save/SaveGame.hpp"
-#include "spawn/ItemSpawner.hpp"
-#include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "spawn/TrapSpawner.hpp"
 #include "systems/BystanderAI.hpp"
 #include "systems/DamageSystem.hpp"
 #include "systems/HungerSystem.hpp"
@@ -40,7 +36,6 @@
 #include "systems/RenderSystem.hpp"
 #include "systems/SystemScheduler.hpp"
 #include "systems/TrapSystem.hpp"
-#include "systems/VendorSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
 #include "systems/WorldTravelSystem.hpp"
 #include "ui/CampMenu.hpp"
@@ -184,41 +179,12 @@ void Game::commitGeneratedMap(MapBuildResult build)
 {
     map_ = std::move(build.map);
     resources_.player = spawnPlayer(registry_, build.playerStart);
-    [[maybe_unused]] const auto requested =
-        spawnRequestedEntities(registry_,
-                               build.spawnRequests,
-                               map_,
-                               build.playerStart,
-                               build.stairsPosition);
-    populateAllVendorStock(registry_, defaultRawDatabase());
     const bool townStart =
         resources_.mapBuilderId == "normal" && resources_.depth == 1;
     resources_.log.add(townStart ? "Entered the town."
                                  : "Entered the dungeon.");
-    const auto spawned = townStart ? 0
-                                   : spawnMonsters(registry_,
-                                                   build.spawnRegions,
-                                                   map_,
-                                                   resources_.rng,
-                                                   build.playerStart,
-                                                   resources_.depth);
-    [[maybe_unused]] const auto spawnedItems =
-        townStart ? 0
-                  : spawnItems(registry_,
-                               build.spawnRegions,
-                               map_,
-                               resources_.rng,
-                               build.playerStart,
-                               resources_.depth);
-    [[maybe_unused]] const auto spawnedTraps =
-        townStart ? 0
-                  : spawnTraps(registry_,
-                               build.spawnRegions,
-                               map_,
-                               resources_.rng,
-                               build.playerStart,
-                               build.stairsPosition,
-                               resources_.depth);
+    const auto spawned =
+        populateGeneratedLevel(registry_, resources_, map_, build);
     if (spawned > 0) {
         resources_.log.add("You hear movement in the dark.");
     }
