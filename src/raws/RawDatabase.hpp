@@ -50,8 +50,7 @@ class RawDatabase {
     std::unordered_map<std::string, RawFaction> factions_;
     std::unordered_map<std::string, RawIngredient> ingredients_;
     std::unordered_map<std::string, RawRecipe> recipes_;
-    std::unordered_map<std::string, RawBiomeResourceTable>
-        biomeResourceTables_;
+    std::unordered_map<std::string, RawBiomeResourceTable> biomeResourceTables_;
     std::vector<SpawnEntry> monsterSpawnTable_;
     std::vector<SpawnEntry> itemSpawnTable_;
     std::vector<SpawnEntry> propSpawnTable_;

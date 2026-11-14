@@ -6,11 +6,11 @@
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/DamageSystem.hpp"
-#include "systems/SystemScheduler.hpp"
+#include "systems/TurnSystem.hpp"
 
 namespace rl::test {
 
-void runSchedulerTests(TestRunner& runner)
+void runTurnTests(TestRunner& runner)
 {
     {
         auto map = openMap();

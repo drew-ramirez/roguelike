@@ -1,7 +1,7 @@
 /**
  * **************************************************************************
- * @file     SystemScheduler.hpp
- * @brief    Declares deterministic single-threaded turn phase dispatch
+ * @file     TurnSystem.hpp
+ * @brief    Declares deterministic gameplay turn resolution
  * **************************************************************************
  */
 
@@ -16,7 +16,6 @@ namespace rl {
 struct GameResources;
 class IFovProvider;
 class Map;
-class Rng;
 
 void resolveTurnSystems(entt::registry& registry,
                         GameResources& resources,

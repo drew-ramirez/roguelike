@@ -39,7 +39,7 @@ int main()
     runSuite(runner, "faction_tests", rl::test::runFactionTests);
     runSuite(runner, "portal_tests", rl::test::runPortalTests);
     runSuite(runner, "log_tests", rl::test::runLogTests);
-    runSuite(runner, "scheduler_tests", rl::test::runSchedulerTests);
+    runSuite(runner, "turn_tests", rl::test::runTurnTests);
     runSuite(runner, "targeting_tests", rl::test::runTargetingTests);
     runSuite(runner, "ui_tests", rl::test::runUiTests);
     runSuite(runner, "dice_tests", rl::test::runDiceTests);

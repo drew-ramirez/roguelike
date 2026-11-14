@@ -95,14 +95,24 @@ void runDescentAndSpawnTests(TestRunner& runner)
     {
         Rng buildRng{606U};
         auto townBuild = SimpleMapBuilder::build(40, 25, buildRng);
+        runner.expect(townBuild.spawnRegions.size() > 1,
+                      "town fixture has a non-start spawn region");
+        if (townBuild.spawnRegions.size() <= 1) {
+            return;
+        }
         const auto& tiles = townBuild.spawnRegions[1].tiles;
         const auto vendorPoint =
-            *std::find_if(tiles.begin(), tiles.end(), [&](Point point) {
+            std::find_if(tiles.begin(), tiles.end(), [&](Point point) {
                 return point != townBuild.playerStart &&
                        point != townBuild.stairsPosition &&
                        townBuild.map.isWalkable(point.x, point.y);
             });
-        townBuild.spawnRequests.push_back({"blacksmith", vendorPoint});
+        runner.expect(vendorPoint != tiles.end(),
+                      "town fixture has a valid authored vendor position");
+        if (vendorPoint == tiles.end()) {
+            return;
+        }
+        townBuild.spawnRequests.push_back({"blacksmith", *vendorPoint});
         entt::registry townRegistry;
         GameResources townResources;
         townResources.rng.reseed(42U);

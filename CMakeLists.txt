@@ -92,7 +92,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/systems/ShrineRiteSystem.cpp
     src/systems/SpatialIndexSystem.cpp
     src/systems/SpellSystem.cpp
-    src/systems/SystemScheduler.cpp
+    src/systems/TurnSystem.cpp
     src/systems/TrapSystem.cpp
     src/systems/VendorSystem.cpp
     src/systems/VisibilitySystem.cpp
@@ -142,7 +142,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/raws_validation_tests.cpp
     tests/region_routing_tests.cpp
     tests/save_load_tests.cpp
-    tests/scheduler_tests.cpp
+    tests/turn_tests.cpp
     tests/spell_tests.cpp
     tests/spatial_tests.cpp
     tests/targeting_tests.cpp
@@ -253,7 +253,7 @@ set(ROGUELIKE_HEADERS
     src/systems/ShrineRiteSystem.hpp
     src/systems/SpatialIndexSystem.hpp
     src/systems/SpellSystem.hpp
-    src/systems/SystemScheduler.hpp
+    src/systems/TurnSystem.hpp
     src/systems/TrapSystem.hpp
     src/systems/VendorSystem.hpp
     src/systems/VisibilitySystem.hpp

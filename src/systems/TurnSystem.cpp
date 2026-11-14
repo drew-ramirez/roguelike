@@ -1,11 +1,11 @@
 /**
  * **************************************************************************
- * @file     SystemScheduler.cpp
+ * @file     TurnSystem.cpp
  * @brief    Runs gameplay systems in an explicit deterministic order
  * **************************************************************************
  */
 
-#include "systems/SystemScheduler.hpp"
+#include "systems/TurnSystem.hpp"
 
 #include "core/GameResources.hpp"
 #include "fov/IFovProvider.hpp"

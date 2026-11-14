@@ -33,11 +33,14 @@ void runEffectsTests(TestRunner& runner)
         rawEffects, resources.player, entt::null, Point{3, 2});
     runner.expect(queue.resolve(registry, resources, map),
                   "raw damage resolves at a visible target");
-    runner.expect(registry.get<SufferDamage>(first).amount == 6 &&
+    runner.expect(registry.all_of<SufferDamage>(first) &&
+                      registry.all_of<SufferDamage>(second) &&
+                      registry.get<SufferDamage>(first).amount == 6 &&
                       registry.get<SufferDamage>(second).amount == 6 &&
                       !registry.all_of<SufferDamage>(outside),
                   "raw damage affects only targets inside its radius");
     runner.expect(!queue.resolve(registry, resources, map) &&
+                      registry.all_of<SufferDamage>(first) &&
                       registry.get<SufferDamage>(first).amount == 6,
                   "resolving drains the queue");
 
