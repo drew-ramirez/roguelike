@@ -27,6 +27,43 @@ constexpr int unreachable = -1;
     return static_cast<std::size_t>(map.xyIdx(point.x, point.y));
 }
 
+template <typename TilePredicate>
+[[nodiscard]] std::vector<ConnectedRegion>
+collectConnectedRegions(const Map& map, TilePredicate accepts)
+{
+    std::vector<ConnectedRegion> regions;
+    std::vector<bool> visited(static_cast<std::size_t>(map.tileCount()), false);
+    for (int y = 0; y < map.height(); ++y) {
+        for (int x = 0; x < map.width(); ++x) {
+            const Point start{x, y};
+            if (!accepts(map.tileAt(x, y)) || visited[mapIndex(map, start)]) {
+                continue;
+            }
+            ConnectedRegion region;
+            std::vector<Point> frontier{start};
+            visited[mapIndex(map, start)] = true;
+            while (!frontier.empty()) {
+                const Point current = frontier.back();
+                frontier.pop_back();
+                region.tiles.push_back(current);
+                for (const Point next : cardinalNeighbors(current)) {
+                    if (!map.inBounds(next.x, next.y) ||
+                        !accepts(map.tileAt(next.x, next.y))) {
+                        continue;
+                    }
+                    const auto index = mapIndex(map, next);
+                    if (!visited[index]) {
+                        visited[index] = true;
+                        frontier.push_back(next);
+                    }
+                }
+            }
+            regions.push_back(std::move(region));
+        }
+    }
+    return regions;
+}
+
 [[nodiscard]] int distanceSquared(Point left, Point right) noexcept
 {
     const int dx = left.x - right.x;
@@ -193,44 +230,8 @@ int countConnectivityPassableTiles(const Map& map)
 
 std::vector<ConnectedRegion> findConnectedRegions(const Map& map)
 {
-    std::vector<ConnectedRegion> regions;
-    std::vector<bool> visited(
-        static_cast<std::size_t>(map.width() * map.height()), false);
-
-    for (int y = 0; y < map.height(); ++y) {
-        for (int x = 0; x < map.width(); ++x) {
-            const Point start{x, y};
-            if (!isConnectivityPassable(map, start) ||
-                visited[mapIndex(map, start)]) {
-                continue;
-            }
-
-            ConnectedRegion region;
-            std::vector<Point> frontier{start};
-            visited[mapIndex(map, start)] = true;
-
-            while (!frontier.empty()) {
-                const Point current = frontier.back();
-                frontier.pop_back();
-                region.tiles.push_back(current);
-
-                for (const Point next : cardinalNeighbors(current)) {
-                    if (!isConnectivityPassable(map, next)) {
-                        continue;
-                    }
-                    const auto index = mapIndex(map, next);
-                    if (!visited[index]) {
-                        visited[index] = true;
-                        frontier.push_back(next);
-                    }
-                }
-            }
-
-            regions.push_back(std::move(region));
-        }
-    }
-
-    return regions;
+    return collectConnectedRegions(
+        map, [](TileType tile) { return isConnectivityPassable(tile); });
 }
 
 DistanceMap buildDistanceMap(const Map& map, Point start)
@@ -278,7 +279,7 @@ int countReachableTiles(const Map& map, Point start)
                       [](int distance) { return distance != unreachable; }));
 }
 
-std::optional<Point> closestReachableFloorTo(const Map& map, Point target)
+std::optional<Point> closestWalkableFloorTo(const Map& map, Point target)
 {
     std::optional<Point> best;
     int bestDistance = std::numeric_limits<int>::max();
@@ -351,48 +352,31 @@ int cullSmallRegions(Map& map, int maximumSize, TileType replacement)
     return culled;
 }
 
+int countSmallNaturalBlockerComponents(const Map& map, int maximumSize)
+{
+    if (maximumSize < 1) {
+        return 0;
+    }
+    const auto regions = collectConnectedRegions(map, isNaturalBlocker);
+    return static_cast<int>(std::count_if(
+        regions.begin(), regions.end(), [maximumSize](const auto& region) {
+            return static_cast<int>(region.tiles.size()) <= maximumSize;
+        }));
+}
+
 int cullSmallNaturalBlockerComponents(Map& map, int maximumSize)
 {
     if (maximumSize < 1) {
         return 0;
     }
-
-    std::vector<bool> visited(
-        static_cast<std::size_t>(map.width() * map.height()), false);
     int culled = 0;
-    for (int y = 0; y < map.height(); ++y) {
-        for (int x = 0; x < map.width(); ++x) {
-            const Point start{x, y};
-            const auto startIndex = mapIndex(map, start);
-            if (visited[startIndex] || !isNaturalBlocker(map.tileAt(x, y))) {
-                continue;
-            }
-
-            std::vector<Point> component;
-            std::vector<Point> frontier{start};
-            visited[startIndex] = true;
-            while (!frontier.empty()) {
-                const Point current = frontier.back();
-                frontier.pop_back();
-                component.push_back(current);
-                for (const Point next : cardinalNeighbors(current)) {
-                    if (!map.inBounds(next.x, next.y) ||
-                        !isNaturalBlocker(map.tileAt(next.x, next.y))) {
-                        continue;
-                    }
-                    const auto index = mapIndex(map, next);
-                    if (!visited[index]) {
-                        visited[index] = true;
-                        frontier.push_back(next);
-                    }
-                }
-            }
-            if (static_cast<int>(component.size()) <= maximumSize) {
-                for (const Point point : component) {
-                    map.setTile(point.x, point.y, TileType::Floor);
-                    ++culled;
-                }
-            }
+    for (const auto& region : collectConnectedRegions(map, isNaturalBlocker)) {
+        if (static_cast<int>(region.tiles.size()) > maximumSize) {
+            continue;
+        }
+        for (const Point point : region.tiles) {
+            map.setTile(point.x, point.y, TileType::Floor);
+            ++culled;
         }
     }
     return culled;

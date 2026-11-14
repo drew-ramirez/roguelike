@@ -105,7 +105,7 @@ MapBuildResult SimpleMapBuilder::build(int width,
     result.playerStart = result.rooms.front().center();
     if (!result.map.isWalkable(result.playerStart.x, result.playerStart.y)) {
         const auto closest =
-            closestReachableFloorTo(result.map, result.playerStart);
+            closestWalkableFloorTo(result.map, result.playerStart);
         if (!closest.has_value()) {
             throw std::runtime_error(
                 "Map generation placed the player start in a wall");

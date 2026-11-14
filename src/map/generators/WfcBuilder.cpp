@@ -739,7 +739,7 @@ WfcBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
                              options.recordSnapshots);
 
     auto start =
-        closestReachableFloorTo(result.map, Point{width / 2, height / 2});
+        closestWalkableFloorTo(result.map, Point{width / 2, height / 2});
     if (!start.has_value()) {
         result.map.setTile(width / 2, height / 2, TileType::Floor);
         start = Point{width / 2, height / 2};

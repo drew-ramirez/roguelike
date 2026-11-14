@@ -107,7 +107,7 @@ shiftedSurfaceScreen(Point macro, Point screen, Point direction) noexcept
         map.isWalkable(target.x, target.y)) {
         return target;
     }
-    if (const auto closest = closestReachableFloorTo(map, target)) {
+    if (const auto closest = closestWalkableFloorTo(map, target)) {
         return *closest;
     }
     return firstWalkablePoint(map);
