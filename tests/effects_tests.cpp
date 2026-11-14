@@ -5,6 +5,7 @@
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "raws/RawDatabase.hpp"
+#include "spawn/MonsterSpawner.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/EffectSystem.hpp"
@@ -20,24 +21,32 @@ void runEffectsTests(TestRunner& runner)
     GameResources resources;
     resources.player = spawnPlayer(registry, Point{2, 2});
 
+    revealAll(map);
+    const auto first = spawnGoblin(registry, Point{3, 2});
+    const auto second = spawnGoblin(registry, Point{4, 2});
+    const auto outside = spawnGoblin(registry, Point{7, 2});
     RawEffects rawEffects;
     rawEffects.inflictsDamage = 6;
     rawEffects.areaOfEffect = 1;
-    auto queue = effectsQueueForRawEffects(
+    auto queue = EffectsQueue::forRawEffects(
         rawEffects, resources.player, entt::null, Point{3, 2});
-    runner.expect(!queue.empty() && queue.size() == 1,
-                  "effects queue wraps raw effect requests");
-    runner.expect(queue.requests().front().kind == EffectKind::Damage &&
-                      queue.requests().front().amount == 6 &&
-                      queue.requests().front().radius == 1,
-                  "effects queue exposes existing effect request data");
+    runner.expect(queue.resolve(registry, resources, map),
+                  "raw damage resolves at a visible target");
+    runner.expect(registry.get<SufferDamage>(first).amount == 6 &&
+                      registry.get<SufferDamage>(second).amount == 6 &&
+                      !registry.all_of<SufferDamage>(outside),
+                  "raw damage affects only targets inside its radius");
+    runner.expect(!queue.resolve(registry, resources, map) &&
+                      registry.get<SufferDamage>(first).amount == 6,
+                  "resolving drains the queue");
 
+    auto hiddenMap = openMap();
     EffectsQueue revealQueue;
-    revealQueue.push(
+    revealQueue.enqueue(
         EffectRequest{EffectKind::RevealMap, resources.player, entt::null});
-    runner.expect(resolveEffectsQueue(registry, resources, map, revealQueue),
-                  "effects queue resolves through the effect system");
-    runner.expect(map.isRevealed(1, 1),
+    runner.expect(revealQueue.resolve(registry, resources, hiddenMap),
+                  "effects queue resolves reveal");
+    runner.expect(hiddenMap.isRevealed(1, 1),
                   "resolved reveal effect mutates the map");
 
     const auto cursed = spawnNamedEntity(

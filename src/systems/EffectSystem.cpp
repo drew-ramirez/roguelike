@@ -259,66 +259,18 @@ void consumeIfNeeded(entt::registry& registry, entt::entity item)
 
 } // namespace
 
-EffectsQueue::EffectsQueue(std::vector<EffectRequest> requests)
-    : requests_(std::move(requests))
-{
-}
-
-void EffectsQueue::push(EffectRequest request)
+void EffectsQueue::enqueue(EffectRequest request)
 {
     requests_.push_back(std::move(request));
 }
 
-void EffectsQueue::append(std::vector<EffectRequest> requests)
+EffectsQueue EffectsQueue::forRawEffects(const RawEffects& effects,
+                                         entt::entity actor,
+                                         entt::entity source,
+                                         std::optional<Point> target)
 {
-    for (auto& request : requests) {
-        requests_.push_back(std::move(request));
-    }
-}
-
-void EffectsQueue::enqueue(EffectRequest request)
-{
-    push(std::move(request));
-}
-
-void EffectsQueue::enqueue(std::vector<EffectRequest> requests)
-{
-    append(std::move(requests));
-}
-
-bool EffectsQueue::empty() const noexcept
-{
-    return requests_.empty();
-}
-
-std::size_t EffectsQueue::size() const noexcept
-{
-    return requests_.size();
-}
-
-const std::vector<EffectRequest>& EffectsQueue::requests() const noexcept
-{
-    return requests_;
-}
-
-bool EffectsQueue::resolve(entt::registry& registry,
-                           GameResources& resources,
-                           Map& map,
-                           IFovProvider* fovProvider)
-{
-    const bool resolved =
-        resolveEffectRequests(registry, resources, map, requests_, fovProvider);
-    requests_.clear();
-    return resolved;
-}
-
-std::vector<EffectRequest>
-effectRequestsForRawEffects(const RawEffects& effects,
-                            entt::entity actor,
-                            entt::entity source,
-                            std::optional<Point> target)
-{
-    std::vector<EffectRequest> requests;
+    EffectsQueue queue;
+    auto& requests = queue.requests_;
     if (effects.providesHealing.has_value()) {
         requests.push_back(EffectRequest{
             EffectKind::Heal, actor, source, target, *effects.providesHealing});
@@ -361,26 +313,19 @@ effectRequestsForRawEffects(const RawEffects& effects,
                                          target,
                                          *effects.confusionTurns});
     }
-    return requests;
+    return queue;
 }
 
-EffectsQueue effectsQueueForRawEffects(const RawEffects& effects,
-                                       entt::entity actor,
-                                       entt::entity source,
-                                       std::optional<Point> target)
+EffectsQueue EffectsQueue::forItem(const entt::registry& registry,
+                                   entt::entity actor,
+                                   entt::entity item,
+                                   std::optional<Point> target,
+                                   entt::entity targetEntity)
 {
-    return EffectsQueue{
-        effectRequestsForRawEffects(effects, actor, source, target)};
-}
-
-std::vector<EffectRequest> effectRequestsForItem(const entt::registry& registry,
-                                                 entt::entity actor,
-                                                 entt::entity item,
-                                                 std::optional<Point> target)
-{
-    std::vector<EffectRequest> requests;
+    EffectsQueue queue;
+    auto& requests = queue.requests_;
     if (!registry.valid(item)) {
-        return requests;
+        return queue;
     }
     if (registry.all_of<ProvidesHealing>(item)) {
         requests.push_back(
@@ -433,25 +378,19 @@ std::vector<EffectRequest> effectRequestsForItem(const entt::registry& registry,
                                          target,
                                          registry.get<Confusion>(item).turns});
     }
-    return requests;
+    for (auto& request : requests) {
+        request.targetEntity = targetEntity;
+    }
+    return queue;
 }
 
-EffectsQueue effectsQueueForItem(const entt::registry& registry,
-                                 entt::entity actor,
-                                 entt::entity item,
-                                 std::optional<Point> target)
-{
-    return EffectsQueue{effectRequestsForItem(registry, actor, item, target)};
-}
-
-bool resolveEffectRequests(entt::registry& registry,
+bool EffectsQueue::resolve(entt::registry& registry,
                            GameResources& resources,
                            Map& map,
-                           const std::vector<EffectRequest>& requests,
                            IFovProvider* fovProvider)
 {
     bool anyResolved = false;
-    for (const auto& request : requests) {
+    for (const auto& request : requests_) {
         bool resolved = false;
         switch (request.kind) {
         case EffectKind::Heal:
@@ -502,17 +441,8 @@ bool resolveEffectRequests(entt::registry& registry,
         }
         anyResolved = resolved || anyResolved;
     }
+    requests_.clear();
     return anyResolved;
-}
-
-bool resolveEffectsQueue(entt::registry& registry,
-                         GameResources& resources,
-                         Map& map,
-                         const EffectsQueue& queue,
-                         IFovProvider* fovProvider)
-{
-    return resolveEffectRequests(
-        registry, resources, map, queue.requests(), fovProvider);
 }
 
 bool applyItemEffects(entt::registry& registry,
@@ -523,7 +453,7 @@ bool applyItemEffects(entt::registry& registry,
                       std::optional<Point> target,
                       IFovProvider* fovProvider)
 {
-    auto queue = effectsQueueForItem(registry, actor, item, target);
+    auto queue = EffectsQueue::forItem(registry, actor, item, target);
     const bool resolved = queue.resolve(registry, resources, map, fovProvider);
     if (resolved) {
         consumeIfNeeded(registry, item);

@@ -109,10 +109,9 @@ bool castKnownSpell(entt::registry& registry,
         }
     }
 
-    const auto requests =
-        effectRequestsForRawEffects(spell->effects, caster, entt::null, target);
-    const bool resolved =
-        resolveEffectRequests(registry, resources, map, requests, fovProvider);
+    auto queue =
+        EffectsQueue::forRawEffects(spell->effects, caster, entt::null, target);
+    const bool resolved = queue.resolve(registry, resources, map, fovProvider);
     if (!resolved) {
         return false;
     }

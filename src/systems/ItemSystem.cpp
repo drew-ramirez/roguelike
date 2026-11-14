@@ -407,12 +407,8 @@ bool useInventoryItemOnTargetItem(entt::registry& registry,
         return false;
     }
 
-    auto requests = effectRequestsForItem(registry, owner, source);
-    for (auto& request : requests) {
-        request.targetEntity = target;
-    }
-    EffectsQueue queue;
-    queue.enqueue(std::move(requests));
+    auto queue =
+        EffectsQueue::forItem(registry, owner, source, std::nullopt, target);
     const bool resolved = queue.resolve(registry, resources, map, fovProvider);
     if (resolved) {
         consumeIfNeeded(registry, source);

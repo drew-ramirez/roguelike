@@ -1,59 +1,63 @@
 #include "TestSuites.hpp"
 
-#include <algorithm>
-#include <string>
-#include <vector>
-
+#include "core/GameResources.hpp"
+#include "ecs/Components.hpp"
+#include "fov/ShadowcastingFov.hpp"
+#include "spawn/MonsterSpawner.hpp"
+#include "spawn/Spawner.hpp"
+#include "systems/DamageSystem.hpp"
 #include "systems/SystemScheduler.hpp"
 
 namespace rl::test {
 
 void runSchedulerTests(TestRunner& runner)
 {
-    const auto phases = defaultSystemPhaseOrder();
-    const auto findPhase = [&](SystemPhase phase) {
-        return std::find(phases.begin(), phases.end(), phase);
-    };
-
-    runner.expect(phases.size() == 9U &&
-                      findPhase(SystemPhase::PreTurn) <
-                          findPhase(SystemPhase::PlayerIntent) &&
-                      findPhase(SystemPhase::AITurn) <
-                          findPhase(SystemPhase::RenderPrep),
-                  "scheduler exposes deterministic named turn phases");
-    runner.expect(systemPhaseName(SystemPhase::PlayerIntent) ==
-                          "PlayerIntent" &&
-                      systemPhaseName(SystemPhase::RenderPrep) == "RenderPrep",
-                  "scheduler exposes Section 4 phase names");
-
-    std::vector<std::string> calls;
-    SystemScheduler scheduler;
-    scheduler.registerSystem(SystemPhase::Combat, "combat-one", [&] {
-        calls.push_back("combat-one");
-    });
-    scheduler.registerSystem(
-        SystemPhase::PreTurn, "pre-turn", [&] { calls.push_back("pre-turn"); });
-    scheduler.registerSystem(SystemPhase::Combat, "combat-two", [&] {
-        calls.push_back("combat-two");
-    });
-    scheduler.registerSystem(
-        SystemPhase::AITurn, "ai-turn", [&] { calls.push_back("ai-turn"); });
-
-    scheduler.run();
-    runner.expect(calls ==
-                      std::vector<std::string>{
-                          "pre-turn", "ai-turn", "combat-one", "combat-two"},
-                  "scheduler runs by phase order then registration order");
-
-    calls.clear();
-    scheduler.runPhase(SystemPhase::Combat);
-    runner.expect(calls == std::vector<std::string>{"combat-one", "combat-two"},
-                  "scheduler can run a focused phase for turn sequencing");
-
-    const auto plan = scheduler.executionPlan();
-    runner.expect(plan.size() == 4U && plan.front().name == "pre-turn" &&
-                      plan.back().name == "combat-two",
-                  "scheduler reports deterministic execution plan");
+    {
+        auto map = openMap();
+        revealAll(map);
+        entt::registry registry;
+        GameResources resources;
+        resources.player = spawnPlayer(registry, Point{2, 2});
+        registry.emplace<KnownSpells>(resources.player, KnownSpells{{"spark"}});
+        registry.get<Pools>(resources.player).mana = 6;
+        const auto monster = spawnGoblin(registry, Point{3, 2});
+        registry.get<CombatStats>(monster).hp = 1;
+        const int playerHp = registry.get<CombatStats>(resources.player).hp;
+        registry.emplace<WantsToCastSpell>(
+            resources.player, WantsToCastSpell{"spark", Point{3, 2}});
+        ShadowcastingFov fov;
+        RunState state = RunState::AwaitingInput;
+        resolveTurnSystems(registry, resources, map, fov, state, true);
+        runner.expect(!registry.valid(monster) &&
+                          registry.get<CombatStats>(resources.player).hp ==
+                              playerHp,
+                      "player spell defeats adjacent monster before its turn");
+        runner.expect(state == RunState::AwaitingInput,
+                      "completed turn returns to input");
+    }
+    {
+        auto map = openMap();
+        entt::registry registry;
+        GameResources resources;
+        resources.player = spawnPlayer(registry, Point{2, 2});
+        const auto monster = spawnGoblin(registry, Point{3, 2});
+        registry.emplace<Confusion>(monster, Confusion{3});
+        ShadowcastingFov fov;
+        RunState state = RunState::AwaitingInput;
+        resolveTurnSystems(registry, resources, map, fov, state, false);
+        runner.expect(registry.get<Confusion>(monster).turns == 3,
+                      "turn can skip monster AI");
+        resolveTurnSystems(registry, resources, map, fov, state, true);
+        runner.expect(registry.get<Confusion>(monster).turns == 2,
+                      "enabled monster AI takes its turn");
+        queueDamage(registry,
+                    resources.player,
+                    registry.get<CombatStats>(resources.player).hp);
+        resolveTurnSystems(registry, resources, map, fov, state, true);
+        runner.expect(state == RunState::GameOver &&
+                          registry.get<Confusion>(monster).turns == 2,
+                      "player death prevents the monster turn");
+    }
 }
 
 } // namespace rl::test

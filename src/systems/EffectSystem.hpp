@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <cstddef>
 #include <optional>
 #include <vector>
 
@@ -45,16 +44,19 @@ struct EffectRequest {
 
 class EffectsQueue {
   public:
-    EffectsQueue() = default;
-    explicit EffectsQueue(std::vector<EffectRequest> requests);
+    [[nodiscard]] static EffectsQueue
+    forItem(const entt::registry& registry,
+            entt::entity actor,
+            entt::entity item,
+            std::optional<Point> target = std::nullopt,
+            entt::entity targetEntity = entt::null);
+    [[nodiscard]] static EffectsQueue
+    forRawEffects(const RawEffects& effects,
+                  entt::entity actor,
+                  entt::entity source,
+                  std::optional<Point> target = std::nullopt);
 
-    void push(EffectRequest request);
-    void append(std::vector<EffectRequest> requests);
     void enqueue(EffectRequest request);
-    void enqueue(std::vector<EffectRequest> requests);
-    [[nodiscard]] bool empty() const noexcept;
-    [[nodiscard]] std::size_t size() const noexcept;
-    [[nodiscard]] const std::vector<EffectRequest>& requests() const noexcept;
     [[nodiscard]] bool resolve(entt::registry& registry,
                                GameResources& resources,
                                Map& map,
@@ -63,43 +65,6 @@ class EffectsQueue {
   private:
     std::vector<EffectRequest> requests_;
 };
-
-[[nodiscard]] std::vector<EffectRequest>
-effectRequestsForItem(const entt::registry& registry,
-                      entt::entity actor,
-                      entt::entity item,
-                      std::optional<Point> target = std::nullopt);
-
-[[nodiscard]] std::vector<EffectRequest>
-effectRequestsForRawEffects(const RawEffects& effects,
-                            entt::entity actor,
-                            entt::entity source,
-                            std::optional<Point> target = std::nullopt);
-
-[[nodiscard]] EffectsQueue
-effectsQueueForItem(const entt::registry& registry,
-                    entt::entity actor,
-                    entt::entity item,
-                    std::optional<Point> target = std::nullopt);
-
-[[nodiscard]] EffectsQueue
-effectsQueueForRawEffects(const RawEffects& effects,
-                          entt::entity actor,
-                          entt::entity source,
-                          std::optional<Point> target = std::nullopt);
-
-[[nodiscard]] bool
-resolveEffectRequests(entt::registry& registry,
-                      GameResources& resources,
-                      Map& map,
-                      const std::vector<EffectRequest>& requests,
-                      IFovProvider* fovProvider = nullptr);
-
-[[nodiscard]] bool resolveEffectsQueue(entt::registry& registry,
-                                       GameResources& resources,
-                                       Map& map,
-                                       const EffectsQueue& queue,
-                                       IFovProvider* fovProvider = nullptr);
 
 [[nodiscard]] bool applyItemEffects(entt::registry& registry,
                                     GameResources& resources,
