@@ -11,7 +11,7 @@
 #include "raws/RawDatabase.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/VendorSystem.hpp"
+#include "systems/services/VendorSystem.hpp"
 
 namespace rl::test {
 namespace {

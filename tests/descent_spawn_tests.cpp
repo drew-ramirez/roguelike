@@ -15,9 +15,9 @@
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/SpawnTable.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/EquipmentSystem.hpp"
-#include "systems/MapTransitionSystem.hpp"
-#include "systems/VendorSystem.hpp"
+#include "systems/inventory/EquipmentSystem.hpp"
+#include "systems/services/VendorSystem.hpp"
+#include "systems/travel/MapTransitionSystem.hpp"
 
 namespace rl::test {
 namespace {

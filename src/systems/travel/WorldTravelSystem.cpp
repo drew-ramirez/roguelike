@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/WorldTravelSystem.hpp"
+#include "systems/travel/WorldTravelSystem.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -20,9 +20,9 @@
 #include "fov/IFovProvider.hpp"
 #include "map/Map.hpp"
 #include "map/MapConnectivity.hpp"
-#include "systems/HungerSystem.hpp"
-#include "systems/MapTransitionSystem.hpp"
-#include "systems/VisibilitySystem.hpp"
+#include "systems/spatial/VisibilitySystem.hpp"
+#include "systems/survival/HungerSystem.hpp"
+#include "systems/travel/MapTransitionSystem.hpp"
 #include "world/WorldGeneration.hpp"
 
 namespace rl {

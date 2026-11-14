@@ -8,7 +8,7 @@
 #include "ecs/Components.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/InputSystem.hpp"
-#include "systems/SpatialIndexSystem.hpp"
+#include "systems/spatial/SpatialIndexSystem.hpp"
 
 namespace rl::test {
 namespace {

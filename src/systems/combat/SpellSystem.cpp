@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/SpellSystem.hpp"
+#include "systems/combat/SpellSystem.hpp"
 
 #include <algorithm>
 #include <string>
@@ -16,7 +16,7 @@
 #include "fov/IFovProvider.hpp"
 #include "map/Map.hpp"
 #include "raws/RawDatabase.hpp"
-#include "systems/EffectSystem.hpp"
+#include "systems/effects/EffectSystem.hpp"
 
 namespace rl {
 namespace {

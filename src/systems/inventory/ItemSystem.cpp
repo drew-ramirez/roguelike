@@ -1,4 +1,4 @@
-#include "systems/ItemSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
 
 #include <algorithm>
 #include <string>
@@ -9,9 +9,9 @@
 #include "ecs/Components.hpp"
 #include "ecs/EntityState.hpp"
 #include "map/Map.hpp"
-#include "systems/EffectSystem.hpp"
-#include "systems/EquipmentSystem.hpp"
-#include "systems/SpatialIndexSystem.hpp"
+#include "systems/effects/EffectSystem.hpp"
+#include "systems/inventory/EquipmentSystem.hpp"
+#include "systems/spatial/SpatialIndexSystem.hpp"
 
 namespace rl {
 namespace {

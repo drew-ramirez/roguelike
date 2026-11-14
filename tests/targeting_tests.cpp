@@ -9,8 +9,8 @@
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/ItemSystem.hpp"
-#include "systems/RenderSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
+#include "systems/rendering/RenderSystem.hpp"
 #include "ui/Targeting.hpp"
 
 namespace rl::test {

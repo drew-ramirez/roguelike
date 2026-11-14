@@ -11,12 +11,12 @@
 #include "raws/RawDatabase.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/CampSystem.hpp"
-#include "systems/CookingSystem.hpp"
-#include "systems/ForageSystem.hpp"
-#include "systems/SettlementServiceSystem.hpp"
-#include "systems/ShrineRiteSystem.hpp"
-#include "systems/WorldTravelSystem.hpp"
+#include "systems/services/SettlementServiceSystem.hpp"
+#include "systems/services/ShrineRiteSystem.hpp"
+#include "systems/survival/CampSystem.hpp"
+#include "systems/survival/CookingSystem.hpp"
+#include "systems/survival/ForageSystem.hpp"
+#include "systems/travel/WorldTravelSystem.hpp"
 #include "world/WorldGeneration.hpp"
 
 namespace rl::test {

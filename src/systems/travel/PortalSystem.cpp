@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/PortalSystem.hpp"
+#include "systems/travel/PortalSystem.hpp"
 
 #include <optional>
 
@@ -16,8 +16,8 @@
 #include "map/Map.hpp"
 #include "raws/RawDatabase.hpp"
 #include "spawn/RawSpawner.hpp"
-#include "systems/MapTransitionSystem.hpp"
-#include "systems/VisibilitySystem.hpp"
+#include "systems/spatial/VisibilitySystem.hpp"
+#include "systems/travel/MapTransitionSystem.hpp"
 
 namespace rl {
 namespace {

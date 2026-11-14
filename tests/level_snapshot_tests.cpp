@@ -14,7 +14,7 @@
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/MapTransitionSystem.hpp"
+#include "systems/travel/MapTransitionSystem.hpp"
 
 namespace rl::test {
 namespace {

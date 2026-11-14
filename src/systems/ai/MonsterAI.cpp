@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/MonsterAI.hpp"
+#include "systems/ai/MonsterAI.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -19,9 +19,9 @@
 #include "ecs/EntityState.hpp"
 #include "map/Map.hpp"
 #include "raws/RawDatabase.hpp"
-#include "systems/BystanderAI.hpp"
 #include "systems/InputSystem.hpp"
-#include "systems/SpatialIndexSystem.hpp"
+#include "systems/ai/BystanderAI.hpp"
+#include "systems/spatial/SpatialIndexSystem.hpp"
 
 namespace rl {
 namespace {

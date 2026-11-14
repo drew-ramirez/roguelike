@@ -8,8 +8,8 @@
 #include "ecs/Components.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "systems/InputSystem.hpp"
-#include "systems/ItemSystem.hpp"
-#include "systems/VendorSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
+#include "systems/services/VendorSystem.hpp"
 #include "ui/Widgets.hpp"
 
 namespace rl {

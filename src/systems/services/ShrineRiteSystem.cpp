@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/ShrineRiteSystem.hpp"
+#include "systems/services/ShrineRiteSystem.hpp"
 
 #include <algorithm>
 #include <string>
@@ -13,7 +13,7 @@
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
-#include "systems/ItemSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
 #include "world/WorldGeneration.hpp"
 
 namespace rl {

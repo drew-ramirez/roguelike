@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/SpatialIndexSystem.hpp"
+#include "systems/spatial/SpatialIndexSystem.hpp"
 
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"

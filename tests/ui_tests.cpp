@@ -11,7 +11,7 @@
 #include "render/ConsoleBuffer.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/EquipmentSystem.hpp"
+#include "systems/inventory/EquipmentSystem.hpp"
 #include "ui/Hud.hpp"
 #include "ui/WorldMapMenu.hpp"
 #include "world/WorldGeneration.hpp"

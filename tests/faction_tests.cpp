@@ -7,7 +7,7 @@
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/MonsterAI.hpp"
+#include "systems/ai/MonsterAI.hpp"
 
 namespace rl::test {
 namespace {

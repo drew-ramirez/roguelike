@@ -5,12 +5,12 @@
  * **************************************************************************
  */
 
-#include "systems/TrapSystem.hpp"
+#include "systems/combat/TrapSystem.hpp"
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
-#include "systems/DamageSystem.hpp"
-#include "systems/ParticleSystem.hpp"
+#include "systems/combat/DamageSystem.hpp"
+#include "systems/rendering/ParticleSystem.hpp"
 
 namespace rl {
 

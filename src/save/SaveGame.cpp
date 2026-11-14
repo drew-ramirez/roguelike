@@ -15,7 +15,7 @@
 #include "save/SaveMap.hpp"
 #include "save/SaveResources.hpp"
 #include "save/SaveTypes.hpp"
-#include "systems/MapTransitionSystem.hpp"
+#include "systems/travel/MapTransitionSystem.hpp"
 
 namespace rl {
 

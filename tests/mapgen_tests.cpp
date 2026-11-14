@@ -32,7 +32,7 @@
 #include "map/rooms/RoomCarver.hpp"
 #include "render/Camera.hpp"
 #include "render/ConsoleBuffer.hpp"
-#include "systems/MapRenderSystem.hpp"
+#include "systems/rendering/MapRenderSystem.hpp"
 
 namespace rl::test {
 namespace {

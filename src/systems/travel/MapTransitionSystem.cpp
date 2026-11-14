@@ -1,4 +1,4 @@
-#include "systems/MapTransitionSystem.hpp"
+#include "systems/travel/MapTransitionSystem.hpp"
 
 #include <optional>
 #include <string>
@@ -13,8 +13,8 @@
 #include "map/TileType.hpp"
 #include "raws/RawDatabase.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/VendorSystem.hpp"
-#include "systems/VisibilitySystem.hpp"
+#include "systems/services/VendorSystem.hpp"
+#include "systems/spatial/VisibilitySystem.hpp"
 #include "world/WorldGeneration.hpp"
 
 namespace rl {

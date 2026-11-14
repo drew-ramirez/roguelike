@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/ForageSystem.hpp"
+#include "systems/survival/ForageSystem.hpp"
 
 #include <string>
 #include <string_view>
@@ -14,7 +14,7 @@
 #include "ecs/Components.hpp"
 #include "raws/RawDatabase.hpp"
 #include "spawn/RawSpawner.hpp"
-#include "systems/HungerSystem.hpp"
+#include "systems/survival/HungerSystem.hpp"
 #include "world/WorldGeneration.hpp"
 
 namespace rl {

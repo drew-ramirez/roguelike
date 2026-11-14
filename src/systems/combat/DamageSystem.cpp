@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/DamageSystem.hpp"
+#include "systems/combat/DamageSystem.hpp"
 
 #include <algorithm>
 #include <string>
@@ -16,7 +16,7 @@
 #include "ecs/EntityState.hpp"
 #include "map/Map.hpp"
 #include "progression/ExperienceSystem.hpp"
-#include "systems/ParticleSystem.hpp"
+#include "systems/rendering/ParticleSystem.hpp"
 
 namespace rl {
 namespace {

@@ -5,13 +5,13 @@
  * **************************************************************************
  */
 
-#include "systems/CampSystem.hpp"
+#include "systems/survival/CampSystem.hpp"
 
 #include <algorithm>
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
-#include "systems/HungerSystem.hpp"
+#include "systems/survival/HungerSystem.hpp"
 #include "world/WorldGeneration.hpp"
 
 namespace rl {

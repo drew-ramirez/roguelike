@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/VendorSystem.hpp"
+#include "systems/services/VendorSystem.hpp"
 
 #include <algorithm>
 #include <string>

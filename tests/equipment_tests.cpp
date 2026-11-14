@@ -10,10 +10,10 @@
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/DamageSystem.hpp"
-#include "systems/EquipmentSystem.hpp"
-#include "systems/ItemSystem.hpp"
-#include "systems/MeleeCombatSystem.hpp"
+#include "systems/combat/DamageSystem.hpp"
+#include "systems/combat/MeleeCombatSystem.hpp"
+#include "systems/inventory/EquipmentSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
 
 namespace rl::test {
 

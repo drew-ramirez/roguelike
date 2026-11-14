@@ -5,14 +5,14 @@
  * **************************************************************************
  */
 
-#include "systems/SettlementServiceSystem.hpp"
+#include "systems/services/SettlementServiceSystem.hpp"
 
 #include <string>
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "raws/RawDatabase.hpp"
-#include "systems/HungerSystem.hpp"
+#include "systems/survival/HungerSystem.hpp"
 #include "world/WorldGeneration.hpp"
 
 namespace rl {

@@ -7,9 +7,9 @@
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
 #include "render/ConsoleBuffer.hpp"
-#include "systems/EquipmentSystem.hpp"
 #include "systems/InputSystem.hpp"
-#include "systems/ItemSystem.hpp"
+#include "systems/inventory/EquipmentSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
 #include "ui/ItemDetails.hpp"
 #include "ui/Widgets.hpp"
 

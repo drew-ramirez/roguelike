@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/MeleeCombatSystem.hpp"
+#include "systems/combat/MeleeCombatSystem.hpp"
 
 #include <algorithm>
 #include <optional>
@@ -17,8 +17,8 @@
 #include "core/Rng.hpp"
 #include "ecs/Components.hpp"
 #include "ecs/EntityState.hpp"
-#include "systems/DamageSystem.hpp"
-#include "systems/EquipmentSystem.hpp"
+#include "systems/combat/DamageSystem.hpp"
+#include "systems/inventory/EquipmentSystem.hpp"
 
 namespace rl {
 namespace {

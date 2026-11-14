@@ -8,7 +8,7 @@
 #include "map/Map.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "systems/InputSystem.hpp"
-#include "systems/ItemSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
 #include "ui/ItemDetails.hpp"
 #include "ui/Widgets.hpp"
 

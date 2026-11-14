@@ -5,8 +5,8 @@
 #include "fov/ShadowcastingFov.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/DamageSystem.hpp"
 #include "systems/TurnSystem.hpp"
+#include "systems/combat/DamageSystem.hpp"
 
 namespace rl::test {
 

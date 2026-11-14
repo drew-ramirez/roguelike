@@ -1,4 +1,4 @@
-#include "systems/EquipmentSystem.hpp"
+#include "systems/inventory/EquipmentSystem.hpp"
 
 #include <string>
 

@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/MapRenderSystem.hpp"
+#include "systems/rendering/MapRenderSystem.hpp"
 
 #include "map/Map.hpp"
 #include "map/TileType.hpp"

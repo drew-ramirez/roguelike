@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/BystanderAI.hpp"
+#include "systems/ai/BystanderAI.hpp"
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"

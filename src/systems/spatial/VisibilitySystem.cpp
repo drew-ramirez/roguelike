@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/VisibilitySystem.hpp"
+#include "systems/spatial/VisibilitySystem.hpp"
 
 #include "ecs/Components.hpp"
 #include "fov/IFovProvider.hpp"

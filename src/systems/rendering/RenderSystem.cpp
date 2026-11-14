@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/RenderSystem.hpp"
+#include "systems/rendering/RenderSystem.hpp"
 
 #include <algorithm>
 #include <vector>

@@ -16,7 +16,7 @@
 #include "ecs/Components.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "systems/InputSystem.hpp"
-#include "systems/ShrineRiteSystem.hpp"
+#include "systems/services/ShrineRiteSystem.hpp"
 #include "ui/Widgets.hpp"
 
 namespace rl {

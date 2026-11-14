@@ -10,7 +10,7 @@
 #include "raws/RawDatabase.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "systems/InputSystem.hpp"
-#include "systems/SpellSystem.hpp"
+#include "systems/combat/SpellSystem.hpp"
 #include "ui/Widgets.hpp"
 
 namespace rl {

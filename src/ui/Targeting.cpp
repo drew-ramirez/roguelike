@@ -8,7 +8,7 @@
 #include "render/Camera.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "systems/InputSystem.hpp"
-#include "systems/ItemSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
 
 namespace rl {
 namespace {

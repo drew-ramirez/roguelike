@@ -8,10 +8,10 @@
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/EffectSystem.hpp"
-#include "systems/EquipmentSystem.hpp"
-#include "systems/ItemSystem.hpp"
-#include "systems/SpellSystem.hpp"
+#include "systems/combat/SpellSystem.hpp"
+#include "systems/effects/EffectSystem.hpp"
+#include "systems/inventory/EquipmentSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
 
 namespace rl::test {
 

@@ -7,7 +7,7 @@
 #include "raws/RawDatabase.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/SpawnTable.hpp"
-#include "systems/SpatialIndexSystem.hpp"
+#include "systems/spatial/SpatialIndexSystem.hpp"
 
 namespace rl {
 namespace {

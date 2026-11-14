@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/RangedCombatSystem.hpp"
+#include "systems/combat/RangedCombatSystem.hpp"
 
 #include <algorithm>
 #include <optional>
@@ -19,9 +19,9 @@
 #include "ecs/EntityState.hpp"
 #include "map/Map.hpp"
 #include "map/MapGeometry.hpp"
-#include "systems/DamageSystem.hpp"
-#include "systems/EquipmentSystem.hpp"
-#include "systems/SpatialIndexSystem.hpp"
+#include "systems/combat/DamageSystem.hpp"
+#include "systems/inventory/EquipmentSystem.hpp"
+#include "systems/spatial/SpatialIndexSystem.hpp"
 
 namespace rl {
 namespace {

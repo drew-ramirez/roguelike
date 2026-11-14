@@ -8,8 +8,8 @@
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/TrapSpawner.hpp"
-#include "systems/SpatialIndexSystem.hpp"
-#include "systems/VendorSystem.hpp"
+#include "systems/services/VendorSystem.hpp"
+#include "systems/spatial/SpatialIndexSystem.hpp"
 
 namespace rl {
 namespace {

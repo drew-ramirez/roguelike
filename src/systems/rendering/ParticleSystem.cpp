@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/ParticleSystem.hpp"
+#include "systems/rendering/ParticleSystem.hpp"
 
 #include <vector>
 

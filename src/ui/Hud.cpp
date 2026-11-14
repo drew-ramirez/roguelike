@@ -9,8 +9,8 @@
 #include "ecs/Components.hpp"
 #include "progression/ExperienceSystem.hpp"
 #include "render/ConsoleBuffer.hpp"
-#include "systems/EquipmentSystem.hpp"
-#include "systems/ItemSystem.hpp"
+#include "systems/inventory/EquipmentSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
 #include "ui/Widgets.hpp"
 
 namespace rl {

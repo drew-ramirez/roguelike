@@ -15,10 +15,10 @@
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "render/ConsoleBuffer.hpp"
-#include "systems/CampSystem.hpp"
-#include "systems/CookingSystem.hpp"
-#include "systems/ForageSystem.hpp"
 #include "systems/InputSystem.hpp"
+#include "systems/survival/CampSystem.hpp"
+#include "systems/survival/CookingSystem.hpp"
+#include "systems/survival/ForageSystem.hpp"
 #include "ui/Widgets.hpp"
 
 namespace rl {

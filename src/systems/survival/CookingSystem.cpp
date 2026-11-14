@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/CookingSystem.hpp"
+#include "systems/survival/CookingSystem.hpp"
 
 #include <algorithm>
 #include <string>
@@ -15,7 +15,7 @@
 #include "ecs/Components.hpp"
 #include "raws/RawDatabase.hpp"
 #include "spawn/RawSpawner.hpp"
-#include "systems/ItemSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
 #include "world/WorldGeneration.hpp"
 
 namespace rl {

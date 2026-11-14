@@ -5,13 +5,13 @@
  * **************************************************************************
  */
 
-#include "systems/HungerSystem.hpp"
+#include "systems/survival/HungerSystem.hpp"
 
 #include <algorithm>
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
-#include "systems/DamageSystem.hpp"
+#include "systems/combat/DamageSystem.hpp"
 
 namespace rl {
 namespace {

@@ -6,8 +6,8 @@
 #include "ecs/Components.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/BystanderAI.hpp"
-#include "systems/MonsterAI.hpp"
+#include "systems/ai/BystanderAI.hpp"
+#include "systems/ai/MonsterAI.hpp"
 
 namespace rl::test {
 namespace {

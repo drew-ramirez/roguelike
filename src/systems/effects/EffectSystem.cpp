@@ -5,7 +5,7 @@
  * **************************************************************************
  */
 
-#include "systems/EffectSystem.hpp"
+#include "systems/effects/EffectSystem.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -17,10 +17,10 @@
 #include "ecs/EntityState.hpp"
 #include "fov/IFovProvider.hpp"
 #include "map/Map.hpp"
-#include "systems/DamageSystem.hpp"
-#include "systems/HungerSystem.hpp"
-#include "systems/ParticleSystem.hpp"
-#include "systems/PortalSystem.hpp"
+#include "systems/combat/DamageSystem.hpp"
+#include "systems/rendering/ParticleSystem.hpp"
+#include "systems/survival/HungerSystem.hpp"
+#include "systems/travel/PortalSystem.hpp"
 
 namespace rl {
 namespace {
