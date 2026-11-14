@@ -8,8 +8,6 @@
 #include "map/MapQualityMetrics.hpp"
 
 #include <array>
-#include <cstddef>
-#include <vector>
 
 #include "core/Point.hpp"
 #include "map/Map.hpp"
@@ -19,7 +17,7 @@
 namespace rl {
 namespace {
 
-constexpr std::size_t tinyComponentLimit = 8;
+constexpr int tinyComponentLimit = 8;
 
 [[nodiscard]] int cardinalPassableNeighbors(const Map& map, Point point)
 {
@@ -63,46 +61,6 @@ constexpr std::size_t tinyComponentLimit = 8;
     return count == 2 && ((open[0] && open[2]) || (open[1] && open[3]));
 }
 
-[[nodiscard]] int countTinyNaturalBlockerComponents(const Map& map)
-{
-    std::vector<bool> visited(static_cast<std::size_t>(map.tileCount()), false);
-    int tinyComponents = 0;
-    for (int y = 0; y < map.height(); ++y) {
-        for (int x = 0; x < map.width(); ++x) {
-            const Point start{x, y};
-            const auto startIndex = static_cast<std::size_t>(map.xyIdx(x, y));
-            if (visited[startIndex] || !isNaturalBlocker(map.tileAt(x, y))) {
-                continue;
-            }
-
-            std::size_t size = 0;
-            std::vector<Point> frontier{start};
-            visited[startIndex] = true;
-            while (!frontier.empty()) {
-                const Point current = frontier.back();
-                frontier.pop_back();
-                ++size;
-                for (const Point next : cardinalNeighbors(current)) {
-                    if (!map.inBounds(next.x, next.y) ||
-                        !isNaturalBlocker(map.tileAt(next.x, next.y))) {
-                        continue;
-                    }
-                    const auto index =
-                        static_cast<std::size_t>(map.xyIdx(next.x, next.y));
-                    if (!visited[index]) {
-                        visited[index] = true;
-                        frontier.push_back(next);
-                    }
-                }
-            }
-            if (size <= tinyComponentLimit) {
-                ++tinyComponents;
-            }
-        }
-    }
-    return tinyComponents;
-}
-
 } // namespace
 
 MapQualityMetrics measureMapQuality(const Map& map)
@@ -131,7 +89,8 @@ MapQualityMetrics measureMapQuality(const Map& map)
     const auto regions = findConnectedRegions(map);
     metrics.disconnectedRegions =
         regions.empty() ? 0 : static_cast<int>(regions.size()) - 1;
-    metrics.tinyBlockerComponents = countTinyNaturalBlockerComponents(map);
+    metrics.tinyBlockerComponents =
+        countSmallNaturalBlockerComponents(map, tinyComponentLimit);
     if (metrics.totalTiles > 0) {
         metrics.walkableCoverage = static_cast<double>(metrics.walkableTiles) /
                                    static_cast<double>(metrics.totalTiles);

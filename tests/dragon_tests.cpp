@@ -7,8 +7,8 @@
 #include "raws/RawDatabase.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/MonsterAI.hpp"
-#include "systems/RangedCombatSystem.hpp"
+#include "systems/ai/MonsterAI.hpp"
+#include "systems/combat/RangedCombatSystem.hpp"
 
 namespace rl::test {
 

@@ -13,7 +13,7 @@
 #include "input/InputEvent.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/InputSystem.hpp"
-#include "systems/MapTransitionSystem.hpp"
+#include "systems/travel/MapTransitionSystem.hpp"
 #include "ui/WorldMapMenu.hpp"
 #include "world/WorldGeneration.hpp"
 

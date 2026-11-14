@@ -5,10 +5,10 @@
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
-#include "systems/ItemSystem.hpp"
-#include "systems/SettlementServiceSystem.hpp"
-#include "systems/ShrineRiteSystem.hpp"
-#include "systems/SpatialIndexSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
+#include "systems/services/SettlementServiceSystem.hpp"
+#include "systems/services/ShrineRiteSystem.hpp"
+#include "systems/spatial/SpatialIndexSystem.hpp"
 #include "world/WorldTypes.hpp"
 
 namespace rl {

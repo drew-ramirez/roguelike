@@ -15,7 +15,6 @@
 #include "core/Point.hpp"
 #include "core/Rng.hpp"
 #include "map/MapBuilderTypes.hpp"
-#include "map/Rect.hpp"
 
 namespace rl {
 
@@ -33,11 +32,6 @@ spawnHealingPotion(entt::registry& registry, Point position, int amount = 8);
 [[nodiscard]] entt::entity spawnChainMail(entt::registry& registry,
                                           Point position);
 
-[[nodiscard]] std::size_t spawnItems(entt::registry& registry,
-                                     const std::vector<Rect>& rooms,
-                                     Rng& rng,
-                                     Point playerStart,
-                                     int depth);
 [[nodiscard]] std::size_t spawnItems(entt::registry& registry,
                                      const std::vector<SpawnRegion>& regions,
                                      const Map& map,

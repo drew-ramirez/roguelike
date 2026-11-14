@@ -8,8 +8,8 @@
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/EquipmentSystem.hpp"
-#include "systems/RangedCombatSystem.hpp"
+#include "systems/combat/RangedCombatSystem.hpp"
+#include "systems/inventory/EquipmentSystem.hpp"
 
 namespace rl::test {
 

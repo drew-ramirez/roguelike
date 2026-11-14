@@ -14,8 +14,8 @@
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/EquipmentSystem.hpp"
-#include "systems/ItemSystem.hpp"
+#include "systems/inventory/EquipmentSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
 #include "world/WorldGeneration.hpp"
 
 namespace rl::test {

@@ -15,10 +15,11 @@
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "render/ConsoleBuffer.hpp"
-#include "systems/CampSystem.hpp"
-#include "systems/CookingSystem.hpp"
-#include "systems/ForageSystem.hpp"
 #include "systems/InputSystem.hpp"
+#include "systems/survival/CampSystem.hpp"
+#include "systems/survival/CookingSystem.hpp"
+#include "systems/survival/ForageSystem.hpp"
+#include "ui/Widgets.hpp"
 
 namespace rl {
 namespace {
@@ -29,21 +30,6 @@ constexpr int panelWidth = 52;
 constexpr int panelHeight = 16;
 constexpr std::array<std::string_view, 4> actions{
     "Rest", "Forage nearby", "Cook meal", "Leave"};
-
-void drawBox(ConsoleBuffer& console)
-{
-    for (int y = panelY; y < panelY + panelHeight; ++y) {
-        for (int x = panelX; x < panelX + panelWidth; ++x) {
-            const bool border = x == panelX || x == panelX + panelWidth - 1 ||
-                                y == panelY || y == panelY + panelHeight - 1;
-            console.set(x,
-                        y,
-                        border ? U'#' : U' ',
-                        Color{180, 180, 180, 255},
-                        Color::black());
-        }
-    }
-}
 
 } // namespace
 
@@ -106,7 +92,7 @@ void drawCampMenu(ConsoleBuffer& console,
                   const entt::registry& registry,
                   const GameResources& resources)
 {
-    drawBox(console);
+    drawMenuFrame(console, panelX, panelY, panelWidth, panelHeight);
     std::string name = "Camp";
     if (resources.pendingCamp.has_value() &&
         registry.valid(resources.pendingCamp->camp) &&

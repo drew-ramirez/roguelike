@@ -6,7 +6,7 @@
 #include "ecs/Components.hpp"
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/SpellSystem.hpp"
+#include "systems/combat/SpellSystem.hpp"
 
 namespace rl::test {
 

@@ -2,25 +2,16 @@
 
 #include <algorithm>
 #include <string>
-#include <string_view>
 
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
 #include "raws/RawDatabase.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/SpawnTable.hpp"
-#include "systems/SpatialIndexSystem.hpp"
+#include "systems/spatial/SpatialIndexSystem.hpp"
 
 namespace rl {
 namespace {
-
-Point randomPointInRoom(const Rect& room, Rng& rng)
-{
-    return Point{
-        rng.rangeInclusive(room.x1, room.x2 - 1),
-        rng.rangeInclusive(room.y1, room.y2 - 1),
-    };
-}
 
 [[nodiscard]] bool
 canSpawnAt(const entt::registry& registry, Point point, Point playerStart)
@@ -37,12 +28,6 @@ canSpawnAt(const entt::registry& registry, Point point, Point playerStart)
 {
     return map.isWalkable(point.x, point.y) &&
            canSpawnAt(registry, point, playerStart);
-}
-
-[[nodiscard]] entt::entity
-spawnItemById(entt::registry& registry, std::string_view id, Point position)
-{
-    return spawnNamedEntity(registry, defaultRawDatabase(), id, position);
 }
 
 } // namespace
@@ -91,49 +76,6 @@ entt::entity spawnChainMail(entt::registry& registry, Point position)
 }
 
 std::size_t spawnItems(entt::registry& registry,
-                       const std::vector<Rect>& rooms,
-                       Rng& rng,
-                       Point playerStart,
-                       int depth)
-{
-    if (rooms.size() <= 1) {
-        return 0;
-    }
-
-    std::size_t spawned = 0;
-    const auto maximum = static_cast<std::size_t>(maxItemsForDepth(depth));
-    for (std::size_t roomIndex = 1;
-         roomIndex < rooms.size() && spawned < maximum;
-         ++roomIndex) {
-        const bool forceEarlyItems = spawned < 2;
-        if (!forceEarlyItems && rng.rangeInclusive(0, 3) != 0) {
-            continue;
-        }
-
-        constexpr int maxAttempts = 12;
-        for (int attempt = 0; attempt < maxAttempts; ++attempt) {
-            const Point position = randomPointInRoom(rooms[roomIndex], rng);
-            if (!canSpawnAt(registry, position, playerStart)) {
-                continue;
-            }
-
-            const auto id =
-                forceEarlyItems
-                    ? (spawned == 0 ? std::string{"healing_potion"}
-                                    : std::string{"food_ration"})
-                    : rollSpawn(
-                          defaultRawDatabase().itemSpawnTable(), depth, rng);
-            [[maybe_unused]] const auto item =
-                spawnItemById(registry, id, position);
-            ++spawned;
-            break;
-        }
-    }
-
-    return spawned;
-}
-
-std::size_t spawnItems(entt::registry& registry,
                        const std::vector<SpawnRegion>& regions,
                        const Map& map,
                        Rng& rng,
@@ -178,7 +120,7 @@ std::size_t spawnItems(entt::registry& registry,
                     : rollSpawn(
                           defaultRawDatabase().itemSpawnTable(), depth, rng);
             [[maybe_unused]] const auto item =
-                spawnItemById(registry, id, position);
+                spawnNamedEntity(registry, defaultRawDatabase(), id, position);
             ++spawned;
             break;
         }

@@ -722,9 +722,6 @@ WfcBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
 
     MapBuildResult result{std::move(*collapsedMap), {}, {}};
     result.builderName = "wfc";
-    addBuildStep(result, "source: rexpaint chunk library");
-    addBuildStep(result, "base: chunk wfc");
-    addBuildStep(result, "solver: neighbor-count collapse");
     recordWfcSetupSnapshots(result.snapshots,
                             library.sources,
                             library.chunks,
@@ -739,7 +736,7 @@ WfcBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
                              options.recordSnapshots);
 
     auto start =
-        closestReachableFloorTo(result.map, Point{width / 2, height / 2});
+        closestWalkableFloorTo(result.map, Point{width / 2, height / 2});
     if (!start.has_value()) {
         result.map.setTile(width / 2, height / 2, TileType::Floor);
         start = Point{width / 2, height / 2};
@@ -748,9 +745,6 @@ WfcBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
     if (!acceptedConnectedCollapse) {
         cullSmallRegions(result.map, 8, TileType::Wall);
         repairConnectivity(result.map, result.playerStart, rng);
-        addBuildStep(result, "fallback: bounded nearest-boundary connections");
-    } else {
-        addBuildStep(result, "validation: connected collapse accepted");
     }
     cullUnreachable(result.map, result.playerStart);
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
@@ -758,7 +752,6 @@ WfcBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);
     recordSnapshot(
         result.snapshots, result.map, "wfc output", options.recordSnapshots);
-    addBuildStep(result, "modifier: distant exit");
 
     validateBuildOrThrow(result, "WFC generation produced an invalid map");
 

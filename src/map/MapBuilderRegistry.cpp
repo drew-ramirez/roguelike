@@ -354,7 +354,6 @@ MapBuildResult buildLevelForDepth(
         setUpStairsAtStart(
             result.map, result.playerStart, result.upStairsPosition);
     }
-    result.buildSteps.push_back("region:" + route.regionId);
     return result;
 }
 

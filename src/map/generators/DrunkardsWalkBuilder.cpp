@@ -49,17 +49,6 @@ startDigger(const Map& map, Point playerStart, DrunkSpawnMode mode, Rng& rng)
         rng.rangeInclusive(0, static_cast<int>(starts.size()) - 1))];
 }
 
-[[nodiscard]] std::string settingLabel(const DrunkardSettings& settings)
-{
-    std::string label = settings.spawnMode == DrunkSpawnMode::StartingPoint
-                            ? "starting-point"
-                            : "random";
-    label += " lifetime " + std::to_string(settings.drunkenLifetime);
-    label += " floor " + std::to_string(settings.floorPercent);
-    label += " brush " + std::to_string(settings.brushSize);
-    return label;
-}
-
 void staggerPersistent(
     Point& point, Point& heading, int width, int height, Rng& rng)
 {
@@ -167,8 +156,6 @@ DrunkardsWalkBuilder::buildWithSettings(int width,
     result.playerStart = Point{width / 2, height / 2};
     result.map.setTile(
         result.playerStart.x, result.playerStart.y, TileType::Floor);
-    addBuildStep(result, "base: drunkard walk");
-    addBuildStep(result, "settings: " + settingLabel(settings));
 
     const int desiredFloors = static_cast<int>(
         static_cast<double>(width * height) * settings.floorPercent);
@@ -219,11 +206,6 @@ DrunkardsWalkBuilder::buildWithSettings(int width,
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);
-    addBuildStep(result,
-                 "digger count: " + std::to_string(diggerCount) + " total, " +
-                     std::to_string(activeDiggerCount) + " active");
-    addBuildStep(result, "modifier: unreachable cull");
-    addBuildStep(result, "modifier: distant exit");
 
     validateBuildOrThrow(result, "Drunkard generation produced an invalid map");
 

@@ -172,8 +172,6 @@ MapBuildResult BspDungeonBuilder::build(int width,
                           std::move(snapshots),
                           "bsp",
                           std::move(corridorPaths)};
-    addBuildStep(result, "base: bsp recursive leaves with random subrects");
-    addBuildStep(result, "connector: sibling subtrees");
 
     validateBuildOrThrow(result, "BSP generation produced an invalid map");
 

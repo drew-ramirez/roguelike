@@ -25,7 +25,7 @@ void runRangedCombatTests(TestRunner& runner);
 void runRawsValidationTests(TestRunner& runner);
 void runRegionRoutingTests(TestRunner& runner);
 void runSaveLoadTests(TestRunner& runner);
-void runSchedulerTests(TestRunner& runner);
+void runTurnTests(TestRunner& runner);
 void runSpellTests(TestRunner& runner);
 void runSpatialTests(TestRunner& runner);
 void runTargetingTests(TestRunner& runner);

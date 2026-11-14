@@ -321,8 +321,7 @@ void parseStringList(const Json& json, std::vector<std::string>& out)
         entity.campSite = parseCampSite(json.at("camp_site"));
     }
     if (json.contains("cooking_station")) {
-        entity.cookingStation =
-            parseCookingStation(json.at("cooking_station"));
+        entity.cookingStation = parseCookingStation(json.at("cooking_station"));
     }
     if (json.contains("settlement_service")) {
         entity.settlementService =
@@ -669,8 +668,7 @@ const RawFaction* RawDatabase::faction(std::string_view id) const noexcept
     return found == factions_.end() ? nullptr : &found->second;
 }
 
-const RawIngredient*
-RawDatabase::ingredient(std::string_view id) const noexcept
+const RawIngredient* RawDatabase::ingredient(std::string_view id) const noexcept
 {
     const auto found = ingredients_.find(std::string{id});
     return found == ingredients_.end() ? nullptr : &found->second;
@@ -769,14 +767,14 @@ std::vector<std::string> RawDatabase::validate() const
             std::string_view label) {
             for (const auto& amount : amounts) {
                 if (ingredient(amount.id) == nullptr) {
-                    errors.push_back(std::string{label} +
-                                     " references unknown ingredient: " +
-                                     amount.id);
+                    errors.push_back(
+                        std::string{label} +
+                        " references unknown ingredient: " + amount.id);
                 }
                 if (amount.count <= 0) {
-                    errors.push_back(std::string{label} +
-                                     " has non-positive ingredient count: " +
-                                     amount.id);
+                    errors.push_back(
+                        std::string{label} +
+                        " has non-positive ingredient count: " + amount.id);
                 }
             }
         };
@@ -880,13 +878,12 @@ std::vector<std::string> RawDatabase::validate() const
         validateIngredientAmounts(recipeTemplate.ingredients, id + " recipe");
         for (const auto& output : recipeTemplate.outputs) {
             if (entity(output.id) == nullptr) {
-                errors.push_back(id + " recipe outputs unknown entity: " +
-                                 output.id);
+                errors.push_back(
+                    id + " recipe outputs unknown entity: " + output.id);
             }
             if (output.count <= 0) {
-                errors.push_back(id +
-                                 " recipe has non-positive output count: " +
-                                 output.id);
+                errors.push_back(
+                    id + " recipe has non-positive output count: " + output.id);
             }
         }
     }

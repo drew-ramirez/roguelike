@@ -69,8 +69,9 @@ void runWorldGenerationTests(TestRunner& runner)
         runner.expect(first.cells.size() == second.cells.size(),
                       "same-seed worlds have matching cell counts");
 
-        bool same = true;
-        for (std::size_t index = 0; index < first.cells.size(); ++index) {
+        bool same = first.cells.size() == second.cells.size();
+        for (std::size_t index = 0; same && index < first.cells.size();
+             ++index) {
             same = same &&
                    sameCellIdentity(first.cells[index], second.cells[index]);
         }

@@ -9,8 +9,8 @@
 #include "raws/RawDatabase.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/DamageSystem.hpp"
-#include "systems/PortalSystem.hpp"
+#include "systems/combat/DamageSystem.hpp"
+#include "systems/travel/PortalSystem.hpp"
 
 namespace rl::test {
 

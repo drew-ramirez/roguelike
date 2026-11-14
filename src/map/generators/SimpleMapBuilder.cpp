@@ -57,7 +57,6 @@ MapBuildResult SimpleMapBuilder::build(int width,
     MapBuildResult result{Map{width, height, TileType::Wall}, {}, {}};
     result.builderName = "simple";
     result.rooms.reserve(maxRooms);
-    addBuildStep(result, "base: mixed rooms");
 
     for (int attempt = 0; attempt < maxRooms; ++attempt) {
         const int roomWidth = rng.rangeInclusive(minRoomSize, maxRoomSize);
@@ -105,7 +104,7 @@ MapBuildResult SimpleMapBuilder::build(int width,
     result.playerStart = result.rooms.front().center();
     if (!result.map.isWalkable(result.playerStart.x, result.playerStart.y)) {
         const auto closest =
-            closestReachableFloorTo(result.map, result.playerStart);
+            closestWalkableFloorTo(result.map, result.playerStart);
         if (!closest.has_value()) {
             throw std::runtime_error(
                 "Map generation placed the player start in a wall");
@@ -116,7 +115,6 @@ MapBuildResult SimpleMapBuilder::build(int width,
     const int repaired =
         repairConnectivity(result.map, result.playerStart, rng);
     if (repaired > 0) {
-        addBuildStep(result, "modifier: connectivity repair");
         recordSnapshot(result.snapshots,
                        result.map,
                        "repaired connectivity",
@@ -126,7 +124,6 @@ MapBuildResult SimpleMapBuilder::build(int width,
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     recordSnapshot(
         result.snapshots, result.map, "placed stairs", options.recordSnapshots);
-    addBuildStep(result, "modifier: distant exit");
 
     validateBuildOrThrow(result, "Simple generation produced an invalid map");
 

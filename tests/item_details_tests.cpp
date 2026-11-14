@@ -15,7 +15,7 @@
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/ItemSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
 #include "ui/InventoryMenu.hpp"
 #include "ui/ItemDetails.hpp"
 #include "ui/ItemSelectionMenu.hpp"

@@ -1,6 +1,7 @@
-﻿{
+{
   "name": "roguelike",
   "version-string": "0.1.0",
+  "builtin-baseline": "353415a59f07e661416c649acb2d720f32e99fef",
   "dependencies": [
     "entt",
     "nlohmann-json",

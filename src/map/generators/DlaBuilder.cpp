@@ -89,25 +89,6 @@ void centralAttractor(Map& map,
     paint(map, previous, settings);
 }
 
-[[nodiscard]] std::string settingLabel(const DlaSettings& settings)
-{
-    std::string label;
-    switch (settings.algorithm) {
-    case DlaAlgorithm::WalkInwards:
-        label = "walk-inwards";
-        break;
-    case DlaAlgorithm::WalkOutwards:
-        label = "walk-outwards";
-        break;
-    case DlaAlgorithm::CentralAttractor:
-        label = "central-attractor";
-        break;
-    }
-    label += " brush " + std::to_string(settings.brushSize);
-    label += " floor " + std::to_string(settings.floorPercent);
-    return label;
-}
-
 } // namespace
 
 DlaSettings DlaBuilder::walkInwardsSettings() noexcept
@@ -173,8 +154,6 @@ MapBuildResult DlaBuilder::buildWithSettings(int width,
     result.builderName = "dla";
     result.playerStart = Point{width / 2, height / 2};
     carveSeed(result.map, result.playerStart);
-    addBuildStep(result, "base: diffusion-limited aggregation");
-    addBuildStep(result, "settings: " + settingLabel(settings));
     recordSnapshot(
         result.snapshots, result.map, "seed dla", options.recordSnapshots);
 
@@ -214,11 +193,6 @@ MapBuildResult DlaBuilder::buildWithSettings(int width,
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);
-    addBuildStep(result,
-                 "iterations: " + std::to_string(iterations) + " of " +
-                     std::to_string(maxIterations));
-    addBuildStep(result, "modifier: unreachable cull");
-    addBuildStep(result, "modifier: distant exit");
 
     validateBuildOrThrow(result, "DLA generation produced an invalid map");
 

@@ -112,7 +112,6 @@ void placeDoors(MapBuildResult& result,
     }
 
     if (placed > 0) {
-        addBuildStep(result, "modifier: doors");
         recordSnapshot(result.snapshots,
                        result.map,
                        "placed doors",
@@ -127,7 +126,6 @@ MapBuildResult BuilderChain::buildCavernVaults(int width,
 {
     auto result = CellularAutomataBuilder::build(width, height, rng, options);
     result.builderName = "cavern-vaults";
-    result.buildSteps.insert(result.buildSteps.begin(), "chain: cavern-vaults");
     const auto vaults = vaultsForDepth(1);
     if (!vaults.empty()) {
         const auto& vault = vaults[static_cast<std::size_t>(
@@ -148,7 +146,6 @@ MapBuildResult BuilderChain::buildRuinedRooms(int width,
 {
     auto result = SimpleMapBuilder::build(width, height, rng, options);
     result.builderName = "ruined-rooms";
-    result.buildSteps.insert(result.buildSteps.begin(), "chain: ruined-rooms");
     [[maybe_unused]] const auto placed =
         placePrefab(result, shrinePrefab(), rng, options);
 

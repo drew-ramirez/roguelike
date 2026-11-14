@@ -74,11 +74,6 @@ void recordSnapshot(std::vector<MapSnapshot>& snapshots,
     }
 }
 
-void addBuildStep(MapBuildResult& result, std::string step)
-{
-    result.buildSteps.push_back(std::move(step));
-}
-
 void validateBuildOrThrow(const MapBuildResult& result,
                           std::string_view failureMessage)
 {

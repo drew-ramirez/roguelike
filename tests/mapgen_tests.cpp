@@ -32,7 +32,7 @@
 #include "map/rooms/RoomCarver.hpp"
 #include "render/Camera.hpp"
 #include "render/ConsoleBuffer.hpp"
-#include "systems/MapRenderSystem.hpp"
+#include "systems/rendering/MapRenderSystem.hpp"
 
 namespace rl::test {
 namespace {
@@ -253,16 +253,6 @@ void setChunkTile(wfc::ChunkPattern& pattern, int x, int y, TileType tile)
                        result.snapshots.end(),
                        [text](const auto& s) {
                            return s.label.find(text) != std::string::npos;
-                       });
-}
-
-[[nodiscard]] bool hasBuildStepContaining(const MapBuildResult& result,
-                                          std::string_view text)
-{
-    return std::any_of(result.buildSteps.begin(),
-                       result.buildSteps.end(),
-                       [text](const auto& step) {
-                           return step.find(text) != std::string::npos;
                        });
 }
 
@@ -778,8 +768,6 @@ void runMapgenTests(TestRunner& runner)
                           roles[index].id + " surface role validates");
             runner.expect(result.builderName == roles[index].id,
                           roles[index].id + " reports its surface id");
-            runner.expect(hasBuildStepContaining(result, "role:"),
-                          roles[index].id + " records its local role");
             runner.expect(
                 surfaceExitIsOpen(result.map, exitNorth) &&
                     surfaceExitIsOpen(result.map, exitEast) &&
@@ -822,39 +810,17 @@ void runMapgenTests(TestRunner& runner)
     {
         struct RegionContent {
             std::string id;
-            std::string buildStep;
             std::string firstSpawn;
             std::string secondSpawn;
         };
         const std::vector<RegionContent> regions{
-            {"deep-caverns",
-             "theme: deep caverns",
-             "deep_kobold",
-             "stone_golem"},
-            {"dwarf-transition",
-             "theme: cavern to dwarf fort transition",
-             "dwarf_sentry",
-             "dwarf_rubble"},
-            {"dragon-lair",
-             "content: dragon and dwarf fortress treasure",
-             "dragon",
-             "gauntlets_of_might"},
-            {"mushroom-entrance",
-             "theme: mushroom entrance",
-             "mushroom_patch",
-             "sporeling"},
-            {"mushroom-forest",
-             "content: fungal forest encounters",
-             "sporeling",
-             "fungal_giant"},
-            {"mushroom-exit",
-             "theme: mushroom exit toward dark elf city",
-             "dark_elf_scout_a",
-             "hand_crossbow"},
-            {"dark-elf-city",
-             "content: rival dark elf clans",
-             "dark_elf_marksman_a",
-             "dark_elf_blade_b"},
+            {"deep-caverns", "deep_kobold", "stone_golem"},
+            {"dwarf-transition", "dwarf_sentry", "dwarf_rubble"},
+            {"dragon-lair", "dragon", "gauntlets_of_might"},
+            {"mushroom-entrance", "mushroom_patch", "sporeling"},
+            {"mushroom-forest", "sporeling", "fungal_giant"},
+            {"mushroom-exit", "dark_elf_scout_a", "hand_crossbow"},
+            {"dark-elf-city", "dark_elf_marksman_a", "dark_elf_blade_b"},
         };
 
         for (std::size_t index = 0; index < regions.size(); ++index) {
@@ -865,9 +831,6 @@ void runMapgenTests(TestRunner& runner)
                 result.map, result.playerStart, result.stairsPosition);
             runner.expect(validation.valid,
                           regions[index].id + " region validates");
-            runner.expect(
-                hasBuildStepContaining(result, regions[index].buildStep),
-                regions[index].id + " records authored theme");
             runner.expect(
                 hasSpawnRequest(result, regions[index].firstSpawn) &&
                     hasSpawnRequest(result, regions[index].secondSpawn),
@@ -888,8 +851,6 @@ void runMapgenTests(TestRunner& runner)
                       "bsp builder records snapshots when requested");
         runner.expect(!result.corridorPaths.empty(),
                       "bsp builder records corridor paths for modifiers");
-        runner.expect(hasBuildStepContaining(result, "random subrects"),
-                      "bsp builder records subrect algorithm");
     }
 
     {
@@ -904,8 +865,6 @@ void runMapgenTests(TestRunner& runner)
                       "bsp interior builder keeps maps reachable");
         runner.expect(!result.corridorPaths.empty(),
                       "bsp interior builder records corridor paths");
-        runner.expect(hasBuildStepContaining(result, "leaf rooms"),
-                      "bsp interior builder records leaf-room algorithm");
     }
 
     {
@@ -985,8 +944,6 @@ void runMapgenTests(TestRunner& runner)
                 hasSnapshotContaining(first, "chunk gallery") &&
                 hasSnapshotContaining(first, "placement"),
             "wfc builder records source chunk and placement snapshots");
-        runner.expect(hasBuildStepContaining(first, "neighbor-count"),
-                      "wfc builder records solver mode");
     }
 
     {
@@ -995,11 +952,8 @@ void runMapgenTests(TestRunner& runner)
             "drunkard-open-area", 40, 25, openAreaRng, MapBuildOptions{true});
         runner.expect(openArea.builderName == "drunkard-open-area",
                       "drunkard open-area variant reports its id");
-        runner.expect(hasBuildStepContaining(openArea, "starting-point") &&
-                          hasBuildStepContaining(openArea, "lifetime 400"),
-                      "drunkard open-area uses starting-point settings");
 
-        Rng fatPassagesRng{82U};
+        Rng fatPassagesRng{81U};
         const auto fatPassages = buildMapById("drunkard-fat-passages",
                                               40,
                                               25,
@@ -1007,8 +961,9 @@ void runMapgenTests(TestRunner& runner)
                                               MapBuildOptions{true});
         runner.expect(fatPassages.builderName == "drunkard-fat-passages",
                       "drunkard fat-passages variant reports its id");
-        runner.expect(hasBuildStepContaining(fatPassages, "brush 2"),
-                      "drunkard fat-passages uses a wider brush");
+        runner.expect(
+            !sameMapTiles(openArea.map, fatPassages.map),
+            "drunkard variants produce distinct terrain for the same seed");
     }
 
     {
@@ -1017,10 +972,8 @@ void runMapgenTests(TestRunner& runner)
             "dla-walk-inwards", 40, 25, inwardsRng, MapBuildOptions{true});
         runner.expect(inwards.builderName == "dla-walk-inwards",
                       "DLA walk-inwards variant reports its id");
-        runner.expect(hasBuildStepContaining(inwards, "walk-inwards"),
-                      "DLA records walk-inwards settings");
 
-        Rng attractorRng{92U};
+        Rng attractorRng{91U};
         const auto attractor = buildMapById("dla-central-attractor",
                                             40,
                                             25,
@@ -1028,8 +981,9 @@ void runMapgenTests(TestRunner& runner)
                                             MapBuildOptions{true});
         runner.expect(attractor.builderName == "dla-central-attractor",
                       "DLA central-attractor variant reports its id");
-        runner.expect(hasBuildStepContaining(attractor, "central-attractor"),
-                      "DLA records central-attractor settings");
+        runner.expect(
+            !sameMapTiles(inwards.map, attractor.map),
+            "DLA variants produce distinct terrain for the same seed");
     }
 
     {
@@ -1042,9 +996,6 @@ void runMapgenTests(TestRunner& runner)
         runner.expect(pythagoras.builderName == "voronoi-pythagoras" &&
                           manhattan.builderName == "voronoi-manhattan",
                       "Voronoi distance variants report their ids");
-        runner.expect(hasBuildStepContaining(pythagoras, "pythagoras") &&
-                          hasBuildStepContaining(manhattan, "manhattan"),
-                      "Voronoi records selected distance settings");
         runner.expect(!sameMapTiles(pythagoras.map, manhattan.map),
                       "Voronoi distance variants produce distinct maps");
 
@@ -1071,16 +1022,13 @@ void runMapgenTests(TestRunner& runner)
                       "prefab placement applies door markers");
         runner.expect(result.spawnRequests.size() == 2U,
                       "prefab placement converts spawn markers to requests");
-        runner.expect(hasBuildStepContaining(result, "placed prefab shrine"),
-                      "prefab placement records a build step");
 
         MapBuildResult tiny{Map{5, 5, TileType::Floor}, {}, {}};
         tiny.playerStart = Point{1, 1};
         tiny.stairsPosition = Point{3, 3};
         const auto failed =
             placePrefab(tiny, armoryVaultPrefab(), rng, MapBuildOptions{});
-        runner.expect(!failed.placed &&
-                          hasBuildStepContaining(tiny, "skipped prefab"),
+        runner.expect(!failed.placed && !failed.reason.empty(),
                       "prefab placement reports failed placement diagnostics");
 
         MapBuildResult sectionResult{Map{12, 12, TileType::Floor}, {}, {}};

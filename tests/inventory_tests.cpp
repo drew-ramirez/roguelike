@@ -9,7 +9,7 @@
 #include "input/InputEvent.hpp"
 #include "spawn/ItemSpawner.hpp"
 #include "spawn/Spawner.hpp"
-#include "systems/ItemSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
 #include "ui/InventoryMenu.hpp"
 
 namespace rl::test {

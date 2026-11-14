@@ -91,10 +91,9 @@ distanceFor(Point left, Point right, VoronoiDistance algorithm) noexcept
            map.tileAt(point.x, point.y) == TileType::Rock;
 }
 
-int removeFloatingWallFragments(Map& map)
+void removeFloatingWallFragments(Map& map)
 {
     std::vector<bool> visited(static_cast<std::size_t>(map.tileCount()), false);
-    int removed = 0;
 
     // Voronoi boundaries can leave tiny enclosed wall islands. Keep large or
     // edge-connected walls, but flatten small interior components so they do
@@ -139,30 +138,10 @@ int removeFloatingWallFragments(Map& map)
                 component.size() <= maxFloatingWallFragmentSize) {
                 for (const Point point : component) {
                     map.setTile(point.x, point.y, TileType::Floor);
-                    ++removed;
                 }
             }
         }
     }
-
-    return removed;
-}
-
-[[nodiscard]] std::string settingLabel(const VoronoiSettings& settings)
-{
-    std::string label = std::to_string(settings.seedCount) + " seeds ";
-    switch (settings.distance) {
-    case VoronoiDistance::Pythagoras:
-        label += "pythagoras";
-        break;
-    case VoronoiDistance::Manhattan:
-        label += "manhattan";
-        break;
-    case VoronoiDistance::Chebyshev:
-        label += "chebyshev";
-        break;
-    }
-    return label;
 }
 
 } // namespace
@@ -212,10 +191,6 @@ VoronoiBuilder::buildWithSettings(int width,
 
     MapBuildResult result{Map{width, height, TileType::Rock}, {}, {}};
     result.builderName = "voronoi";
-    addBuildStep(result, "base: voronoi hive");
-    addBuildStep(result, "settings: " + settingLabel(settings));
-    addBuildStep(result,
-                 "readable spaced seeds: " + std::to_string(seeds.size()));
 
     for (int y = 1; y < height - 1; ++y) {
         for (int x = 1; x < width - 1; ++x) {
@@ -229,7 +204,7 @@ VoronoiBuilder::buildWithSettings(int width,
     }
 
     auto start =
-        closestReachableFloorTo(result.map, Point{width / 2, height / 2});
+        closestWalkableFloorTo(result.map, Point{width / 2, height / 2});
     if (!start.has_value()) {
         result.map.setTile(width / 2, height / 2, TileType::Floor);
         start = Point{width / 2, height / 2};
@@ -237,16 +212,12 @@ VoronoiBuilder::buildWithSettings(int width,
     result.playerStart = *start;
     repairConnectivity(result.map, result.playerStart, rng);
     sealMapEdges(result.map, TileType::Rock);
-    if (removeFloatingWallFragments(result.map) > 0) {
-        addBuildStep(result, "modifier: floating wall cleanup");
-    }
+    removeFloatingWallFragments(result.map);
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);
     recordSnapshot(
         result.snapshots, result.map, "voronoi hive", options.recordSnapshots);
-    addBuildStep(result, "modifier: deliberate nearest-boundary gates");
-    addBuildStep(result, "modifier: distant exit");
 
     validateBuildOrThrow(result, "Voronoi generation produced an invalid map");
 

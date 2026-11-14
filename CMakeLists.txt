@@ -69,33 +69,34 @@ set(ROGUELIKE_CORE_SOURCES
     src/spawn/SpawnTable.cpp
     src/spawn/Spawner.cpp
     src/spawn/TrapSpawner.cpp
-    src/systems/BystanderAI.cpp
-    src/systems/CampSystem.cpp
-    src/systems/CookingSystem.cpp
-    src/systems/DamageSystem.cpp
-    src/systems/EffectSystem.cpp
-    src/systems/EquipmentSystem.cpp
-    src/systems/ForageSystem.cpp
-    src/systems/HungerSystem.cpp
+    src/systems/ai/BystanderAI.cpp
+    src/systems/survival/CampSystem.cpp
+    src/systems/survival/CookingSystem.cpp
+    src/systems/combat/DamageSystem.cpp
+    src/systems/effects/EffectSystem.cpp
+    src/ecs/EntityState.cpp
+    src/systems/inventory/EquipmentSystem.cpp
+    src/systems/survival/ForageSystem.cpp
+    src/systems/survival/HungerSystem.cpp
     src/systems/InputSystem.cpp
-    src/systems/ItemSystem.cpp
-    src/systems/MapRenderSystem.cpp
-    src/systems/MapTransitionSystem.cpp
-    src/systems/MeleeCombatSystem.cpp
-    src/systems/MonsterAI.cpp
-    src/systems/ParticleSystem.cpp
-    src/systems/PortalSystem.cpp
-    src/systems/RangedCombatSystem.cpp
-    src/systems/RenderSystem.cpp
-    src/systems/SettlementServiceSystem.cpp
-    src/systems/ShrineRiteSystem.cpp
-    src/systems/SpatialIndexSystem.cpp
-    src/systems/SpellSystem.cpp
-    src/systems/SystemScheduler.cpp
-    src/systems/TrapSystem.cpp
-    src/systems/VendorSystem.cpp
-    src/systems/VisibilitySystem.cpp
-    src/systems/WorldTravelSystem.cpp
+    src/systems/inventory/ItemSystem.cpp
+    src/systems/rendering/MapRenderSystem.cpp
+    src/systems/travel/MapTransitionSystem.cpp
+    src/systems/combat/MeleeCombatSystem.cpp
+    src/systems/ai/MonsterAI.cpp
+    src/systems/rendering/ParticleSystem.cpp
+    src/systems/travel/PortalSystem.cpp
+    src/systems/combat/RangedCombatSystem.cpp
+    src/systems/rendering/RenderSystem.cpp
+    src/systems/services/SettlementServiceSystem.cpp
+    src/systems/services/ShrineRiteSystem.cpp
+    src/systems/spatial/SpatialIndexSystem.cpp
+    src/systems/combat/SpellSystem.cpp
+    src/systems/TurnSystem.cpp
+    src/systems/combat/TrapSystem.cpp
+    src/systems/services/VendorSystem.cpp
+    src/systems/spatial/VisibilitySystem.cpp
+    src/systems/travel/WorldTravelSystem.cpp
     src/ui/CampMenu.cpp
     src/ui/Hud.cpp
     src/ui/InventoryMenu.cpp
@@ -141,7 +142,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/raws_validation_tests.cpp
     tests/region_routing_tests.cpp
     tests/save_load_tests.cpp
-    tests/scheduler_tests.cpp
+    tests/turn_tests.cpp
     tests/spell_tests.cpp
     tests/spatial_tests.cpp
     tests/targeting_tests.cpp
@@ -172,6 +173,7 @@ set(ROGUELIKE_HEADERS
     src/debug/MapgenPlayback.hpp
     src/debug/MapgenViewer.hpp
     src/ecs/Components.hpp
+    src/ecs/EntityState.hpp
     src/fov/IFovProvider.hpp
     src/fov/ShadowcastingFov.hpp
     src/input/InputEvent.hpp
@@ -229,33 +231,33 @@ set(ROGUELIKE_HEADERS
     src/spawn/SpawnTable.hpp
     src/spawn/Spawner.hpp
     src/spawn/TrapSpawner.hpp
-    src/systems/BystanderAI.hpp
-    src/systems/CampSystem.hpp
-    src/systems/CookingSystem.hpp
-    src/systems/DamageSystem.hpp
-    src/systems/EffectSystem.hpp
-    src/systems/EquipmentSystem.hpp
-    src/systems/ForageSystem.hpp
-    src/systems/HungerSystem.hpp
+    src/systems/ai/BystanderAI.hpp
+    src/systems/survival/CampSystem.hpp
+    src/systems/survival/CookingSystem.hpp
+    src/systems/combat/DamageSystem.hpp
+    src/systems/effects/EffectSystem.hpp
+    src/systems/inventory/EquipmentSystem.hpp
+    src/systems/survival/ForageSystem.hpp
+    src/systems/survival/HungerSystem.hpp
     src/systems/InputSystem.hpp
-    src/systems/ItemSystem.hpp
-    src/systems/MapRenderSystem.hpp
-    src/systems/MapTransitionSystem.hpp
-    src/systems/MeleeCombatSystem.hpp
-    src/systems/MonsterAI.hpp
-    src/systems/ParticleSystem.hpp
-    src/systems/PortalSystem.hpp
-    src/systems/RangedCombatSystem.hpp
-    src/systems/RenderSystem.hpp
-    src/systems/SettlementServiceSystem.hpp
-    src/systems/ShrineRiteSystem.hpp
-    src/systems/SpatialIndexSystem.hpp
-    src/systems/SpellSystem.hpp
-    src/systems/SystemScheduler.hpp
-    src/systems/TrapSystem.hpp
-    src/systems/VendorSystem.hpp
-    src/systems/VisibilitySystem.hpp
-    src/systems/WorldTravelSystem.hpp
+    src/systems/inventory/ItemSystem.hpp
+    src/systems/rendering/MapRenderSystem.hpp
+    src/systems/travel/MapTransitionSystem.hpp
+    src/systems/combat/MeleeCombatSystem.hpp
+    src/systems/ai/MonsterAI.hpp
+    src/systems/rendering/ParticleSystem.hpp
+    src/systems/travel/PortalSystem.hpp
+    src/systems/combat/RangedCombatSystem.hpp
+    src/systems/rendering/RenderSystem.hpp
+    src/systems/services/SettlementServiceSystem.hpp
+    src/systems/services/ShrineRiteSystem.hpp
+    src/systems/spatial/SpatialIndexSystem.hpp
+    src/systems/combat/SpellSystem.hpp
+    src/systems/TurnSystem.hpp
+    src/systems/combat/TrapSystem.hpp
+    src/systems/services/VendorSystem.hpp
+    src/systems/spatial/VisibilitySystem.hpp
+    src/systems/travel/WorldTravelSystem.hpp
     src/ui/CampMenu.hpp
     src/ui/Hud.hpp
     src/ui/InventoryMenu.hpp

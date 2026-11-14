@@ -69,7 +69,6 @@ MapBuildResult CellularAutomataBuilder::build(int width,
 
     MapBuildResult result{Map{width, height, TileType::Rock}, {}, {}};
     result.builderName = "cellular";
-    addBuildStep(result, "base: cellular automata");
 
     for (int y = 1; y < height - 1; ++y) {
         for (int x = 1; x < width - 1; ++x) {
@@ -94,7 +93,7 @@ MapBuildResult CellularAutomataBuilder::build(int width,
     cullSmallRegions(result.map, insignificantFloorRegionSize, TileType::Rock);
     cullSmallNaturalBlockerComponents(result.map, tinyRockComponentSize);
     auto start =
-        closestReachableFloorTo(result.map, Point{width / 2, height / 2});
+        closestWalkableFloorTo(result.map, Point{width / 2, height / 2});
     if (!start.has_value()) {
         result.map.setTile(width / 2, height / 2, TileType::Floor);
         start = Point{width / 2, height / 2};
@@ -107,9 +106,6 @@ MapBuildResult CellularAutomataBuilder::build(int width,
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);
-    addBuildStep(result, "modifier: tiny cave fragment cleanup");
-    addBuildStep(result, "modifier: nearest-boundary cave connections");
-    addBuildStep(result, "modifier: distant exit");
     recordSnapshot(result.snapshots,
                    result.map,
                    "validated cave",

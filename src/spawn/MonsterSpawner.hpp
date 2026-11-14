@@ -8,7 +8,6 @@
 #include "core/Point.hpp"
 #include "core/Rng.hpp"
 #include "map/MapBuilderTypes.hpp"
-#include "map/Rect.hpp"
 
 namespace rl {
 
@@ -16,11 +15,6 @@ namespace rl {
                                        Point position);
 [[nodiscard]] entt::entity spawnOrc(entt::registry& registry, Point position);
 [[nodiscard]] entt::entity spawnTroll(entt::registry& registry, Point position);
-[[nodiscard]] std::size_t spawnMonsters(entt::registry& registry,
-                                        const std::vector<Rect>& rooms,
-                                        Rng& rng,
-                                        Point playerStart,
-                                        int depth = 1);
 [[nodiscard]] std::size_t spawnMonsters(entt::registry& registry,
                                         const std::vector<SpawnRegion>& regions,
                                         const Map& map,

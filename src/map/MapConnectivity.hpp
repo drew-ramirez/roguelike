@@ -45,8 +45,8 @@ enum class ConnectivityStyle { Architectural, Cave, Surface };
 /** Builds a reachability field for endpoint selection and later analysis. */
 [[nodiscard]] DistanceMap buildDistanceMap(const Map& map, Point start);
 [[nodiscard]] int countReachableTiles(const Map& map, Point start);
-[[nodiscard]] std::optional<Point> closestReachableFloorTo(const Map& map,
-                                                           Point target);
+[[nodiscard]] std::optional<Point> closestWalkableFloorTo(const Map& map,
+                                                          Point target);
 [[nodiscard]] std::optional<Point> farthestReachableFloor(const Map& map,
                                                           Point start);
 
@@ -58,6 +58,9 @@ int cullUnreachable(Map& map,
 int cullSmallRegions(Map& map,
                      int maximumSize,
                      TileType replacement = TileType::Wall);
+/** Counts cardinally connected rock, tree, and reed fragments. */
+[[nodiscard]] int countSmallNaturalBlockerComponents(const Map& map,
+                                                     int maximumSize);
 /** Removes small isolated rock, tree, or reed fragments. */
 int cullSmallNaturalBlockerComponents(Map& map, int maximumSize);
 /** Joins disconnected regions using terrain-appropriate narrow routes. */

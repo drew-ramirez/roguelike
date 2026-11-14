@@ -1,5 +1,6 @@
 #include "spawn/Spawner.hpp"
 
+#include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
 #include "raws/RawDatabase.hpp"
@@ -7,7 +8,8 @@
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/RawSpawner.hpp"
 #include "spawn/TrapSpawner.hpp"
-#include "systems/SpatialIndexSystem.hpp"
+#include "systems/services/VendorSystem.hpp"
+#include "systems/spatial/SpatialIndexSystem.hpp"
 
 namespace rl {
 namespace {
@@ -25,6 +27,43 @@ namespace {
 }
 
 } // namespace
+
+std::size_t populateGeneratedLevel(entt::registry& registry,
+                                   GameResources& resources,
+                                   const Map& map,
+                                   const MapBuildResult& build)
+{
+    [[maybe_unused]] const auto requested =
+        spawnRequestedEntities(registry,
+                               build.spawnRequests,
+                               map,
+                               build.playerStart,
+                               build.stairsPosition);
+    populateAllVendorStock(registry, defaultRawDatabase());
+    if (resources.mapBuilderId == "normal" && resources.depth == 1) {
+        return 0;
+    }
+    const auto monsters = spawnMonsters(registry,
+                                        build.spawnRegions,
+                                        map,
+                                        resources.rng,
+                                        build.playerStart,
+                                        resources.depth);
+    [[maybe_unused]] const auto items = spawnItems(registry,
+                                                   build.spawnRegions,
+                                                   map,
+                                                   resources.rng,
+                                                   build.playerStart,
+                                                   resources.depth);
+    [[maybe_unused]] const auto traps = spawnTraps(registry,
+                                                   build.spawnRegions,
+                                                   map,
+                                                   resources.rng,
+                                                   build.playerStart,
+                                                   build.stairsPosition,
+                                                   resources.depth);
+    return monsters;
+}
 
 entt::entity spawnPlayer(entt::registry& registry, Point position)
 {

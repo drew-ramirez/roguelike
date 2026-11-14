@@ -54,11 +54,8 @@ struct MapBuildResult {
     std::vector<MapSnapshot> snapshots;
     std::string builderName = "simple";
     std::vector<CorridorPath> corridorPaths;
-    std::vector<std::string> buildSteps;
     std::vector<SpawnRequest> spawnRequests;
     Point upStairsPosition;
 };
-
-using BuilderMap = MapBuildResult;
 
 } // namespace rl

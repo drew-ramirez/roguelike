@@ -14,12 +14,12 @@
 #include "spawn/MonsterSpawner.hpp"
 #include "spawn/Spawner.hpp"
 #include "spawn/TrapSpawner.hpp"
-#include "systems/DamageSystem.hpp"
-#include "systems/HungerSystem.hpp"
-#include "systems/ItemSystem.hpp"
-#include "systems/MapRenderSystem.hpp"
-#include "systems/ParticleSystem.hpp"
-#include "systems/TrapSystem.hpp"
+#include "systems/combat/DamageSystem.hpp"
+#include "systems/combat/TrapSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
+#include "systems/rendering/MapRenderSystem.hpp"
+#include "systems/rendering/ParticleSystem.hpp"
+#include "systems/survival/HungerSystem.hpp"
 #include "ui/MainMenu.hpp"
 
 namespace rl::test {

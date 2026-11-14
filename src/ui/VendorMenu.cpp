@@ -8,8 +8,9 @@
 #include "ecs/Components.hpp"
 #include "render/ConsoleBuffer.hpp"
 #include "systems/InputSystem.hpp"
-#include "systems/ItemSystem.hpp"
-#include "systems/VendorSystem.hpp"
+#include "systems/inventory/ItemSystem.hpp"
+#include "systems/services/VendorSystem.hpp"
+#include "ui/Widgets.hpp"
 
 namespace rl {
 namespace {
@@ -58,21 +59,6 @@ menuItems(const entt::registry& registry, const GameResources& resources)
         return vendorStock(registry, vendor);
     }
     return saleItems(registry, resources.player, vendor);
-}
-
-void drawBox(ConsoleBuffer& console)
-{
-    for (int y = panelY; y < panelY + panelHeight; ++y) {
-        for (int x = panelX; x < panelX + panelWidth; ++x) {
-            const bool border = x == panelX || x == panelX + panelWidth - 1 ||
-                                y == panelY || y == panelY + panelHeight - 1;
-            console.set(x,
-                        y,
-                        border ? U'#' : U' ',
-                        Color{180, 180, 180, 255},
-                        Color::black());
-        }
-    }
 }
 
 } // namespace
@@ -144,7 +130,7 @@ void drawVendorMenu(ConsoleBuffer& console,
                     const entt::registry& registry,
                     const GameResources& resources)
 {
-    drawBox(console);
+    drawMenuFrame(console, panelX, panelY, panelWidth, panelHeight);
     if (!resources.pendingVendor.has_value()) {
         return;
     }
