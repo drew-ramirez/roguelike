@@ -11,6 +11,7 @@
 #include "systems/EffectSystem.hpp"
 #include "systems/EquipmentSystem.hpp"
 #include "systems/ItemSystem.hpp"
+#include "systems/SpellSystem.hpp"
 
 namespace rl::test {
 
@@ -48,6 +49,41 @@ void runEffectsTests(TestRunner& runner)
                   "effects queue resolves reveal");
     runner.expect(hiddenMap.isRevealed(1, 1),
                   "resolved reveal effect mutates the map");
+
+    const auto firstMagic = spawnNamedEntity(
+        registry, defaultRawDatabase(), "cursed_dagger", Point{1, 1});
+    const auto selectedMagic = spawnNamedEntity(
+        registry, defaultRawDatabase(), "cursed_dagger", Point{1, 1});
+    for (const auto item : {firstMagic, selectedMagic}) {
+        registry.remove<Position>(item);
+        registry.emplace<InBackpack>(item, InBackpack{resources.player});
+    }
+    const auto selectedScroll = spawnNamedEntity(
+        registry, defaultRawDatabase(), "identify_scroll", Point{1, 1});
+    registry.remove<Position>(selectedScroll);
+    registry.emplace<InBackpack>(selectedScroll, InBackpack{resources.player});
+    runner.expect(useInventoryItemOnTargetItem(registry,
+                                               resources,
+                                               map,
+                                               resources.player,
+                                               selectedScroll,
+                                               selectedMagic),
+                  "identify scroll resolves on selected item");
+    runner.expect(registry.get<MagicItem>(selectedMagic).identified &&
+                      !registry.get<MagicItem>(firstMagic).identified &&
+                      !registry.valid(selectedScroll),
+                  "selected item is identified and scroll is consumed");
+    registry.destroy(firstMagic);
+    registry.destroy(selectedMagic);
+
+    registry.emplace<KnownSpells>(resources.player, KnownSpells{{"heal"}});
+    auto& pools = registry.get<Pools>(resources.player);
+    pools.mana = 6;
+    runner.expect(
+        !castKnownSpell(
+            registry, resources, map, resources.player, "heal", std::nullopt) &&
+            pools.mana == 6,
+        "failed healing spell does not spend mana");
 
     const auto cursed = spawnNamedEntity(
         registry, defaultRawDatabase(), "cursed_dagger", Point{1, 1});
