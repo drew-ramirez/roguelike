@@ -64,13 +64,6 @@ collectConnectedRegions(const Map& map, TilePredicate accepts)
     return regions;
 }
 
-[[nodiscard]] int distanceSquared(Point left, Point right) noexcept
-{
-    const int dx = left.x - right.x;
-    const int dy = left.y - right.y;
-    return (dx * dx) + (dy * dy);
-}
-
 [[nodiscard]] std::vector<ConnectedRegion>
 regionsSortedBySize(std::vector<ConnectedRegion> regions)
 {
