@@ -69,7 +69,6 @@ MapBuildResult CellularAutomataBuilder::build(int width,
 
     MapBuildResult result{Map{width, height, TileType::Rock}, {}, {}};
     result.builderName = "cellular";
-    addBuildStep(result, "base: cellular automata");
 
     for (int y = 1; y < height - 1; ++y) {
         for (int x = 1; x < width - 1; ++x) {
@@ -107,9 +106,6 @@ MapBuildResult CellularAutomataBuilder::build(int width,
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);
-    addBuildStep(result, "modifier: tiny cave fragment cleanup");
-    addBuildStep(result, "modifier: nearest-boundary cave connections");
-    addBuildStep(result, "modifier: distant exit");
     recordSnapshot(result.snapshots,
                    result.map,
                    "validated cave",

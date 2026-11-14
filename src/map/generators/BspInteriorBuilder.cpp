@@ -187,8 +187,6 @@ MapBuildResult BspInteriorBuilder::build(int width,
                           std::move(snapshots),
                           "bsp-interior",
                           std::move(corridorPaths)};
-    addBuildStep(result, "base: bsp interior leaf rooms");
-    addBuildStep(result, "connector: sibling subtrees");
 
     validateBuildOrThrow(result,
                          "BSP interior generation produced an invalid map");

@@ -32,7 +32,6 @@ void recordSnapshot(std::vector<MapSnapshot>& snapshots,
                     const Map& map,
                     std::string label,
                     bool enabled);
-void addBuildStep(MapBuildResult& result, std::string step);
 /** Rejects results whose start, stairs, or connectivity are not playable. */
 void validateBuildOrThrow(const MapBuildResult& result,
                           std::string_view failureMessage);

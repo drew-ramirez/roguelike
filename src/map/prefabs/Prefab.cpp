@@ -158,7 +158,6 @@ void applyPrefab(MapBuildResult& result,
         result.spawnRegions.push_back(
             spawnRegionFromTiles(std::move(spawnTiles), SpawnRegionKind::Room));
     }
-    addBuildStep(result, "modifier: placed prefab " + prefab.name);
     recordSnapshot(result.snapshots,
                    result.map,
                    "placed prefab " + prefab.name,
@@ -344,34 +343,21 @@ PrefabPlacementResult placeSection(MapBuildResult& result,
                                    MapBuildOptions options)
 {
     if (!isRectangular(section.prefab)) {
-        const auto failure = fail("non-rectangular prefab");
-        addBuildStep(result,
-                     "modifier: skipped section " + section.prefab.name + " (" +
-                         failure.reason + ")");
-        return failure;
+        return fail("non-rectangular prefab");
     }
 
     const int maxX = result.map.width() - prefabWidth(section.prefab) - 1;
     const int maxY = result.map.height() - prefabHeight(section.prefab) - 1;
     if (maxX <= 1 || maxY <= 1) {
-        const auto failure = fail("section does not fit map");
-        addBuildStep(result,
-                     "modifier: skipped section " + section.prefab.name + " (" +
-                         failure.reason + ")");
-        return failure;
+        return fail("section does not fit map");
     }
 
     const Point origin = sectionOrigin(result.map, section);
     if (!canPlacePrefab(result, section.prefab, origin)) {
-        const auto failure = fail("section placement blocked");
-        addBuildStep(result,
-                     "modifier: skipped section " + section.prefab.name + " (" +
-                         failure.reason + ")");
-        return failure;
+        return fail("section placement blocked");
     }
 
     applyPrefab(result, section.prefab, origin, options.recordSnapshots);
-    addBuildStep(result, "modifier: placed section " + section.prefab.name);
     return PrefabPlacementResult{true, origin, {}};
 }
 
@@ -383,31 +369,19 @@ PrefabPlacementResult placePrefab(MapBuildResult& result,
                                   int maxAttempts)
 {
     if (!isRectangular(prefab)) {
-        const auto failure = fail("non-rectangular prefab");
-        addBuildStep(result,
-                     "modifier: skipped prefab " + prefab.name + " (" +
-                         failure.reason + ")");
-        return failure;
+        return fail("non-rectangular prefab");
     }
 
     const int maxX = result.map.width() - prefabWidth(prefab) - 1;
     const int maxY = result.map.height() - prefabHeight(prefab) - 1;
     if (maxX <= 1 || maxY <= 1) {
-        const auto failure = fail("prefab does not fit map");
-        addBuildStep(result,
-                     "modifier: skipped prefab " + prefab.name + " (" +
-                         failure.reason + ")");
-        return failure;
+        return fail("prefab does not fit map");
     }
 
     if (mode != PrefabPlacementMode::Random) {
         const Point origin = fixedOrigin(result.map, prefab, mode);
         if (!canPlacePrefab(result, prefab, origin)) {
-            const auto failure = fail("fixed placement blocked");
-            addBuildStep(result,
-                         "modifier: skipped prefab " + prefab.name + " (" +
-                             failure.reason + ")");
-            return failure;
+            return fail("fixed placement blocked");
         }
         applyPrefab(result, prefab, origin, options.recordSnapshots);
         return PrefabPlacementResult{true, origin, {}};
@@ -423,11 +397,7 @@ PrefabPlacementResult placePrefab(MapBuildResult& result,
         return PrefabPlacementResult{true, origin, {}};
     }
 
-    const auto failure = fail("no valid random placement");
-    addBuildStep(result,
-                 "modifier: skipped prefab " + prefab.name + " (" +
-                     failure.reason + ")");
-    return failure;
+    return fail("no valid random placement");
 }
 
 } // namespace rl

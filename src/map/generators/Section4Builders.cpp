@@ -545,7 +545,6 @@ MapBuildResult Section4Builders::buildWoods(int width,
     addSpawnRequestIfOpen(result, "food_ration", Point{roadX - 2, clearingY});
     addSpawnRequestIfOpen(
         result, "healing_potion", Point{roadX + 2, clearingY});
-    addBuildStep(result, "content: woods wildlife and supplies");
     return result;
 }
 
@@ -578,7 +577,6 @@ MapBuildResult Section4Builders::buildTownOutskirts(int width,
     addSpawnRequestIfOpen(result, "food_ration", Point{center.x, center.y + 3});
     addSpawnRequestIfOpen(
         result, "greenholt_hearth", Point{center.x + 5, center.y + 2});
-    addBuildStep(result, "role: town outskirts");
     return result;
 }
 
@@ -596,7 +594,6 @@ MapBuildResult Section4Builders::buildSurfaceCardinalTransition(
 
     finishSurfaceRegion(result, rng, "surface-cardinal-transition", options);
     addBiomeFlavor(result, options.biomeVariant, center, false);
-    addBuildStep(result, "role: cardinal transition");
     return result;
 }
 
@@ -623,7 +620,6 @@ MapBuildResult Section4Builders::buildSurfaceCornerWilderness(
     finishSurfaceRegion(result, rng, "surface-corner-wilderness", options);
     addBiomeFlavor(result, options.biomeVariant, center, false);
     addSpawnRequestIfOpen(result, "food_ration", Point{center.x, center.y + 2});
-    addBuildStep(result, "role: corner wilderness");
     return result;
 }
 
@@ -653,7 +649,6 @@ MapBuildResult Section4Builders::buildSurfaceRuinPocket(int width,
         result, "dwarf_rubble", Point{center.x + 5, center.y + 2});
     addSpawnRequestIfOpen(
         result, "cursed_dagger", Point{center.x + 2, center.y});
-    addBuildStep(result, "role: ruin pocket");
     return result;
 }
 
@@ -684,7 +679,6 @@ MapBuildResult Section4Builders::buildSurfaceCaveMouth(int width,
         result, "cave_mushroom", Point{center.x - 2, center.y + 3});
     addSpawnRequestIfOpen(
         result, "salt_crust", Point{center.x + 2, center.y + 3});
-    addBuildStep(result, "role: cave mouth");
     return result;
 }
 
@@ -722,7 +716,6 @@ MapBuildResult Section4Builders::buildSurfaceCampShrine(int width,
         addSpawnRequestIfOpen(
             result, "reed_mentor", Point{center.x + 6, center.y});
     }
-    addBuildStep(result, "role: camp shrine");
     return result;
 }
 
@@ -764,7 +757,6 @@ MapBuildResult Section4Builders::buildSurfaceResourceHeavy(
         addSpawnRequestIfOpen(
             result, "fallen_log", Point{center.x + 5, center.y + 3});
     }
-    addBuildStep(result, "role: resource heavy");
     return result;
 }
 
@@ -788,7 +780,6 @@ MapBuildResult Section4Builders::buildSurfaceDangerEncounter(
     addBiomeFlavor(result, options.biomeVariant, center, true);
     addSpawnRequestIfOpen(
         result, "fireball_scroll", Point{center.x, center.y + 4});
-    addBuildStep(result, "role: danger encounter");
     return result;
 }
 
@@ -814,8 +805,6 @@ MapBuildResult Section4Builders::buildLimestoneCaverns(int width,
     addSpawnRequestFromDistantFloor(result, "limestone_column", columnOffset);
     addSpawnRequestFromDistantFloor(result, "healing_potion", supplyOffset);
     addSpawnRequestFromDistantFloor(result, "food_ration", rationOffset);
-    addBuildStep(result, "theme: limestone caverns");
-    addBuildStep(result, "content: cavern denizens and formations");
     recordSnapshot(result.snapshots,
                    result.map,
                    "limestone region",
@@ -839,8 +828,6 @@ MapBuildResult Section4Builders::buildDeepCaverns(int width,
     addSpawnRequestFromDistantFloor(result, "deep_limestone_column", 12);
     addSpawnRequestFromDistantFloor(result, "town_portal_scroll", 18);
     addSpawnRequestFromDistantFloor(result, "food_ration", 24);
-    addBuildStep(result, "theme: deep caverns");
-    addBuildStep(result, "content: deep denizens and portal supplies");
     recordSnapshot(result.snapshots,
                    result.map,
                    "deep cavern region",
@@ -862,8 +849,6 @@ MapBuildResult Section4Builders::buildDwarfTransition(int width,
     addSpawnRequestFromDistantFloor(result, "chain_mail", 10);
     addSpawnRequestFromDistantFloor(result, "remove_curse_scroll", 15);
     addSpawnRequestFromDistantFloor(result, "food_ration", 20);
-    addBuildStep(result, "theme: cavern to dwarf fort transition");
-    addBuildStep(result, "content: ruined dwarf defenses");
     recordSnapshot(result.snapshots,
                    result.map,
                    "dwarf transition region",
@@ -900,7 +885,6 @@ MapBuildResult Section4Builders::buildDragonLair(int width,
         result, "gauntlets_of_might", Point{width / 2 + 4, height - 8});
     addSpawnRequestIfOpen(result, "food_ration", Point{width / 2, height - 5});
     finalizeRegion(result, "dragon-lair", options.recordSnapshots);
-    addBuildStep(result, "content: dragon and dwarf fortress treasure");
     return result;
 }
 
@@ -931,8 +915,6 @@ MapBuildResult Section4Builders::buildMushroomEntrance(int width,
         result, "sporeling", Point{width / 2 + 6, height / 2});
     addSpawnRequestIfOpen(
         result, "food_ration", Point{width / 2, height / 2 + 2});
-    addBuildStep(result, "theme: mushroom entrance");
-    addBuildStep(result, "content: first fungal growths");
     return result;
 }
 
@@ -966,7 +948,6 @@ MapBuildResult Section4Builders::buildMushroomForest(int width,
     addSpawnRequestFromDistantFloor(result, "mushroom_patch", 12);
     addSpawnRequestFromDistantFloor(result, "confusion_spore", 18);
     addSpawnRequestFromDistantFloor(result, "food_ration", 24);
-    addBuildStep(result, "content: fungal forest encounters");
     return result;
 }
 
@@ -996,7 +977,6 @@ MapBuildResult Section4Builders::buildMushroomExit(int width,
     addSpawnRequestIfOpen(
         result, "hand_crossbow", Point{width / 2, height - 8});
     addSpawnRequestIfOpen(result, "food_ration", Point{width / 2, height - 6});
-    addBuildStep(result, "theme: mushroom exit toward dark elf city");
     return result;
 }
 
@@ -1025,7 +1005,6 @@ MapBuildResult Section4Builders::buildDarkElfCity(int width,
     addSpawnRequestIfOpen(result, "scimitar", Point{midX - 4, midY + 2});
     addSpawnRequestIfOpen(result, "buckler", Point{midX + 4, midY + 2});
     finalizeRegion(result, "dark-elf-city", options.recordSnapshots, false);
-    addBuildStep(result, "content: rival dark elf clans");
     return result;
 }
 

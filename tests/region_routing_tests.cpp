@@ -12,15 +12,6 @@
 namespace rl::test {
 namespace {
 
-[[nodiscard]] bool hasBuildStep(const MapBuildResult& result,
-                                std::string_view step)
-{
-    return std::any_of(
-        result.buildSteps.begin(),
-        result.buildSteps.end(),
-        [step](const std::string& candidate) { return candidate == step; });
-}
-
 [[nodiscard]] bool hasSpawnRequest(const MapBuildResult& result,
                                    std::string_view id)
 {
@@ -59,8 +50,6 @@ void runRegionRoutingTests(TestRunner& runner)
     Rng townRng{99U};
     const auto town = buildLevelForDepth(1, 40, 25, townRng, {});
     runner.expect(town.builderName == "town", "depth 1 builds town");
-    runner.expect(hasBuildStep(town, "region:town"),
-                  "town build records its region route");
     runner.expect(
         town.map.tileAt(town.stairsPosition.x, town.stairsPosition.y) ==
             TileType::DownStairs,
@@ -77,17 +66,11 @@ void runRegionRoutingTests(TestRunner& runner)
                       hasSpawnRequest(woods, "food_ration") &&
                       hasSpawnRequest(woods, "healing_potion"),
                   "woods requests wildlife and supplies");
-    runner.expect(hasBuildStep(woods, "content: woods wildlife and supplies"),
-                  "woods build records authored content");
 
     Rng cavernRng{101U};
     const auto cavern = buildLevelForDepth(3, 40, 25, cavernRng, {});
     runner.expect(cavern.builderName == "limestone-caverns",
                   "limestone depths use the themed cavern builder");
-    runner.expect(hasBuildStep(cavern, "region:limestone"),
-                  "limestone build records its region route");
-    runner.expect(hasBuildStep(cavern, "theme: limestone caverns"),
-                  "limestone build records its theme");
     runner.expect(cavern.spawnRegions.size() >= 3,
                   "limestone caverns expose multiple spawn regions");
     runner.expect(hasSpawnRequest(cavern, "kobold") &&
@@ -106,9 +89,6 @@ void runRegionRoutingTests(TestRunner& runner)
     const auto deep = buildLevelForDepth(4, 40, 25, deepRng, {});
     runner.expect(deep.builderName == "deep-caverns",
                   "depth 4 builds deep caverns");
-    runner.expect(hasBuildStep(deep, "region:deep_caverns") &&
-                      hasBuildStep(deep, "theme: deep caverns"),
-                  "deep caverns record route and theme");
     runner.expect(hasSpawnRequest(deep, "deep_kobold") &&
                       hasSpawnRequest(deep, "stone_golem") &&
                       hasSpawnRequest(deep, "deep_limestone_column") &&

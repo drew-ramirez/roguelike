@@ -54,7 +54,6 @@ MazeBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
     result.builderName = "maze";
     result.playerStart = Point{1, 1};
     result.map.setTile(1, 1, TileType::Floor);
-    addBuildStep(result, "base: recursive backtracker maze");
 
     std::vector<Point> stack{result.playerStart};
     constexpr std::array<Point, 4> baseDirections{
@@ -96,7 +95,6 @@ MazeBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Corridor);
-    addBuildStep(result, "modifier: distant exit");
 
     validateBuildOrThrow(result, "Maze generation produced an invalid map");
 
