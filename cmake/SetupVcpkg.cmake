@@ -65,6 +65,7 @@ execute_process(COMMAND "${GIT_EXECUTABLE}" symbolic-ref -q HEAD
                 OUTPUT_QUIET ERROR_QUIET)
 if(new_checkout OR NOT head_result EQUAL 0 OR NOT head STREQUAL baseline OR
    branch_result EQUAL 0)
+    set(needs_bootstrap TRUE)
     execute_process(COMMAND "${GIT_EXECUTABLE}" checkout --detach "${baseline}"
                     WORKING_DIRECTORY "${vcpkg_dir}" RESULT_VARIABLE result)
     if(NOT result EQUAL 0)
@@ -73,13 +74,25 @@ if(new_checkout OR NOT head_result EQUAL 0 OR NOT head STREQUAL baseline OR
 endif()
 
 if(CMAKE_HOST_WIN32)
-    execute_process(COMMAND cmd.exe /d /c bootstrap-vcpkg.bat -disableMetrics
-                    WORKING_DIRECTORY "${vcpkg_dir}" RESULT_VARIABLE result)
+    set(vcpkg_executable "${vcpkg_dir}/vcpkg.exe")
 else()
-    execute_process(COMMAND sh ./bootstrap-vcpkg.sh -disableMetrics
-                    WORKING_DIRECTORY "${vcpkg_dir}" RESULT_VARIABLE result)
+    set(vcpkg_executable "${vcpkg_dir}/vcpkg")
 endif()
-if(NOT result EQUAL 0)
-    message(FATAL_ERROR "vcpkg bootstrap failed. Check the output above and retry setup.")
+if(needs_bootstrap OR NOT EXISTS "${vcpkg_executable}")
+    if(CMAKE_HOST_WIN32)
+        execute_process(COMMAND cmd.exe /d /c bootstrap-vcpkg.bat -disableMetrics
+                        WORKING_DIRECTORY "${vcpkg_dir}" RESULT_VARIABLE result)
+    else()
+        execute_process(COMMAND sh ./bootstrap-vcpkg.sh -disableMetrics
+                        WORKING_DIRECTORY "${vcpkg_dir}" RESULT_VARIABLE result)
+    endif()
+    if(NOT result EQUAL 0)
+        # A failed bootstrap may leave a stale or incomplete executable.
+        file(REMOVE "${vcpkg_executable}")
+        if(EXISTS "${vcpkg_executable}")
+            message(FATAL_ERROR "vcpkg bootstrap failed and ${vcpkg_executable} could not be removed. Remove it before retrying.")
+        endif()
+        message(FATAL_ERROR "vcpkg bootstrap failed. Check the output above and retry setup.")
+    endif()
 endif()
 message(STATUS "Project-local vcpkg is ready at ${vcpkg_dir}")
