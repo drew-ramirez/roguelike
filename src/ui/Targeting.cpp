@@ -13,13 +13,6 @@
 namespace rl {
 namespace {
 
-[[nodiscard]] int distanceSquared(Point left, Point right) noexcept
-{
-    const int dx = left.x - right.x;
-    const int dy = left.y - right.y;
-    return (dx * dx) + (dy * dy);
-}
-
 [[nodiscard]] Point playerPoint(const entt::registry& registry,
                                 const GameResources& resources)
 {

@@ -16,6 +16,7 @@
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
+#include "ecs/EntityState.hpp"
 #include "fov/IFovProvider.hpp"
 #include "map/Map.hpp"
 #include "map/MapConnectivity.hpp"
@@ -126,22 +127,6 @@ shiftedSurfaceScreen(Point macro, Point screen, Point direction) noexcept
         target = Point{map.width() / 2, map.height() - 2};
     }
     return firstWalkableNear(map, target);
-}
-
-void movePlayerTo(entt::registry& registry, entt::entity player, Point point)
-{
-    if (player == entt::null || !registry.valid(player) ||
-        !registry.all_of<Position>(player)) {
-        return;
-    }
-
-    auto& position = registry.get<Position>(player);
-    position.x = point.x;
-    position.y = point.y;
-    if (registry.all_of<Viewshed>(player)) {
-        registry.patch<Viewshed>(
-            player, [](Viewshed& viewshed) { viewshed.dirty = true; });
-    }
 }
 
 [[nodiscard]] bool
@@ -329,7 +314,7 @@ bool tryTravelByEdge(entt::registry& registry,
         return false;
     }
 
-    movePlayerTo(
+    moveEntityTo(
         registry, resources.player, edgeArrivalPosition(map, direction));
     (void)setMapBuilderToSurfaceScreen(resources, macro, screen, false);
     updateVisibility(registry, map, resources.player, fovProvider);

@@ -74,6 +74,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/systems/CookingSystem.cpp
     src/systems/DamageSystem.cpp
     src/systems/EffectSystem.cpp
+    src/ecs/EntityState.cpp
     src/systems/EquipmentSystem.cpp
     src/systems/ForageSystem.cpp
     src/systems/HungerSystem.cpp
@@ -172,6 +173,7 @@ set(ROGUELIKE_HEADERS
     src/debug/MapgenPlayback.hpp
     src/debug/MapgenViewer.hpp
     src/ecs/Components.hpp
+    src/ecs/EntityState.hpp
     src/fov/IFovProvider.hpp
     src/fov/ShadowcastingFov.hpp
     src/input/InputEvent.hpp

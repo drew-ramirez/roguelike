@@ -11,6 +11,7 @@
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
+#include "ecs/EntityState.hpp"
 #include "fov/IFovProvider.hpp"
 #include "map/Map.hpp"
 #include "raws/RawDatabase.hpp"
@@ -20,34 +21,6 @@
 
 namespace rl {
 namespace {
-
-[[nodiscard]] std::optional<Point>
-entityPosition(const entt::registry& registry, entt::entity entity)
-{
-    if (entity == entt::null || !registry.valid(entity) ||
-        !registry.all_of<Position>(entity)) {
-        return std::nullopt;
-    }
-    const auto& position = registry.get<Position>(entity);
-    return Point{position.x, position.y};
-}
-
-void setEntityPosition(entt::registry& registry,
-                       entt::entity entity,
-                       Point point)
-{
-    if (entity == entt::null || !registry.valid(entity) ||
-        !registry.all_of<Position>(entity)) {
-        return;
-    }
-    auto& position = registry.get<Position>(entity);
-    position.x = point.x;
-    position.y = point.y;
-    if (registry.all_of<Viewshed>(entity)) {
-        registry.patch<Viewshed>(
-            entity, [](Viewshed& viewshed) { viewshed.dirty = true; });
-    }
-}
 
 [[nodiscard]] bool hasPortalAt(const entt::registry& registry, Point point)
 {
@@ -137,7 +110,7 @@ bool tryUseTownPortal(entt::registry& registry,
         resources.townPortalPosition.value_or(arrival.value_or(Point{1, 1}));
     resources.townPortalPosition = townPortal;
     ensurePortalAt(registry, townPortal);
-    setEntityPosition(registry, resources.player, townPortal);
+    moveEntityTo(registry, resources.player, townPortal);
     updateVisibility(registry, map, resources.player, fovProvider);
     resources.log.add("A town portal opens. Press Enter on it to return.");
     return true;
@@ -173,7 +146,7 @@ bool tryUseReturnPortal(entt::registry& registry,
         return false;
     }
 
-    setEntityPosition(registry, resources.player, returnPosition);
+    moveEntityTo(registry, resources.player, returnPosition);
     resources.townPortalActive = false;
     resources.townPortalReturnPosition.reset();
     updateVisibility(registry, map, resources.player, fovProvider);

@@ -13,19 +13,12 @@
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
+#include "ecs/EntityState.hpp"
 #include "raws/RawDatabase.hpp"
 #include "spawn/RawSpawner.hpp"
 
 namespace rl {
 namespace {
-
-std::string entityName(const entt::registry& registry, entt::entity entity)
-{
-    if (registry.valid(entity) && registry.all_of<Name>(entity)) {
-        return registry.get<Name>(entity).value;
-    }
-    return "Something";
-}
 
 [[nodiscard]] bool hasBackpackOwner(const entt::registry& registry,
                                     entt::entity item,

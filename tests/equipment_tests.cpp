@@ -58,6 +58,31 @@ void runEquipmentTests(TestRunner& runner)
             derivedAttributes.intelligence == baseAttributes.intelligence - 1,
         "derived attributes include equipped attribute bonuses");
 
+    const auto modifierActor = registry.create();
+    runner.expect(
+        attributeModifierWithEquipment(registry, modifierActor, "might") == 0,
+        "missing attributes give no combat modifier");
+    registry.emplace<Attributes>(modifierActor, Attributes{9, 10, 11, 12});
+    runner.expect(
+        attributeModifierWithEquipment(registry, modifierActor, "might") ==
+                -1 &&
+            attributeModifierWithEquipment(
+                registry, modifierActor, "fitness") == 0 &&
+            attributeModifierWithEquipment(
+                registry, modifierActor, "quickness") == 0 &&
+            attributeModifierWithEquipment(
+                registry, modifierActor, "intelligence") == 1 &&
+            attributeModifierWithEquipment(
+                registry, modifierActor, "unknown") == -1,
+        "attribute modifiers round down and unknown attributes use might");
+    const auto modifierItem = registry.create();
+    registry.emplace<Equipped>(modifierItem,
+                               Equipped{modifierActor, EquipmentSlot::Armor});
+    registry.emplace<AttributeBonus>(modifierItem, AttributeBonus{3, 0, 0, 0});
+    runner.expect(
+        attributeModifierWithEquipment(registry, modifierActor, "might") == 1,
+        "combat modifiers include equipped attribute bonuses");
+
     const auto dagger = spawnDagger(registry, Point{1, 1});
     const auto sword = spawnSword(registry, Point{1, 2});
     registry.remove<Position>(dagger);
@@ -89,9 +114,9 @@ void runEquipmentTests(TestRunner& runner)
     runner.expect(!equipOrUnequipItem(
                       registry, resources.log, resources.player, cursedArmor),
                   "cursed equipped item cannot be removed");
-    runner.expect(!dropItemAtOwner(
-                      registry, resources, resources.player, cursedArmor),
-                  "cursed equipped item cannot be dropped");
+    runner.expect(
+        !dropItemAtOwner(registry, resources, resources.player, cursedArmor),
+        "cursed equipped item cannot be dropped");
     runner.expect(registry.all_of<Equipped>(cursedArmor),
                   "cursed equipment remains equipped after blocked actions");
 

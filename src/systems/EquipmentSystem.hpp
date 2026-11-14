@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <string_view>
+
 #include <entt/entt.hpp>
 
 namespace rl {
@@ -27,5 +29,9 @@ class GameLog;
 
 [[nodiscard]] Attributes attributesWithEquipment(const entt::registry& registry,
                                                  entt::entity entity);
+
+[[nodiscard]] int attributeModifierWithEquipment(const entt::registry& registry,
+                                                 entt::entity entity,
+                                                 std::string_view attribute);
 
 } // namespace rl

@@ -23,9 +23,6 @@ class Map;
 [[nodiscard]] std::vector<entt::entity>
 inventoryItems(const entt::registry& registry, entt::entity owner);
 
-[[nodiscard]] std::optional<entt::entity>
-itemAtPosition(const entt::registry& registry, Point position);
-
 [[nodiscard]] bool queuePickupItemAtPlayer(entt::registry& registry,
                                            GameResources& resources);
 

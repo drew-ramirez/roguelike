@@ -4,20 +4,9 @@
 
 #include "core/GameLog.hpp"
 #include "ecs/Components.hpp"
+#include "ecs/EntityState.hpp"
 
 namespace rl {
-namespace {
-
-std::string entityName(const entt::registry& registry, entt::entity entity)
-{
-    if (registry.valid(entity) && registry.all_of<Name>(entity)) {
-        return registry.get<Name>(entity).value;
-    }
-    return "Something";
-}
-
-} // namespace
-
 bool equipOrUnequipItem(entt::registry& registry,
                         GameLog& log,
                         entt::entity owner,
@@ -132,6 +121,26 @@ Attributes attributesWithEquipment(const entt::registry& registry,
         attributes.intelligence += bonus.intelligence;
     }
     return attributes;
+}
+
+int attributeModifierWithEquipment(const entt::registry& registry,
+                                   entt::entity entity,
+                                   std::string_view attribute)
+{
+    if (!registry.valid(entity) || !registry.all_of<Attributes>(entity)) {
+        return 0;
+    }
+    const auto attributes = attributesWithEquipment(registry, entity);
+    int score = attributes.might;
+    if (attribute == "fitness") {
+        score = attributes.fitness;
+    } else if (attribute == "quickness") {
+        score = attributes.quickness;
+    } else if (attribute == "intelligence") {
+        score = attributes.intelligence;
+    }
+    const int delta = score - 10;
+    return delta >= 0 ? delta / 2 : -((1 - delta) / 2);
 }
 
 } // namespace rl

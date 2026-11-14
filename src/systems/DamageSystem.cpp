@@ -13,20 +13,13 @@
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
+#include "ecs/EntityState.hpp"
 #include "map/Map.hpp"
 #include "progression/ExperienceSystem.hpp"
 #include "systems/ParticleSystem.hpp"
 
 namespace rl {
 namespace {
-
-std::string entityName(const entt::registry& registry, entt::entity entity)
-{
-    if (registry.valid(entity) && registry.all_of<Name>(entity)) {
-        return registry.get<Name>(entity).value;
-    }
-    return "Something";
-}
 
 void markBlood(Map* map, const entt::registry& registry, entt::entity entity)
 {

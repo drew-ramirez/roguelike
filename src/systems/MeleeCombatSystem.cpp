@@ -16,51 +16,12 @@
 #include "core/GameLog.hpp"
 #include "core/Rng.hpp"
 #include "ecs/Components.hpp"
+#include "ecs/EntityState.hpp"
 #include "systems/DamageSystem.hpp"
 #include "systems/EquipmentSystem.hpp"
 
 namespace rl {
 namespace {
-
-std::string entityName(const entt::registry& registry, entt::entity entity)
-{
-    if (registry.valid(entity) && registry.all_of<Name>(entity)) {
-        return registry.get<Name>(entity).value;
-    }
-    return "Something";
-}
-
-[[nodiscard]] int attributeValue(const Attributes& attributes,
-                                 std::string_view name)
-{
-    if (name == "fitness") {
-        return attributes.fitness;
-    }
-    if (name == "quickness") {
-        return attributes.quickness;
-    }
-    if (name == "intelligence") {
-        return attributes.intelligence;
-    }
-    return attributes.might;
-}
-
-[[nodiscard]] int attributeModifier(int score)
-{
-    const int delta = score - 10;
-    return delta >= 0 ? delta / 2 : -((1 - delta) / 2);
-}
-
-[[nodiscard]] int attackerModifier(const entt::registry& registry,
-                                   entt::entity attacker,
-                                   std::string_view attribute)
-{
-    if (!registry.valid(attacker) || !registry.all_of<Attributes>(attacker)) {
-        return 0;
-    }
-    return attributeModifier(
-        attributeValue(attributesWithEquipment(registry, attacker), attribute));
-}
 
 [[nodiscard]] std::optional<WeaponStats>
 equippedMeleeWeapon(const entt::registry& registry, entt::entity owner)
@@ -87,12 +48,13 @@ equippedMeleeWeapon(const entt::registry& registry, entt::entity owner)
     const auto weapon = equippedMeleeWeapon(registry, attacker);
     if (!weapon.has_value()) {
         return meleePowerWithEquipment(registry, attacker) +
-               attackerModifier(registry, attacker, "might");
+               attributeModifierWithEquipment(registry, attacker, "might");
     }
 
     return registry.get<CombatStats>(attacker).power +
            rollDice(parseDice(weapon->damage), rng) + weapon->hitBonus +
-           attackerModifier(registry, attacker, weapon->attribute);
+           attributeModifierWithEquipment(
+               registry, attacker, weapon->attribute);
 }
 
 } // namespace

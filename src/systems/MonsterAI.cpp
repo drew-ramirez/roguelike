@@ -16,6 +16,7 @@
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
+#include "ecs/EntityState.hpp"
 #include "map/Map.hpp"
 #include "raws/RawDatabase.hpp"
 #include "systems/BystanderAI.hpp"
@@ -72,24 +73,6 @@ Point chooseMonsterStep(Point monsterPosition,
     return !registry.all_of<Neutral>(entity) &&
            !registry.all_of<Bystander>(entity) &&
            !registry.all_of<Vendor>(entity);
-}
-
-[[nodiscard]] std::optional<Point>
-entityPosition(const entt::registry& registry, entt::entity entity)
-{
-    if (entity == entt::null || !registry.valid(entity) ||
-        !registry.all_of<Position>(entity)) {
-        return std::nullopt;
-    }
-    const auto& position = registry.get<Position>(entity);
-    return Point{position.x, position.y};
-}
-
-[[nodiscard]] int distanceSquared(Point left, Point right) noexcept
-{
-    const int dx = left.x - right.x;
-    const int dy = left.y - right.y;
-    return (dx * dx) + (dy * dy);
 }
 
 [[nodiscard]] int manhattanDistance(Point left, Point right) noexcept

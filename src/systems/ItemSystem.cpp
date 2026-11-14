@@ -1,49 +1,26 @@
 #include "systems/ItemSystem.hpp"
 
 #include <algorithm>
-#include <cmath>
 #include <string>
 #include <utility>
 
 #include "core/GameLog.hpp"
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
+#include "ecs/EntityState.hpp"
 #include "map/Map.hpp"
-#include "systems/DamageSystem.hpp"
 #include "systems/EffectSystem.hpp"
 #include "systems/EquipmentSystem.hpp"
-#include "systems/HungerSystem.hpp"
-#include "systems/ParticleSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
 
 namespace rl {
 namespace {
 
-std::string entityName(const entt::registry& registry, entt::entity entity)
+void consumeIfNeeded(entt::registry& registry, entt::entity item)
 {
-    if (registry.valid(entity) && registry.all_of<Name>(entity)) {
-        return registry.get<Name>(entity).value;
+    if (registry.valid(item) && registry.all_of<Consumable>(item)) {
+        registry.destroy(item);
     }
-    return "Something";
-}
-
-[[nodiscard]] int distanceSquared(Point left, Point right) noexcept
-{
-    const int dx = left.x - right.x;
-    const int dy = left.y - right.y;
-    return (dx * dx) + (dy * dy);
-}
-
-[[nodiscard]] std::optional<Point>
-entityPosition(const entt::registry& registry, entt::entity entity)
-{
-    if (entity == entt::null || !registry.valid(entity) ||
-        !registry.all_of<Position>(entity)) {
-        return std::nullopt;
-    }
-
-    const auto& position = registry.get<Position>(entity);
-    return Point{position.x, position.y};
 }
 
 void removeWorldOwnership(entt::registry& registry, entt::entity item)
@@ -61,163 +38,6 @@ void removeCarriedOwnership(entt::registry& registry, entt::entity item)
     if (registry.all_of<Equipped>(item)) {
         registry.remove<Equipped>(item);
     }
-}
-
-void consumeIfNeeded(entt::registry& registry, entt::entity item)
-{
-    if (registry.valid(item) && registry.all_of<Consumable>(item)) {
-        registry.destroy(item);
-    }
-}
-
-[[nodiscard]] bool healOwner(entt::registry& registry,
-                             GameResources& resources,
-                             entt::entity owner,
-                             entt::entity item)
-{
-    if (!registry.all_of<ProvidesHealing>(item) ||
-        !registry.all_of<CombatStats>(owner)) {
-        return false;
-    }
-
-    auto& stats = registry.get<CombatStats>(owner);
-    if (stats.hp >= stats.maxHp) {
-        resources.log.add("You are already at full health.");
-        return false;
-    }
-
-    const int amount = registry.get<ProvidesHealing>(item).amount;
-    stats.hp = std::min(stats.maxHp, stats.hp + amount);
-    if (registry.all_of<Pools>(owner)) {
-        auto& pools = registry.get<Pools>(owner);
-        pools.maxHitPoints = stats.maxHp;
-        pools.hitPoints = stats.hp;
-    }
-    resources.log.add("You drink " + entityName(registry, item) + ".");
-    if (const auto ownerPosition = entityPosition(registry, owner);
-        ownerPosition.has_value()) {
-        requestHealingParticle(resources, *ownerPosition);
-    }
-    consumeIfNeeded(registry, item);
-    return true;
-}
-
-[[nodiscard]] bool feedOwner(entt::registry& registry,
-                             GameResources& resources,
-                             entt::entity owner,
-                             entt::entity item)
-{
-    if (!registry.all_of<ProvidesNutrition>(item) ||
-        !registry.all_of<HungerClock>(owner)) {
-        return false;
-    }
-
-    constexpr int maximumHunger = 1000;
-    auto& clock = registry.get<HungerClock>(owner);
-    const int amount = registry.get<ProvidesNutrition>(item).amount;
-    clock.duration = std::min(maximumHunger, clock.duration + amount);
-    clock.state = hungerStateForDuration(clock.duration);
-    resources.log.add("You eat " + entityName(registry, item) + ".");
-    consumeIfNeeded(registry, item);
-    return true;
-}
-
-[[nodiscard]] bool itemOwnedBy(const entt::registry& registry,
-                               entt::entity owner,
-                               entt::entity item)
-{
-    if (!registry.valid(item)) {
-        return false;
-    }
-    if (registry.all_of<InBackpack>(item) &&
-        registry.get<InBackpack>(item).owner == owner) {
-        return true;
-    }
-    return registry.all_of<Equipped>(item) &&
-           registry.get<Equipped>(item).owner == owner;
-}
-
-void damageEntity(entt::registry& registry,
-                  GameResources& resources,
-                  entt::entity attacker,
-                  entt::entity target,
-                  int amount)
-{
-    if (target == attacker || !registry.valid(target) ||
-        !registry.all_of<CombatStats>(target)) {
-        return;
-    }
-
-    queueDamage(registry, target, amount);
-    resources.log.add(entityName(registry, target) + " is hit for " +
-                      std::to_string(amount) + ".");
-}
-
-[[nodiscard]] bool applyTargetedEffect(entt::registry& registry,
-                                       GameResources& resources,
-                                       Map& map,
-                                       entt::entity owner,
-                                       entt::entity item,
-                                       Point target)
-{
-    if (!map.inBounds(target.x, target.y) ||
-        !map.isVisible(target.x, target.y) ||
-        !registry.all_of<InflictsDamage>(item)) {
-        resources.log.add("You cannot target there.");
-        return false;
-    }
-
-    const int damage = registry.get<InflictsDamage>(item).amount;
-    int affected = 0;
-    if (registry.all_of<AreaOfEffect>(item)) {
-        const int radius = registry.get<AreaOfEffect>(item).radius;
-        const int radiusSquared = radius * radius;
-        const auto view = registry.view<const Position, const CombatStats>();
-        for (const auto entity : view) {
-            const auto& position = view.get<const Position>(entity);
-            const Point entityPoint{position.x, position.y};
-            if (distanceSquared(entityPoint, target) <= radiusSquared &&
-                map.isVisible(entityPoint.x, entityPoint.y)) {
-                damageEntity(registry, resources, owner, entity, damage);
-                ++affected;
-            }
-        }
-    } else {
-        const auto view = registry.view<const Position, const CombatStats>();
-        for (const auto entity : view) {
-            const auto& position = view.get<const Position>(entity);
-            if (position.x == target.x && position.y == target.y) {
-                damageEntity(registry, resources, owner, entity, damage);
-                ++affected;
-            }
-        }
-    }
-
-    if (affected == 0) {
-        resources.log.add("The magic fizzles.");
-    }
-    consumeIfNeeded(registry, item);
-    return true;
-}
-
-[[nodiscard]] bool applyMagicMapping(entt::registry& registry,
-                                     GameResources& resources,
-                                     Map& map,
-                                     entt::entity owner,
-                                     entt::entity item)
-{
-    if (!registry.all_of<MagicMapper>(item)) {
-        return false;
-    }
-
-    map.revealAll();
-    resources.log.add("The scroll reveals the dungeon layout.");
-    if (const auto ownerPosition = entityPosition(registry, owner);
-        ownerPosition.has_value()) {
-        requestMappingParticle(resources, *ownerPosition);
-    }
-    consumeIfNeeded(registry, item);
-    return true;
 }
 
 } // namespace
@@ -248,12 +68,6 @@ std::vector<entt::entity> inventoryItems(const entt::registry& registry,
     return items;
 }
 
-std::optional<entt::entity> itemAtPosition(const entt::registry& registry,
-                                           Point position)
-{
-    return itemAt(registry, position);
-}
-
 bool queuePickupItemAtPlayer(entt::registry& registry, GameResources& resources)
 {
     const auto playerPosition = entityPosition(registry, resources.player);
@@ -261,7 +75,7 @@ bool queuePickupItemAtPlayer(entt::registry& registry, GameResources& resources)
         return false;
     }
 
-    const auto item = itemAtPosition(registry, *playerPosition);
+    const auto item = itemAt(registry, *playerPosition);
     if (!item.has_value()) {
         resources.log.add("There is nothing here.");
         return false;

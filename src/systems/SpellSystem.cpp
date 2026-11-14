@@ -12,6 +12,7 @@
 
 #include "core/GameResources.hpp"
 #include "ecs/Components.hpp"
+#include "ecs/EntityState.hpp"
 #include "fov/IFovProvider.hpp"
 #include "map/Map.hpp"
 #include "raws/RawDatabase.hpp"
@@ -19,24 +20,6 @@
 
 namespace rl {
 namespace {
-
-[[nodiscard]] std::optional<Point>
-entityPosition(const entt::registry& registry, entt::entity entity)
-{
-    if (entity == entt::null || !registry.valid(entity) ||
-        !registry.all_of<Position>(entity)) {
-        return std::nullopt;
-    }
-    const auto& position = registry.get<Position>(entity);
-    return Point{position.x, position.y};
-}
-
-[[nodiscard]] int distanceSquared(Point left, Point right) noexcept
-{
-    const int dx = left.x - right.x;
-    const int dy = left.y - right.y;
-    return (dx * dx) + (dy * dy);
-}
 
 [[nodiscard]] bool knowsSpell(const entt::registry& registry,
                               entt::entity caster,
