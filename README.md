@@ -1,64 +1,74 @@
 # Roguelike
 
-Generic roguelike
+A roguelike built in C++20 with SDL2 and EnTT. Explore generated maps, fight
+monsters, and collect equipment.
 
 ## Features
 
-- SDL2 console renderer
-- ECS entities
-- Tile map rendering
-- Movement input
-- Seeded map generation
-- Field of view and map memory
-- Monster spawning
-- Bump combat
-- HUD and message log
+- Seeded maps using rooms, BSP, caves, mazes, Voronoi, and WFC.
+- Field of view, explored-map memory, and camera scrolling.
+- Melee and ranged combat, spells, traps, and monster AI.
+- Inventory, equipment, vendors, and XP progression.
+- Surface travel, persistent dungeon levels, and town portals.
+- Hunger, foraging, camp rest, cooking, and shrine offerings.
+- Save/load and an interactive map generation gallery.
 
-## Planned Stack
+## Build and run
 
-- C++20 or newer
-- CMake
-- SDL2 + SDL_ttf for renderer/input
-- EnTT for ECS
-- JSON serialization
-- Central seedable RNG wrapper
-
-## Build
-
-Install dependencies with vcpkg manifest mode, then configure with the vcpkg toolchain file:
+On Windows, install Git for Windows, CMake 3.21+, and Visual Studio 2022 or
+Build Tools with the **Desktop development with C++** workload.
+Run from the repository root in Git Bash:
 
 ```bash
-cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
-cmake --build build
-ctest --test-dir build -C Debug
+bash ./run.sh
 ```
 
-Run the game executable without arguments to open the window. The smoke test uses:
+The script sets up dependencies, builds as needed, and launches the game.
+The first run downloads the required libraries.
 
-```bash
-./build/Debug/roguelike --smoke
-```
-
-Use a reproducible map seed with:
-
-```bash
-./build/Debug/roguelike --seed 12345
-```
-
-The SDL_ttf renderer looks for a local monospace font. Set `ROGUELIKE_FONT_PATH` to a `.ttf` or `.ttc` file if automatic font discovery fails.
-
-## Formatting And Linting
-
-Use CMake targets:
-
-```bash
-cmake -S . -B build-lint -G Ninja -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
-cmake --build build-lint --target format-check
-cmake --build build-lint --target format
-cmake --build build-lint --target lint
-```
+Add `--seed 12345` for a repeatable map or `--gallery` to browse map generators.
 
 ## Controls
 
-- Arrow keys or WASD: move one tile.
-- Window close button: quit.
+Move with arrows or WASD. Bump monsters to attack. `G` picks up items,
+`I` opens inventory, and `F5` saves. `>` descends and `<` ascends.
+
+## Repo map
+
+```text
+.
+├── src/
+│   ├── main.cpp           # CLI options and application entry
+│   ├── assets/            # REXPaint asset loading
+│   ├── core/              # Game loop, run state, RNG, and logs
+│   ├── debug/             # Map generation gallery and playback
+│   ├── ecs/               # Components and shared entity queries
+│   ├── fov/               # Field-of-view calculations
+│   ├── input/             # Input event and key types
+│   ├── map/               # Tile maps, generation, and level snapshots
+│   │   ├── corridors/     # Corridor carving
+│   │   ├── generators/    # Map generation algorithms
+│   │   ├── prefabs/       # Authored terrain and spawn layouts
+│   │   └── rooms/         # Room carving
+│   ├── progression/       # XP and player leveling
+│   ├── raws/              # JSON content parsing and validation
+│   ├── render/            # Console renderer, camera, and themes
+│   ├── save/              # Save files and entity serialization
+│   ├── spawn/             # Entity creation and level population
+│   ├── systems/           # Input, turns, and gameplay domains
+│   │   ├── ai/            # Bystander and monster decisions
+│   │   ├── combat/        # Damage, melee, ranged attacks, spells, and traps
+│   │   ├── effects/       # Shared item and spell effects
+│   │   ├── inventory/     # Inventory and equipment
+│   │   ├── rendering/     # Map, entity, and particle presentation
+│   │   ├── services/      # Vendors, settlement services, and shrines
+│   │   ├── spatial/       # Tile queries and visibility
+│   │   ├── survival/      # Hunger, camps, foraging, and cooking
+│   │   └── travel/        # Dungeon, portal, and world travel
+│   ├── ui/                # HUD, menus, and targeting
+│   └── world/             # World generation, biomes, and routes
+├── assets/                # Art, palettes, and map patterns
+├── data/
+│   └── raws/              # Monsters, items, spells, and recipes
+└── tests/                 # Unit and integration tests
+```
