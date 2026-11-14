@@ -9,7 +9,9 @@
 
 #include <cstddef>
 #include <optional>
+#include <string>
 #include <string_view>
+#include <vector>
 
 #include "core/Rng.hpp"
 #include "world/WorldTypes.hpp"
@@ -19,17 +21,32 @@ namespace rl {
 [[nodiscard]] bool worldPointInBounds(Point point) noexcept;
 [[nodiscard]] bool localScreenInBounds(Point point) noexcept;
 [[nodiscard]] std::size_t worldCellIndex(Point point);
+[[nodiscard]] std::string worldCellKey(Point point);
 
 [[nodiscard]] WorldCellDescriptor* worldCellAt(WorldMapState& world,
                                                Point point);
-[[nodiscard]] const WorldCellDescriptor* worldCellAt(
-    const WorldMapState& world, Point point);
+[[nodiscard]] const WorldCellDescriptor* worldCellAt(const WorldMapState& world,
+                                                     Point point);
+[[nodiscard]] WorldRegionDescriptor* worldRegionById(WorldMapState& world,
+                                                     std::string_view id);
+[[nodiscard]] const WorldRegionDescriptor*
+worldRegionById(const WorldMapState& world, std::string_view id);
+[[nodiscard]] WorldRegionDescriptor* currentWorldRegion(WorldMapState& world);
+[[nodiscard]] const WorldRegionDescriptor*
+currentWorldRegion(const WorldMapState& world);
+void updateCurrentWorldRegion(WorldMapState& world);
+[[nodiscard]] const RouteLink*
+findDiscoveredRoute(const WorldRegionDescriptor& region,
+                    std::string_view destinationRegionId);
+[[nodiscard]] std::vector<RouteLink>
+discoveredRoutes(const WorldRegionDescriptor& region);
+bool unlockCurrentLandmarkFastTravel(WorldMapState& world);
 
+/** Samples a deterministic, smoothly interpolated macro-world scalar field. */
 [[nodiscard]] double valueNoise2d(Rng::Seed seed, double x, double y) noexcept;
-[[nodiscard]] double fbmNoise2d(Rng::Seed seed,
-                                double x,
-                                double y,
-                                int octaves = 4) noexcept;
+/** Layers coherent octaves for broad biome fields with local variation. */
+[[nodiscard]] double
+fbmNoise2d(Rng::Seed seed, double x, double y, int octaves = 4) noexcept;
 
 [[nodiscard]] BiomeVariant deriveBiomeVariant(const WorldCellFields& fields);
 [[nodiscard]] std::string_view biomeVariantId(BiomeVariant biome) noexcept;

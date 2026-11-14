@@ -105,6 +105,18 @@ struct ProvidesNutrition {
     int amount = 300;
 };
 
+struct Ingredient {
+    std::vector<std::string> tags;
+    std::string originBiome;
+    std::string originRegionId;
+    int potency = 1;
+    int risk = 0;
+};
+
+struct Meal {
+    std::string recipeId;
+};
+
 struct MagicMapper {};
 
 struct Ranged {
@@ -129,6 +141,28 @@ struct Vendor {
 };
 
 struct Prop {};
+
+struct CampSite {
+    std::string campType;
+    int safetyBonus = 0;
+};
+
+struct SettlementService {
+    std::string serviceId;
+    std::string recipeId;
+};
+
+struct Shrine {
+    std::string powerId;
+    std::vector<std::string> acceptedOfferingTags;
+    int blessingHp = 0;
+};
+
+struct CookingStation {
+    std::string stationId;
+    std::vector<std::string> methods;
+    std::vector<std::string> placeTags;
+};
 
 struct Faction {
     std::string id;

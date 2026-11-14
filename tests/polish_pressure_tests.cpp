@@ -124,6 +124,35 @@ void runPolishPressureTests(TestRunner& runner)
     }
 
     {
+        Map map{5, 3, TileType::Floor};
+        map.setTile(1, 1, TileType::Tree);
+        map.setTile(2, 1, TileType::DenseReeds);
+        map.setTile(3, 1, TileType::Rock);
+        map.setVisible(1, 1);
+        map.setVisible(2, 1);
+        map.setRevealed(3, 1);
+
+        const auto druidic = mapThemeById("druidic");
+        ConsoleBuffer console{5, 3};
+        console.clear();
+        renderMap(map, console, druidic);
+        runner.expect(console.cellAt(1, 1).glyph == U'\u2663' &&
+                          console.cellAt(2, 1).glyph == U'\u2248' &&
+                          console.cellAt(3, 1).glyph == U'\u25b2',
+                      "natural blockers use tree reed and rock glyphs");
+        runner.expect(
+            sameColor(console.cellAt(1, 1).foreground,
+                      druidic.style(MapThemeTile::Tree, true).foreground) &&
+                sameColor(
+                    console.cellAt(2, 1).foreground,
+                    druidic.style(MapThemeTile::DenseReeds, true).foreground) &&
+                sameColor(console.cellAt(3, 1).foreground,
+                          druidic.style(MapThemeTile::Rock, false).foreground),
+            "legacy map themes synthesize visible and remembered natural "
+            "terrain colors");
+    }
+
+    {
         Map map{4, 3, TileType::Floor};
         map.setBloodstain(1, 1);
         map.setVisible(1, 1);
@@ -266,6 +295,17 @@ void runPolishPressureTests(TestRunner& runner)
             handleMainMenuInput(enter, false, MainMenuMode::Title, selection) ==
                 MainMenuAction::NewGame,
             "main menu Enter starts a new game by default");
+
+        const std::vector<InputEvent> gallery{
+            {InputEventType::KeyDown, Key::G}};
+        runner.expect(handleMainMenuInput(
+                          gallery, false, MainMenuMode::Title, selection) ==
+                          MainMenuAction::Gallery,
+                      "main menu g opens the map generation gallery");
+        runner.expect(handleMainMenuInput(
+                          gallery, false, MainMenuMode::GameOver, selection) ==
+                          MainMenuAction::None,
+                      "game-over menu does not expose the gallery shortcut");
 
         const std::vector<InputEvent> quit{{InputEventType::KeyDown, Key::Q}};
         runner.expect(

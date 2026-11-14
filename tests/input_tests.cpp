@@ -1,6 +1,7 @@
 #include "TestSuites.hpp"
 
 #include <algorithm>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -12,6 +13,9 @@
 #include "input/InputEvent.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/InputSystem.hpp"
+#include "systems/MapTransitionSystem.hpp"
+#include "ui/WorldMapMenu.hpp"
+#include "world/WorldGeneration.hpp"
 
 namespace rl::test {
 
@@ -46,6 +50,67 @@ void runInputTests(TestRunner& runner)
     runner.expect(handleMapInput(registry, resources, map, ascend) ==
                       PlayerInputResult::Ascend,
                   "ascend key requests up transition");
+
+    GameResources surfaceResources;
+    surfaceResources.world = generateWorldMap(Rng::Seed{42U});
+    surfaceResources.world.currentMacro = reedfenWorldPosition();
+    surfaceResources.world.cursor = greenholtWorldPosition();
+    runner.expect(handleMapInput(registry, surfaceResources, map, ascend) ==
+                          PlayerInputResult::OpenWorldMap &&
+                      surfaceResources.world.cursor == reedfenWorldPosition(),
+                  "surface ascend key opens the world map");
+
+    GameResources undergroundResources;
+    undergroundResources.world = generateWorldMap(Rng::Seed{42U});
+    undergroundResources.world.onSurface = false;
+    runner.expect(handleMapInput(registry, undergroundResources, map, ascend) ==
+                      PlayerInputResult::Ascend,
+                  "underground ascend key keeps stair behavior");
+
+    GameResources worldMapResources;
+    worldMapResources.world = generateWorldMap(Rng::Seed{11U});
+    const std::vector<InputEvent> moveCursor{
+        {InputEventType::KeyDown, Key::Right}};
+    runner.expect(handleWorldMapInput(worldMapResources, moveCursor) ==
+                          WorldMapInputResult::MoveCursor &&
+                      worldMapResources.world.pendingLocalTravel ==
+                          std::optional<Point>{Point{1, 0}} &&
+                      worldMapResources.world.cursor ==
+                          greenholtWorldPosition(),
+                  "world map movement records pending macro travel");
+    runner.expect(handleWorldMapInput(worldMapResources, descend) ==
+                      WorldMapInputResult::EnterSelected,
+                  "world map descend key enters the selected cell");
+
+    GameResources edgeResources;
+    edgeResources.world = generateWorldMap(Rng::Seed{12U});
+    edgeResources.player = resources.player;
+    auto edgeMap = openMap(40, 25);
+    registry.get<Position>(resources.player) = Position{38, 12};
+    runner.expect(handleMapInput(registry, edgeResources, edgeMap, moveRight) ==
+                          PlayerInputResult::TravelLocalEdge &&
+                      edgeResources.world.pendingLocalTravel ==
+                          std::optional<Point>{Point{1, 0}},
+                  "surface edge movement requests local screen travel");
+
+    auto surfaceMap = openMap(40, 25);
+    entt::registry surfaceRegistry;
+    GameResources entryResources;
+    entryResources.world = generateWorldMap(Rng::Seed{12U});
+    entryResources.player = spawnPlayer(surfaceRegistry, Point{2, 2});
+    ShadowcastingFov surfaceFov;
+    runner.expect(tryEnterSurfaceScreen(surfaceRegistry,
+                                        entryResources,
+                                        surfaceMap,
+                                        surfaceFov,
+                                        reedfenWorldPosition(),
+                                        Point{1, 1}) &&
+                      entryResources.world.currentMacro ==
+                          reedfenWorldPosition() &&
+                      entryResources.world.currentScreen == Point{1, 1} &&
+                      worldCellAt(entryResources.world, reedfenWorldPosition())
+                          ->discovered,
+                  "world map entry generates and discovers a local screen");
 
     const std::vector<InputEvent> wallMove{{InputEventType::KeyDown, Key::W}};
     auto& position = registry.get<Position>(resources.player);
@@ -116,6 +181,85 @@ void runInputTests(TestRunner& runner)
             "bumping a prop does not consume a turn");
         runner.expect(!propRegistry.all_of<WantsToMelee>(propResources.player),
                       "bumping a prop does not queue melee");
+    }
+
+    {
+        auto campMap = openMap();
+        entt::registry campRegistry;
+        GameResources campResources;
+        campResources.player = spawnPlayer(campRegistry, Point{2, 2});
+
+        const auto camp = campRegistry.create();
+        campRegistry.emplace<Position>(camp, Position{3, 2});
+        campRegistry.emplace<Name>(camp, Name{"Campfire"});
+        campRegistry.emplace<BlocksTile>(camp);
+        campRegistry.emplace<Prop>(camp);
+        campRegistry.emplace<CampSite>(camp, CampSite{"test_camp", 2});
+
+        runner.expect(
+            handleMapInput(campRegistry, campResources, campMap, moveRight) ==
+                PlayerInputResult::OpenCamp,
+            "bumping a camp opens the camp menu");
+        runner.expect(campResources.pendingCamp.has_value() &&
+                          campResources.pendingCamp->camp == camp,
+                      "bumping a camp records the active camp");
+    }
+
+    {
+        auto serviceMap = openMap();
+        entt::registry serviceRegistry;
+        GameResources serviceResources;
+        serviceResources.world = generateWorldMap(Rng::Seed{33U});
+        serviceResources.world.currentMacro = reedfenWorldPosition();
+        serviceResources.world.currentScreen = Point{1, 1};
+        updateCurrentWorldRegion(serviceResources.world);
+        serviceResources.player = spawnPlayer(serviceRegistry, Point{2, 2});
+
+        const auto provider = serviceRegistry.create();
+        serviceRegistry.emplace<Position>(provider, Position{3, 2});
+        serviceRegistry.emplace<Name>(provider, Name{"Reed Mentor"});
+        serviceRegistry.emplace<BlocksTile>(provider);
+        serviceRegistry.emplace<Neutral>(provider);
+        serviceRegistry.emplace<SettlementService>(
+            provider, SettlementService{"teach_recipe", "marsh_stew"});
+
+        runner.expect(
+            handleMapInput(
+                serviceRegistry, serviceResources, serviceMap, moveRight) ==
+                PlayerInputResult::OpenSettlementService,
+            "bumping a settlement service opens the service menu");
+        runner.expect(serviceResources.pendingSettlementService.has_value() &&
+                          serviceResources.pendingSettlementService->provider ==
+                              provider,
+                      "bumping a service records the active provider");
+    }
+
+    {
+        auto shrineMap = openMap();
+        entt::registry shrineRegistry;
+        GameResources shrineResources;
+        shrineResources.world = generateWorldMap(Rng::Seed{34U});
+        shrineResources.world.currentMacro = reedfenWorldPosition();
+        shrineResources.world.currentScreen = Point{1, 1};
+        updateCurrentWorldRegion(shrineResources.world);
+        shrineResources.player = spawnPlayer(shrineRegistry, Point{2, 2});
+
+        const auto shrine = shrineRegistry.create();
+        shrineRegistry.emplace<Position>(shrine, Position{3, 2});
+        shrineRegistry.emplace<Name>(shrine, Name{"Stillwater Shrine"});
+        shrineRegistry.emplace<BlocksTile>(shrine);
+        shrineRegistry.emplace<Prop>(shrine);
+        shrineRegistry.emplace<Shrine>(
+            shrine, Shrine{"stillwater", {"fish", "food"}, 2});
+
+        runner.expect(
+            handleMapInput(
+                shrineRegistry, shrineResources, shrineMap, moveRight) ==
+                PlayerInputResult::OpenShrine,
+            "bumping a shrine opens the shrine menu");
+        runner.expect(shrineResources.pendingShrine.has_value() &&
+                          shrineResources.pendingShrine->shrine == shrine,
+                      "bumping a shrine records the active shrine");
     }
 
     Map sightMap{6, 3, TileType::Floor};

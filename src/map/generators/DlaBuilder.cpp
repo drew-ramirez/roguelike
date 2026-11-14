@@ -43,7 +43,8 @@ bool walkInwards(Map& map, const DlaSettings& settings, Rng& rng)
     int guard = map.width() * map.height() * 40;
     // Walk through solid rock until we hit the existing cave mass, then paint
     // the previous wall. That grows the boundary from the outside inward.
-    while (map.tileAt(digger.x, digger.y) == TileType::Wall && guard > 0) {
+    while (tileTraits(map.tileAt(digger.x, digger.y)).blocksMovement &&
+           guard > 0) {
         previous = digger;
         staggerCardinal(digger, map.width(), map.height(), rng);
         --guard;
@@ -61,7 +62,7 @@ void walkOutwards(Map& map, Point start, const DlaSettings& settings, Rng& rng)
     int guard = map.width() * map.height();
     // Inverse of walk-inwards: start inside the cave and random-walk until the
     // first wall, painting that wall expands the frontier outward
-    while (map.tileAt(digger.x, digger.y) == TileType::Floor && guard > 0) {
+    while (map.isWalkable(digger.x, digger.y) && guard > 0) {
         staggerCardinal(digger, map.width(), map.height(), rng);
         --guard;
     }
@@ -79,7 +80,7 @@ void centralAttractor(Map& map,
     // last wall before existing floor becomes the new aggregate cell.
     for (const Point next :
          bresenhamLine(digger, start, LineStartPolicy::ExcludeStart)) {
-        if (map.tileAt(digger.x, digger.y) != TileType::Wall) {
+        if (map.isWalkable(digger.x, digger.y)) {
             break;
         }
         previous = digger;
@@ -168,7 +169,7 @@ MapBuildResult DlaBuilder::buildWithSettings(int width,
         throw std::invalid_argument("Invalid DLA settings");
     }
 
-    MapBuildResult result{Map{width, height, TileType::Wall}, {}, {}};
+    MapBuildResult result{Map{width, height, TileType::Rock}, {}, {}};
     result.builderName = "dla";
     result.playerStart = Point{width / 2, height / 2};
     carveSeed(result.map, result.playerStart);
@@ -208,8 +209,8 @@ MapBuildResult DlaBuilder::buildWithSettings(int width,
 
     recordSnapshot(
         result.snapshots, result.map, "grown dla", options.recordSnapshots);
-    cullUnreachable(result.map, result.playerStart);
-    sealMapEdges(result.map);
+    cullUnreachable(result.map, result.playerStart, TileType::Rock);
+    sealMapEdges(result.map, TileType::Rock);
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);

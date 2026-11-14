@@ -75,6 +75,60 @@ void runRawsValidationTests(TestRunner& runner)
     runner.expect(rollSpawn(raws.monsterSpawnTable(), 1, first) ==
                       rollSpawn(raws.monsterSpawnTable(), 1, second),
                   "raw spawn table rolls are deterministic");
+
+    const auto openWorldRaws = RawDatabase::fromJson(R"({
+      "items": [
+        {"id": "marsh_root", "name": "Marsh Root", "renderable": {"glyph": "%", "fg": "#90D090", "bg": "#000000", "order": 2}},
+        {"id": "cooked_meal", "name": "Cooked Meal", "renderable": {"glyph": "%", "fg": "#F0C070", "bg": "#000000", "order": 2}}
+      ],
+      "props": [
+        {"id": "reed_camp", "name": "Reed Camp", "renderable": {"glyph": "c", "fg": "#A0D0A0", "bg": "#000000", "order": 1}, "camp_site": {"type": "reed", "safety_bonus": 2}},
+        {"id": "campfire", "name": "Campfire", "renderable": {"glyph": "&", "fg": "#FF8040", "bg": "#000000", "order": 1}, "cooking_station": {"id": "campfire", "methods": ["roast"], "place_tags": ["camp"]}},
+        {"id": "reed_mentor", "name": "Reed Mentor", "renderable": {"glyph": "@", "fg": "#C0FFC0", "bg": "#000000", "order": 5}, "settlement_service": {"service": "teach_recipe", "recipe": "marsh_stew"}}
+      ],
+      "ingredients": [
+        {"id": "marsh_root", "name": "Marsh Root", "item": "marsh_root", "tags": ["reed"]}
+      ],
+      "recipes": [{
+        "id": "marsh_stew", "name": "Marsh Stew", "station": "campfire",
+        "method": "roast", "ingredients": [{"id": "marsh_root", "count": 2}],
+        "outputs": [{"id": "cooked_meal", "count": 1}],
+        "place_tags": ["camp"], "nutrition": 450
+      }],
+      "biome_resource_tables": [{
+        "id": "reed_marsh",
+        "resources": [{"ingredient": "marsh_root", "weight": 3, "min": 1, "max": 2}]
+      }]
+    })");
+
+    const auto* camp = openWorldRaws.entity("reed_camp");
+    const auto* station = openWorldRaws.entity("campfire");
+    const auto* mentor = openWorldRaws.entity("reed_mentor");
+    runner.expect(camp != nullptr && camp->campSite.has_value() &&
+                      camp->campSite->campType == "reed" &&
+                      camp->campSite->safetyBonus == 2,
+                  "raw contracts parse camp site metadata");
+    runner.expect(station != nullptr && station->cookingStation.has_value() &&
+                      station->cookingStation->methods.front() == "roast" &&
+                      station->cookingStation->placeTags.front() == "camp",
+                  "raw contracts parse cooking station metadata");
+    runner.expect(mentor != nullptr &&
+                      mentor->settlementService.has_value() &&
+                      mentor->settlementService->serviceId ==
+                          "teach_recipe" &&
+                      mentor->settlementService->recipeId == "marsh_stew",
+                  "raw contracts parse settlement service metadata");
+    runner.expect(openWorldRaws.ingredient("marsh_root") != nullptr &&
+                      openWorldRaws.recipe("marsh_stew") != nullptr &&
+                      openWorldRaws.biomeResourceTable("reed_marsh") !=
+                          nullptr,
+                  "raw contracts expose open-world lookup helpers");
+    runner.expect(openWorldRaws.recipe("marsh_stew")->nutrition == 450 &&
+                      openWorldRaws.biomeResourceTable("reed_marsh")
+                              ->resources.front()
+                              .maxCount == 2,
+                  "raw contracts preserve recipe and progression details");
+
     const auto& defaults = defaultRawDatabase();
     runner.expect(defaults.entity("wolf") != nullptr &&
                       defaults.entity("wild_boar") != nullptr &&
@@ -99,6 +153,68 @@ void runRawsValidationTests(TestRunner& runner)
                       defaults.entity("scimitar") != nullptr &&
                       defaults.entity("buckler") != nullptr,
                   "default raw content includes late region props and loot");
+    runner.expect(defaults.entity("reed_mentor") != nullptr &&
+                      defaults.entity("cooked_meal") != nullptr &&
+                      defaults.entity("pond_fish") != nullptr &&
+                      defaults.entity("marsh_root") != nullptr &&
+                      defaults.entity("reed_shoot") != nullptr &&
+                      defaults.entity("bitter_herb") != nullptr &&
+                      defaults.entity("cave_mushroom") != nullptr &&
+                      defaults.entity("salt_crust") != nullptr,
+                  "default raw content includes open-world actors and resources");
+    runner.expect(defaults.entity("greenholt_hearth") != nullptr &&
+                      defaults.entity("reed_camp") != nullptr &&
+                      defaults.entity("stone_nook_camp") != nullptr &&
+                      defaults.entity("greenholt_tree") != nullptr &&
+                      defaults.entity("reed_clump") != nullptr &&
+                      defaults.entity("fallen_log") != nullptr,
+                  "default raw content includes open-world service props");
+    runner.expect(defaults.ingredient("pond_fish") != nullptr &&
+                      defaults.ingredient("marsh_root") != nullptr &&
+                      defaults.recipe("marsh_stew") != nullptr &&
+                      defaults.recipe("stonebelly_chowder") != nullptr &&
+                      defaults.biomeResourceTable("reed_marsh") != nullptr &&
+                      defaults.biomeResourceTable("limestone_cave") != nullptr,
+                  "default raw content includes open-world resource contracts");
+
+    const auto* reedCamp = defaults.entity("reed_camp");
+    const auto* reedMentor = defaults.entity("reed_mentor");
+    runner.expect(reedCamp != nullptr && reedCamp->campSite.has_value() &&
+                      reedCamp->cookingStation.has_value() &&
+                      reedCamp->cookingStation->placeTags.front() ==
+                          "campfire",
+                  "default raw content preserves camp service metadata");
+    runner.expect(reedMentor != nullptr &&
+                      reedMentor->settlementService.has_value() &&
+                      reedMentor->settlementService->recipeId ==
+                          "marsh_stew",
+                  "default raw content preserves settlement service metadata");
+
+    const auto marshRoot =
+        spawnRawEntity(registry, defaults, "marsh_root", Point{7, 2});
+    runner.expect(marshRoot.has_value() &&
+                      registry.all_of<Item,
+                                      Consumable,
+                                      ProvidesNutrition,
+                                      RawIdentity>(*marshRoot),
+                  "raw marsh root spawns as a food resource item");
+
+    const auto reedCampEntity =
+        spawnRawEntity(registry, defaults, "reed_camp", Point{8, 2});
+    runner.expect(reedCampEntity.has_value() &&
+                      registry.all_of<Prop, BlocksTile, RawIdentity>(
+                          *reedCampEntity),
+                  "raw reed camp spawns as a blocking service prop");
+
+    const auto reedMentorEntity =
+        spawnRawEntity(registry, defaults, "reed_mentor", Point{9, 2});
+    runner.expect(reedMentorEntity.has_value() &&
+                      registry.all_of<Monster,
+                                      Neutral,
+                                      Bystander,
+                                      Faction,
+                                      RawIdentity>(*reedMentorEntity),
+                  "raw reed mentor spawns as a neutral service actor");
 
     const auto crossbow =
         spawnRawEntity(registry, defaults, "hand_crossbow", Point{5, 2});
@@ -128,6 +244,26 @@ void runRawsValidationTests(TestRunner& runner)
     }
     runner.expect(rejectedBadReference,
                   "raw validation rejects missing spawn references");
+
+    bool rejectedBadOpenWorldReference = false;
+    try {
+        (void)RawDatabase::fromJson(R"({
+          "items": [{
+            "id": "meal",
+            "name": "Meal",
+            "renderable": {"glyph": "%", "fg": "#FFFFFF", "bg": "#000000", "order": 2}
+          }],
+          "recipes": [{
+            "id": "bad_recipe",
+            "ingredients": [{"id": "missing_ingredient", "count": 1}],
+            "outputs": [{"id": "meal", "count": 1}]
+          }]
+        })");
+    } catch (const std::exception&) {
+        rejectedBadOpenWorldReference = true;
+    }
+    runner.expect(rejectedBadOpenWorldReference,
+                  "raw validation rejects missing open-world references");
 }
 
 } // namespace rl::test

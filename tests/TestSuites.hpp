@@ -14,6 +14,7 @@ void runEquipmentTests(TestRunner& runner);
 void runFactionTests(TestRunner& runner);
 void runInputTests(TestRunner& runner);
 void runInventoryTests(TestRunner& runner);
+void runItemDetailsTests(TestRunner& runner);
 void runLevelSnapshotTests(TestRunner& runner);
 void runLogTests(TestRunner& runner);
 void runMapgenTests(TestRunner& runner);
@@ -31,5 +32,7 @@ void runTargetingTests(TestRunner& runner);
 void runUiTests(TestRunner& runner);
 void runVendorTests(TestRunner& runner);
 void runWorldGenerationTests(TestRunner& runner);
+void runWorldStateTests(TestRunner& runner);
+void runWorldSurvivalTests(TestRunner& runner);
 
 } // namespace rl::test

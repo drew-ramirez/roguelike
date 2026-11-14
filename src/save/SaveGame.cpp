@@ -15,6 +15,7 @@
 #include "save/SaveMap.hpp"
 #include "save/SaveResources.hpp"
 #include "save/SaveTypes.hpp"
+#include "systems/MapTransitionSystem.hpp"
 
 namespace rl {
 
@@ -78,6 +79,11 @@ bool deserializeGame(std::string_view text,
         loadedResources.dungeon.replaceLevels(
             save::dungeonFromJson(root.value("dungeon", save::Json::array())));
 
+        if (loadedResources.world.surfaceRegenerationRequired &&
+            !regenerateCurrentSurfaceScreen(
+                loadedRegistry, loadedResources, loadedMap)) {
+            return false;
+        }
         map = std::move(loadedMap);
         registry = std::move(loadedRegistry);
         resources = std::move(loadedResources);

@@ -31,15 +31,15 @@ void validateBuilderDimensions(std::string_view builderName,
     }
 }
 
-void sealMapEdges(Map& map)
+void sealMapEdges(Map& map, TileType tile)
 {
     for (int x = 0; x < map.width(); ++x) {
-        map.setTile(x, 0, TileType::Wall);
-        map.setTile(x, map.height() - 1, TileType::Wall);
+        map.setTile(x, 0, tile);
+        map.setTile(x, map.height() - 1, tile);
     }
     for (int y = 0; y < map.height(); ++y) {
-        map.setTile(0, y, TileType::Wall);
-        map.setTile(map.width() - 1, y, TileType::Wall);
+        map.setTile(0, y, tile);
+        map.setTile(map.width() - 1, y, tile);
     }
 }
 

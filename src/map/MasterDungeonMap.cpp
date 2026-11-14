@@ -59,6 +59,12 @@ namespace {
     if (registry.all_of<ProvidesNutrition>(entity)) {
         stored.providesNutrition = registry.get<ProvidesNutrition>(entity);
     }
+    if (registry.all_of<Ingredient>(entity)) {
+        stored.ingredient = registry.get<Ingredient>(entity);
+    }
+    if (registry.all_of<Meal>(entity)) {
+        stored.meal = registry.get<Meal>(entity);
+    }
     stored.providesIdentify = registry.all_of<ProvidesIdentify>(entity);
     stored.providesRemoveCurse = registry.all_of<ProvidesRemoveCurse>(entity);
     if (registry.all_of<Ranged>(entity)) {
@@ -104,6 +110,18 @@ namespace {
     stored.cursedItem = registry.all_of<CursedItem>(entity);
     if (registry.all_of<Vendor>(entity)) {
         stored.vendor = registry.get<Vendor>(entity);
+    }
+    if (registry.all_of<CampSite>(entity)) {
+        stored.campSite = registry.get<CampSite>(entity);
+    }
+    if (registry.all_of<SettlementService>(entity)) {
+        stored.settlementService = registry.get<SettlementService>(entity);
+    }
+    if (registry.all_of<Shrine>(entity)) {
+        stored.shrine = registry.get<Shrine>(entity);
+    }
+    if (registry.all_of<CookingStation>(entity)) {
+        stored.cookingStation = registry.get<CookingStation>(entity);
     }
     if (registry.all_of<Faction>(entity)) {
         stored.faction = registry.get<Faction>(entity);
@@ -193,6 +211,12 @@ void restoreEntity(entt::registry& registry, const StoredEntity& stored)
     if (stored.providesNutrition.has_value()) {
         registry.emplace<ProvidesNutrition>(entity, *stored.providesNutrition);
     }
+    if (stored.ingredient.has_value()) {
+        registry.emplace<Ingredient>(entity, *stored.ingredient);
+    }
+    if (stored.meal.has_value()) {
+        registry.emplace<Meal>(entity, *stored.meal);
+    }
     if (stored.providesIdentify) {
         registry.emplace<ProvidesIdentify>(entity);
     }
@@ -246,6 +270,18 @@ void restoreEntity(entt::registry& registry, const StoredEntity& stored)
     }
     if (stored.vendor.has_value()) {
         registry.emplace<Vendor>(entity, *stored.vendor);
+    }
+    if (stored.campSite.has_value()) {
+        registry.emplace<CampSite>(entity, *stored.campSite);
+    }
+    if (stored.settlementService.has_value()) {
+        registry.emplace<SettlementService>(entity, *stored.settlementService);
+    }
+    if (stored.shrine.has_value()) {
+        registry.emplace<Shrine>(entity, *stored.shrine);
+    }
+    if (stored.cookingStation.has_value()) {
+        registry.emplace<CookingStation>(entity, *stored.cookingStation);
     }
     if (stored.faction.has_value()) {
         registry.emplace<Faction>(entity, *stored.faction);

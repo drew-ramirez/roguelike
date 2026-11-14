@@ -41,6 +41,8 @@ struct StoredEntity {
     std::optional<Pools> pools;
     std::optional<ProvidesHealing> providesHealing;
     std::optional<ProvidesNutrition> providesNutrition;
+    std::optional<Ingredient> ingredient;
+    std::optional<Meal> meal;
     bool providesIdentify = false;
     bool providesRemoveCurse = false;
     std::optional<Ranged> ranged;
@@ -59,6 +61,10 @@ struct StoredEntity {
     bool identifiedItem = false;
     bool cursedItem = false;
     std::optional<Vendor> vendor;
+    std::optional<CampSite> campSite;
+    std::optional<SettlementService> settlementService;
+    std::optional<Shrine> shrine;
+    std::optional<CookingStation> cookingStation;
     std::optional<Faction> faction;
     bool townPortal = false;
     std::optional<Confusion> confusion;
@@ -99,8 +105,7 @@ class MasterDungeonMap {
                                             entt::entity entity);
 
 [[nodiscard]] std::vector<StoredEntity>
-captureLevelLocalEntities(const entt::registry& registry,
-                          entt::entity player);
+captureLevelLocalEntities(const entt::registry& registry, entt::entity player);
 void restoreStoredEntities(entt::registry& registry,
                            const std::vector<StoredEntity>& entities);
 void destroyLevelLocalEntities(entt::registry& registry, entt::entity player);

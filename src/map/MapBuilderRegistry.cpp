@@ -7,6 +7,7 @@
 
 #include "map/MapBuilderRegistry.hpp"
 
+#include <array>
 #include <stdexcept>
 
 #include "map/DungeonRegionRouter.hpp"
@@ -27,6 +28,50 @@
 namespace rl {
 namespace {
 
+constexpr std::array<MapBuilderDescriptor, 41> builderCatalog{{
+    {"simple", MapBuilderCategory::Algorithm},
+    {"bsp", MapBuilderCategory::Algorithm},
+    {"bsp-interior", MapBuilderCategory::Algorithm},
+    {"cellular", MapBuilderCategory::Algorithm},
+    {"drunkard", MapBuilderCategory::Algorithm},
+    {"drunkard-open-area", MapBuilderCategory::Algorithm},
+    {"drunkard-open-halls", MapBuilderCategory::Algorithm},
+    {"drunkard-winding-passages", MapBuilderCategory::Algorithm},
+    {"drunkard-fat-passages", MapBuilderCategory::Algorithm},
+    {"drunkard-symmetry", MapBuilderCategory::Algorithm},
+    {"maze", MapBuilderCategory::Algorithm},
+    {"dla", MapBuilderCategory::Algorithm},
+    {"dla-walk-inwards", MapBuilderCategory::Algorithm},
+    {"dla-walk-outwards", MapBuilderCategory::Algorithm},
+    {"dla-central-attractor", MapBuilderCategory::Algorithm},
+    {"dla-insectoid", MapBuilderCategory::Algorithm},
+    {"voronoi", MapBuilderCategory::Algorithm},
+    {"voronoi-pythagoras", MapBuilderCategory::Algorithm},
+    {"voronoi-manhattan", MapBuilderCategory::Algorithm},
+    {"voronoi-chebyshev", MapBuilderCategory::Algorithm},
+    {"wfc", MapBuilderCategory::Algorithm},
+    {"cavern-vaults", MapBuilderCategory::Composition},
+    {"ruined-rooms", MapBuilderCategory::Composition},
+    {"town", MapBuilderCategory::Surface},
+    {"woods", MapBuilderCategory::Surface},
+    {"surface-town-outskirts", MapBuilderCategory::Surface},
+    {"surface-cardinal-transition", MapBuilderCategory::Surface},
+    {"surface-corner-wilderness", MapBuilderCategory::Surface},
+    {"surface-ruin-pocket", MapBuilderCategory::Surface},
+    {"surface-cave-mouth", MapBuilderCategory::Surface},
+    {"surface-camp-shrine", MapBuilderCategory::Surface},
+    {"surface-resource-heavy", MapBuilderCategory::Surface},
+    {"surface-danger-encounter", MapBuilderCategory::Surface},
+    {"limestone-caverns", MapBuilderCategory::DungeonRegion},
+    {"deep-caverns", MapBuilderCategory::DungeonRegion},
+    {"dwarf-transition", MapBuilderCategory::DungeonRegion},
+    {"dragon-lair", MapBuilderCategory::DungeonRegion},
+    {"mushroom-entrance", MapBuilderCategory::DungeonRegion},
+    {"mushroom-forest", MapBuilderCategory::DungeonRegion},
+    {"mushroom-exit", MapBuilderCategory::DungeonRegion},
+    {"dark-elf-city", MapBuilderCategory::DungeonRegion},
+}};
+
 MapBuildResult withBuilderName(MapBuildResult result, std::string_view id)
 {
     result.builderName = std::string{id};
@@ -35,59 +80,50 @@ MapBuildResult withBuilderName(MapBuildResult result, std::string_view id)
 
 } // namespace
 
+std::span<const MapBuilderDescriptor> mapBuilderCatalog() noexcept
+{
+    return builderCatalog;
+}
+
+const MapBuilderDescriptor*
+mapBuilderDescriptor(std::string_view builderId) noexcept
+{
+    for (const auto& descriptor : builderCatalog) {
+        if (descriptor.id == builderId) {
+            return &descriptor;
+        }
+    }
+    return nullptr;
+}
+
+std::string_view mapBuilderCategoryName(MapBuilderCategory category) noexcept
+{
+    switch (category) {
+    case MapBuilderCategory::Algorithm:
+        return "Algorithms";
+    case MapBuilderCategory::Composition:
+        return "Compositions";
+    case MapBuilderCategory::Surface:
+        return "Surface";
+    case MapBuilderCategory::DungeonRegion:
+        return "Dungeon Regions";
+    }
+    return "Algorithms";
+}
+
 std::vector<std::string> availableMapBuilders()
 {
-    return {"simple",
-            "bsp",
-            "bsp-interior",
-            "cellular",
-            "drunkard",
-            "drunkard-open-area",
-            "drunkard-open-halls",
-            "drunkard-winding-passages",
-            "drunkard-fat-passages",
-            "drunkard-symmetry",
-            "maze",
-            "dla",
-            "dla-walk-inwards",
-            "dla-walk-outwards",
-            "dla-central-attractor",
-            "dla-insectoid",
-            "voronoi",
-            "voronoi-pythagoras",
-            "voronoi-manhattan",
-            "voronoi-chebyshev",
-            "wfc",
-            "town",
-            "woods",
-            "surface-town-outskirts",
-            "surface-cardinal-transition",
-            "surface-corner-wilderness",
-            "surface-ruin-pocket",
-            "surface-cave-mouth",
-            "surface-camp-shrine",
-            "surface-resource-heavy",
-            "surface-danger-encounter",
-            "limestone-caverns",
-            "deep-caverns",
-            "dwarf-transition",
-            "dragon-lair",
-            "mushroom-entrance",
-            "mushroom-forest",
-            "mushroom-exit",
-            "dark-elf-city",
-            "cavern-vaults",
-            "ruined-rooms"};
+    std::vector<std::string> builders;
+    builders.reserve(builderCatalog.size());
+    for (const auto& descriptor : builderCatalog) {
+        builders.emplace_back(descriptor.id);
+    }
+    return builders;
 }
 
 bool isKnownMapBuilder(std::string_view builderId)
 {
-    for (const auto& id : availableMapBuilders()) {
-        if (id == builderId) {
-            return true;
-        }
-    }
-    return false;
+    return mapBuilderDescriptor(builderId) != nullptr;
 }
 
 MapBuildResult buildMapById(std::string_view builderId,

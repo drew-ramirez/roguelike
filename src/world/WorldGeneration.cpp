@@ -13,9 +13,15 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace rl {
 namespace {
+
+constexpr std::string_view greenholtRegionId = "greenholt_hearth";
+constexpr std::string_view reedfenRegionId = "reedfen_ford";
+constexpr std::string_view limestoneRegionId = "limestone_sink";
 
 [[nodiscard]] std::uint32_t mixHash(std::uint32_t value) noexcept
 {
@@ -38,8 +44,7 @@ namespace {
 [[nodiscard]] double latticeValue(Rng::Seed seed, int x, int y) noexcept
 {
     constexpr double denominator = 16777215.0;
-    return static_cast<double>(hash2d(seed, x, y) & 0x00FFFFFFU) /
-           denominator;
+    return static_cast<double>(hash2d(seed, x, y) & 0x00FFFFFFU) / denominator;
 }
 
 [[nodiscard]] double smoothstep(double value) noexcept
@@ -55,6 +60,30 @@ namespace {
 [[nodiscard]] double clamped01(double value) noexcept
 {
     return std::clamp(value, 0.0, 1.0);
+}
+
+[[nodiscard]] std::uint32_t localSeedForCell(Point point) noexcept
+{
+    return static_cast<std::uint32_t>(4000 + (point.y * worldMapWidth * 97) +
+                                      (point.x * 131));
+}
+
+[[nodiscard]] int dangerTierForFields(const WorldCellFields& fields) noexcept
+{
+    return 1 + (fields.dangerPressure > 0.62 ? 1 : 0) +
+           (fields.dangerPressure > 0.78 ? 1 : 0);
+}
+
+[[nodiscard]] std::string builderIdForBiome(BiomeVariant biome)
+{
+    if (biome == BiomeVariant::ReedMarsh) {
+        return "surface-cardinal-transition";
+    }
+    if (biome == BiomeVariant::Sinklands ||
+        biome == BiomeVariant::LimestoneRise) {
+        return "surface-cave-mouth";
+    }
+    return "woods";
 }
 
 [[nodiscard]] WorldCellFields sampleFields(Rng::Seed seed, Point point)
@@ -76,10 +105,16 @@ void applyAnchor(WorldCellDescriptor& cell)
         cell.fields = WorldCellFields{0.34, 0.42, 0.62, 0.22, 0.12, 0.08};
         cell.biome = BiomeVariant::DryWoods;
         cell.name = "Greenholt";
+        cell.builderId = "town";
         cell.glyph = U'H';
         cell.foreground = Color{120, 220, 130, 255};
+        cell.dangerTier = 0;
+        cell.baseSafety = 3;
         cell.discovered = true;
-        cell.landmark = WorldLandmark{"greenholt", "Greenholt", false};
+        cell.visited = true;
+        cell.regionId = std::string{greenholtRegionId};
+        cell.landmark = WorldLandmark{
+            "greenholt", "Greenholt", false, std::string{greenholtRegionId}};
         return;
     }
 
@@ -87,9 +122,14 @@ void applyAnchor(WorldCellDescriptor& cell)
         cell.fields = WorldCellFields{0.18, 0.78, 0.44, 0.84, 0.18, 0.36};
         cell.biome = BiomeVariant::ReedMarsh;
         cell.name = "Reedfen";
+        cell.builderId = "surface-camp-shrine";
         cell.glyph = U'R';
         cell.foreground = Color{120, 205, 185, 255};
-        cell.landmark = WorldLandmark{"reedfen", "Reedfen", false};
+        cell.dangerTier = 1;
+        cell.baseSafety = 0;
+        cell.regionId = std::string{reedfenRegionId};
+        cell.landmark = WorldLandmark{
+            "reedfen", "Reedfen", false, std::string{reedfenRegionId}};
         return;
     }
 
@@ -97,10 +137,89 @@ void applyAnchor(WorldCellDescriptor& cell)
         cell.fields = WorldCellFields{0.82, 0.36, 0.34, 0.18, 0.28, 0.42};
         cell.biome = BiomeVariant::LimestoneRise;
         cell.name = "Limestone";
+        cell.builderId = "surface-cave-mouth";
         cell.glyph = U'L';
         cell.foreground = Color{210, 210, 185, 255};
-        cell.landmark = WorldLandmark{"limestone", "Limestone", false};
+        cell.dangerTier = 2;
+        cell.baseSafety = -1;
+        cell.regionId = std::string{limestoneRegionId};
+        cell.landmark = WorldLandmark{
+            "limestone", "Limestone", false, std::string{limestoneRegionId}};
     }
+}
+
+[[nodiscard]] WorldRegionDescriptor
+makeRegionForCell(const WorldCellDescriptor& cell)
+{
+    WorldRegionDescriptor region;
+    region.id =
+        cell.regionId.empty() ? worldCellKey(cell.position) : cell.regionId;
+    region.name = cell.name;
+    region.biome = cell.biome;
+    region.builderId = cell.builderId;
+    region.macro = cell.position;
+    region.localSeed = cell.localSeed;
+    region.dangerTier = cell.dangerTier;
+    region.baseSafety = cell.baseSafety;
+    region.discovered = cell.discovered;
+    region.visited = cell.visited;
+    region.localMemoryTags = {"wilderness"};
+
+    if (region.id == greenholtRegionId) {
+        region.name = "Greenholt Hearth";
+        region.hasSettlement = true;
+        region.hasCamp = true;
+        region.fastTravelLandmark = true;
+        region.factionInfluence = {"hearth_circle", "grove_keepers"};
+        region.localMemoryTags = {"settled", "hearth", "grove_edge"};
+        region.routes = {RouteLink{
+            std::string{reedfenRegionId}, "Reedfen Ford", "marsh", 35, true}};
+        return region;
+    }
+
+    if (region.id == reedfenRegionId) {
+        region.name = "Reedfen Ford";
+        region.hasCamp = true;
+        region.hasShrine = true;
+        region.fastTravelLandmark = true;
+        region.factionInfluence = {"reed_wardens", "stillwater"};
+        region.localMemoryTags = {"stream", "reeds", "old_ford"};
+        region.routes = {RouteLink{std::string{greenholtRegionId},
+                                   "Greenholt Hearth",
+                                   "old_road",
+                                   20,
+                                   true},
+                         RouteLink{std::string{limestoneRegionId},
+                                   "Limestone Sink",
+                                   "cave_cut",
+                                   45,
+                                   true}};
+        return region;
+    }
+
+    if (region.id == limestoneRegionId) {
+        region.name = "Limestone Sink";
+        region.hasCamp = true;
+        region.hasShrine = true;
+        region.fastTravelLandmark = true;
+        region.factionInfluence = {"stone_hermits", "stone_stomach"};
+        region.localMemoryTags = {"salt", "cave", "underground_stream"};
+        region.routes = {RouteLink{std::string{reedfenRegionId},
+                                   "Reedfen Ford",
+                                   "cave_cut",
+                                   45,
+                                   true}};
+        return region;
+    }
+
+    if (cell.biome == BiomeVariant::ReedMarsh ||
+        cell.biome == BiomeVariant::Sinklands) {
+        region.hasCamp = true;
+        region.localMemoryTags = {"marsh", "reeds", "surface"};
+    } else if (cell.biome == BiomeVariant::LimestoneRise) {
+        region.localMemoryTags = {"limestone", "rise", "surface"};
+    }
+    return region;
 }
 
 [[nodiscard]] std::string generatedCellName(BiomeVariant biome, Point point)
@@ -115,8 +234,8 @@ void applyAnchor(WorldCellDescriptor& cell)
         "Chalkrise", "Paleledge", "Karstway", "Whitebarrow"};
     const std::array<std::string_view, 4> ruin{
         "Oldroot", "Broken Copse", "Mossfallen", "Ashen Ruins"};
-    const auto pick = static_cast<std::size_t>(
-        std::abs((point.x * 17) + (point.y * 31)) % 4);
+    const auto pick =
+        static_cast<std::size_t>(std::abs((point.x * 17) + (point.y * 31)) % 4);
 
     switch (biome) {
     case BiomeVariant::DryWoods:
@@ -139,8 +258,7 @@ void applyAnchor(WorldCellDescriptor& cell)
 
 [[nodiscard]] bool isCardinalScreen(Point screen) noexcept
 {
-    return (screen.x == 1 && screen.y != 1) ||
-           (screen.y == 1 && screen.x != 1);
+    return (screen.x == 1 && screen.y != 1) || (screen.y == 1 && screen.x != 1);
 }
 
 [[nodiscard]] bool isCornerScreen(Point screen) noexcept
@@ -149,13 +267,13 @@ void applyAnchor(WorldCellDescriptor& cell)
 }
 
 [[nodiscard]] int deterministicRoleRoll(const WorldCellDescriptor& cell,
-                                         Point screen) noexcept
+                                        Point screen) noexcept
 {
-    const auto hash = hash2d(static_cast<Rng::Seed>(
-                                 (cell.position.x + 31) * 101 +
-                                 (cell.position.y + 17) * 313),
-                             screen.x,
-                             screen.y);
+    const auto hash =
+        hash2d(static_cast<Rng::Seed>((cell.position.x + 31) * 101 +
+                                      (cell.position.y + 17) * 313),
+               screen.x,
+               screen.y);
     return static_cast<int>(hash % 100U);
 }
 
@@ -165,12 +283,10 @@ void applyAnchor(WorldCellDescriptor& cell)
     if (screen.y > 0 || macro.y > 0) {
         mask |= exitNorth;
     }
-    if (screen.x < localScreenGridSize - 1 ||
-        macro.x < worldMapWidth - 1) {
+    if (screen.x < localScreenGridSize - 1 || macro.x < worldMapWidth - 1) {
         mask |= exitEast;
     }
-    if (screen.y < localScreenGridSize - 1 ||
-        macro.y < worldMapHeight - 1) {
+    if (screen.y < localScreenGridSize - 1 || macro.y < worldMapHeight - 1) {
         mask |= exitSouth;
     }
     if (screen.x > 0 || macro.x > 0) {
@@ -179,12 +295,10 @@ void applyAnchor(WorldCellDescriptor& cell)
     return mask;
 }
 
-[[nodiscard]] std::string builderForDescriptor(
-    const WorldCellDescriptor& cell,
-    LocalScreenRole role)
+[[nodiscard]] std::string builderForDescriptor(const WorldCellDescriptor& cell,
+                                               LocalScreenRole role)
 {
-    if (role == LocalScreenRole::CenterLandmark &&
-        cell.landmark.has_value()) {
+    if (role == LocalScreenRole::CenterLandmark && cell.landmark.has_value()) {
         if (cell.landmark->id == "greenholt") {
             return "town";
         }
@@ -292,6 +406,11 @@ std::size_t worldCellIndex(Point point)
     return static_cast<std::size_t>(point.y * worldMapWidth + point.x);
 }
 
+std::string worldCellKey(Point point)
+{
+    return "cell_" + std::to_string(point.x) + "_" + std::to_string(point.y);
+}
+
 WorldCellDescriptor* worldCellAt(WorldMapState& world, Point point)
 {
     if (!worldPointInBounds(point) ||
@@ -312,6 +431,90 @@ const WorldCellDescriptor* worldCellAt(const WorldMapState& world, Point point)
     return &world.cells[worldCellIndex(point)];
 }
 
+WorldRegionDescriptor* worldRegionById(WorldMapState& world,
+                                       std::string_view id)
+{
+    const auto found = world.regions.find(std::string{id});
+    return found == world.regions.end() ? nullptr : &found->second;
+}
+
+const WorldRegionDescriptor* worldRegionById(const WorldMapState& world,
+                                             std::string_view id)
+{
+    const auto found = world.regions.find(std::string{id});
+    return found == world.regions.end() ? nullptr : &found->second;
+}
+
+WorldRegionDescriptor* currentWorldRegion(WorldMapState& world)
+{
+    return worldRegionById(world, world.currentRegionId);
+}
+
+const WorldRegionDescriptor* currentWorldRegion(const WorldMapState& world)
+{
+    return worldRegionById(world, world.currentRegionId);
+}
+
+void updateCurrentWorldRegion(WorldMapState& world)
+{
+    auto* cell = worldCellAt(world, world.currentMacro);
+    if (cell == nullptr) {
+        world.currentRegionId.clear();
+        return;
+    }
+
+    cell->discovered = true;
+    cell->visited = true;
+    world.currentRegionId =
+        cell->regionId.empty() ? worldCellKey(cell->position) : cell->regionId;
+
+    if (cell->landmark.has_value() &&
+        world.currentScreen == cell->landmark->localScreen &&
+        !cell->landmark->regionId.empty()) {
+        world.currentRegionId = cell->landmark->regionId;
+    }
+
+    if (auto* region = currentWorldRegion(world); region != nullptr) {
+        region->discovered = true;
+        region->visited = true;
+    }
+}
+
+const RouteLink* findDiscoveredRoute(const WorldRegionDescriptor& region,
+                                     std::string_view destinationRegionId)
+{
+    const auto found = std::find_if(
+        region.routes.begin(), region.routes.end(), [&](const RouteLink& link) {
+            return link.destinationRegionId == destinationRegionId &&
+                   link.discovered;
+        });
+    return found == region.routes.end() ? nullptr : &*found;
+}
+
+std::vector<RouteLink> discoveredRoutes(const WorldRegionDescriptor& region)
+{
+    std::vector<RouteLink> routes;
+    for (const auto& link : region.routes) {
+        if (link.discovered) {
+            routes.push_back(link);
+        }
+    }
+    return routes;
+}
+
+bool unlockCurrentLandmarkFastTravel(WorldMapState& world)
+{
+    auto* cell = worldCellAt(world, world.currentMacro);
+    if (cell == nullptr || !cell->landmark.has_value() ||
+        world.currentScreen != cell->landmark->localScreen) {
+        return false;
+    }
+
+    cell->landmark->fastTravelUnlocked = true;
+    updateCurrentWorldRegion(world);
+    return true;
+}
+
 double valueNoise2d(Rng::Seed seed, double x, double y) noexcept
 {
     const int x0 = static_cast<int>(std::floor(x));
@@ -321,12 +524,10 @@ double valueNoise2d(Rng::Seed seed, double x, double y) noexcept
     const double sx = smoothstep(x - static_cast<double>(x0));
     const double sy = smoothstep(y - static_cast<double>(y0));
 
-    const double north = lerp(latticeValue(seed, x0, y0),
-                             latticeValue(seed, x1, y0),
-                             sx);
-    const double south = lerp(latticeValue(seed, x0, y1),
-                             latticeValue(seed, x1, y1),
-                             sx);
+    const double north =
+        lerp(latticeValue(seed, x0, y0), latticeValue(seed, x1, y0), sx);
+    const double south =
+        lerp(latticeValue(seed, x0, y1), latticeValue(seed, x1, y1), sx);
     return clamped01(lerp(north, south, sy));
 }
 
@@ -552,6 +753,7 @@ WorldMapState generateWorldMap(Rng::Seed seed)
     world.currentMacro = greenholtWorldPosition();
     world.currentScreen = Point{1, 1};
     world.cursor = world.currentMacro;
+    world.currentRegionId = std::string{greenholtRegionId};
     world.cells.reserve(
         static_cast<std::size_t>(worldMapWidth * worldMapHeight));
 
@@ -562,13 +764,20 @@ WorldMapState generateWorldMap(Rng::Seed seed)
             cell.fields = sampleFields(seed, cell.position);
             cell.biome = deriveBiomeVariant(cell.fields);
             cell.name = generatedCellName(cell.biome, cell.position);
+            cell.builderId = builderIdForBiome(cell.biome);
             cell.glyph = biomeGlyph(cell.biome);
             cell.foreground = biomeColor(cell.biome);
+            cell.localSeed = localSeedForCell(cell.position);
+            cell.dangerTier = dangerTierForFields(cell.fields);
+            cell.baseSafety = -std::max(0, cell.dangerTier - 1);
+            cell.regionId = worldCellKey(cell.position);
             applyAnchor(cell);
+            world.regions.emplace(cell.regionId, makeRegionForCell(cell));
             world.cells.push_back(std::move(cell));
         }
     }
 
+    updateCurrentWorldRegion(world);
     return world;
 }
 

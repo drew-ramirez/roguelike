@@ -12,6 +12,7 @@
 
 namespace rl {
 
+/** Builds dense constructed interiors from broad, inset BSP leaf rooms. */
 class BspInteriorBuilder {
   public:
     [[nodiscard]] static MapBuildResult

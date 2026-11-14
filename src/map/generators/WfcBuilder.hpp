@@ -53,6 +53,7 @@ void buildCompatibility(std::vector<MapChunk>& chunks);
 
 } // namespace wfc
 
+/** Assembles curated source chunks; keep experimental output harness-only. */
 class WfcBuilder {
   public:
     [[nodiscard]] static MapBuildResult

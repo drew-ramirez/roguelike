@@ -12,6 +12,7 @@
 
 namespace rl {
 
+/** Builds broad natural cave masses, then joins and refines their regions. */
 class CellularAutomataBuilder {
   public:
     [[nodiscard]] static MapBuildResult

@@ -6,7 +6,10 @@
 #include "ecs/Components.hpp"
 #include "map/Map.hpp"
 #include "systems/ItemSystem.hpp"
+#include "systems/SettlementServiceSystem.hpp"
+#include "systems/ShrineRiteSystem.hpp"
 #include "systems/SpatialIndexSystem.hpp"
+#include "world/WorldTypes.hpp"
 
 namespace rl {
 namespace {
@@ -22,6 +25,15 @@ equippedRangedWeapon(const entt::registry& registry, entt::entity owner)
         }
     }
     return std::nullopt;
+}
+
+[[nodiscard]] bool isSurfaceEdgeTravel(const GameResources& resources,
+                                       const Map& map,
+                                       Point target) noexcept
+{
+    return resources.world.active && resources.world.onSurface &&
+           (target.x <= 0 || target.y <= 0 || target.x >= map.width() - 1 ||
+            target.y >= map.height() - 1);
 }
 
 } // namespace
@@ -174,6 +186,10 @@ PlayerInputResult handleMapInput(entt::registry& registry,
             return PlayerInputResult::Descend;
         }
         if (event.key == Key::Ascend) {
+            if (resources.world.active && resources.world.onSurface) {
+                resources.world.cursor = resources.world.currentMacro;
+                return PlayerInputResult::OpenWorldMap;
+            }
             return PlayerInputResult::Ascend;
         }
 
@@ -187,6 +203,10 @@ PlayerInputResult handleMapInput(entt::registry& registry,
 
             const auto& position = registry.get<Position>(resources.player);
             const Point target{position.x + delta->x, position.y + delta->y};
+            if (isSurfaceEdgeTravel(resources, map, target)) {
+                resources.world.pendingLocalTravel = *delta;
+                return PlayerInputResult::TravelLocalEdge;
+            }
             if (map.inBounds(target.x, target.y) &&
                 map.tileAt(target.x, target.y) == TileType::ClosedDoor) {
                 map.setTile(target.x, target.y, TileType::OpenDoor);
@@ -203,6 +223,24 @@ PlayerInputResult handleMapInput(entt::registry& registry,
                 tileContentAt(registry, target, resources.player);
             if (targetContent.blocker.has_value()) {
                 const auto blocker = *targetContent.blocker;
+                if (registry.all_of<CampSite>(blocker)) {
+                    resources.pendingCamp = PendingCamp{blocker};
+                    resources.campSelection = 0;
+                    return PlayerInputResult::OpenCamp;
+                }
+                if (registry.all_of<SettlementService>(blocker) &&
+                    settlementServiceAvailable(resources, registry, blocker)) {
+                    resources.pendingSettlementService =
+                        PendingSettlementService{blocker};
+                    resources.settlementServiceSelection = 0;
+                    return PlayerInputResult::OpenSettlementService;
+                }
+                if (registry.all_of<Shrine>(blocker) &&
+                    shrineAvailable(resources, registry, blocker)) {
+                    resources.pendingShrine = PendingShrine{blocker};
+                    resources.shrineSelection = 0;
+                    return PlayerInputResult::OpenShrine;
+                }
                 if (registry.all_of<Vendor>(blocker)) {
                     resources.pendingVendor =
                         PendingVendor{blocker, VendorMode::Buy};

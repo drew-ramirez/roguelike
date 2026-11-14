@@ -12,6 +12,7 @@
 
 namespace rl {
 
+/** Builds an extreme one-tile perfect maze for dedicated labyrinth spaces. */
 class MazeBuilder {
   public:
     [[nodiscard]] static MapBuildResult

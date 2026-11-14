@@ -23,10 +23,13 @@ enum class MapThemeTile : std::size_t {
     DownStairs,
     UpStairs,
     ClosedDoor,
-    OpenDoor
+    OpenDoor,
+    Tree,
+    DenseReeds,
+    Rock
 };
 
-inline constexpr std::size_t mapThemeTileCount = 7;
+inline constexpr std::size_t mapThemeTileCount = 10;
 
 struct MapTileStyle {
     char32_t glyph = U' ';
@@ -48,7 +51,7 @@ struct MapTheme {
 [[nodiscard]] MapTheme defaultMapTheme();
 
 /**
- * Loads a 6x2 REX Paint palette sheet for gameplay map rendering.
+ * Loads a 6x2, 7x2, or 10x2 REX Paint gameplay palette sheet.
  */
 [[nodiscard]] MapTheme
 loadMapThemeFromRexPaint(const std::filesystem::path& path);

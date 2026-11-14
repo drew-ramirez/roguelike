@@ -8,12 +8,17 @@ enum class RunState {
     PlayerTurn,
     MonsterTurn,
     ShowInventory,
+    ShowCamp,
+    ShowSettlementService,
+    ShowShrine,
     ShowVendor,
     ShowSpellMenu,
     ShowItemSelection,
     ShowDropItem,
     ShowTargeting,
+    ShowWorldMap,
     MapGeneration,
+    MapGallery,
     GameOver
 };
 

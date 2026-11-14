@@ -20,7 +20,8 @@ void runBystanderAi(entt::registry& registry,
 {
     const auto bystanders = registry.view<const Bystander, Position>();
     for (const auto bystander : bystanders) {
-        if (registry.all_of<Vendor>(bystander)) {
+        if (registry.all_of<Vendor>(bystander) ||
+            registry.all_of<SettlementService>(bystander)) {
             continue;
         }
 

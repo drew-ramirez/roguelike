@@ -13,6 +13,8 @@
 #include "spawn/Spawner.hpp"
 #include "systems/EquipmentSystem.hpp"
 #include "ui/Hud.hpp"
+#include "ui/WorldMapMenu.hpp"
+#include "world/WorldGeneration.hpp"
 
 namespace rl::test {
 namespace {
@@ -80,6 +82,23 @@ void runUiTests(TestRunner& runner)
                   "HUD renders equipped weapon and armor");
     runner.expect(bufferContains(console, "A recent message"),
                   "HUD still renders recent log messages");
+
+    auto world = generateWorldMap(Rng::Seed{101U});
+    world.cursor = reedfenWorldPosition();
+    console.clear();
+    drawWorldMapMenu(console, world);
+    runner.expect(bufferContains(console, "?") &&
+                      bufferContains(console, "Unknown wilds"),
+                  "world map hides undiscovered cells");
+
+    auto* reedfen = worldCellAt(world, reedfenWorldPosition());
+    runner.expect(reedfen != nullptr, "test setup finds Reedfen cell");
+    reedfen->discovered = true;
+    console.clear();
+    drawWorldMapMenu(console, world);
+    runner.expect(bufferContains(console, "Reedfen") &&
+                      bufferContains(console, "Reed marsh"),
+                  "world map shows discovered biome details");
 }
 
 } // namespace rl::test

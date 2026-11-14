@@ -18,8 +18,10 @@
 namespace rl {
 namespace {
 
-constexpr int initialWallChance = 55;
-constexpr int smoothPasses = 15;
+constexpr int initialWallChance = 53;
+constexpr int smoothPasses = 5;
+constexpr int insignificantFloorRegionSize = 12;
+constexpr int tinyRockComponentSize = 8;
 
 [[nodiscard]] int wallNeighborCount(const Map& map, int x, int y)
 {
@@ -29,7 +31,8 @@ constexpr int smoothPasses = 15;
             if (xx == x && yy == y) {
                 continue;
             }
-            if (!map.inBounds(xx, yy) || map.tileAt(xx, yy) == TileType::Wall) {
+            if (!map.inBounds(xx, yy) ||
+                tileTraits(map.tileAt(xx, yy)).blocksMovement) {
                 ++count;
             }
         }
@@ -39,16 +42,17 @@ constexpr int smoothPasses = 15;
 
 void smooth(Map& map)
 {
-    Map next{map.width(), map.height(), TileType::Wall};
+    Map next{map.width(), map.height(), TileType::Rock};
     for (int y = 1; y < map.height() - 1; ++y) {
         for (int x = 1; x < map.width() - 1; ++x) {
             const int neighbors = wallNeighborCount(map, x, y);
-            // Dense wall neighborhoods stay walls; overly open neighborhoods
-            // gain small wall islands to break up huge empty blobs.
-            next.setTile(x,
-                         y,
-                         neighbors > 4 || neighbors <= 1 ? TileType::Wall
-                                                         : TileType::Floor);
+            if (neighbors > 4) {
+                next.setTile(x, y, TileType::Rock);
+            } else if (neighbors < 4) {
+                next.setTile(x, y, TileType::Floor);
+            } else {
+                next.setTile(x, y, map.tileAt(x, y));
+            }
         }
     }
     map = std::move(next);
@@ -63,7 +67,7 @@ MapBuildResult CellularAutomataBuilder::build(int width,
 {
     validateBuilderDimensions("CellularAutomataBuilder", width, height);
 
-    MapBuildResult result{Map{width, height, TileType::Wall}, {}, {}};
+    MapBuildResult result{Map{width, height, TileType::Rock}, {}, {}};
     result.builderName = "cellular";
     addBuildStep(result, "base: cellular automata");
 
@@ -72,7 +76,7 @@ MapBuildResult CellularAutomataBuilder::build(int width,
             result.map.setTile(x,
                                y,
                                rng.rangeInclusive(1, 100) <= initialWallChance
-                                   ? TileType::Wall
+                                   ? TileType::Rock
                                    : TileType::Floor);
         }
     }
@@ -87,6 +91,8 @@ MapBuildResult CellularAutomataBuilder::build(int width,
                        options.recordSnapshots);
     }
 
+    cullSmallRegions(result.map, insignificantFloorRegionSize, TileType::Rock);
+    cullSmallNaturalBlockerComponents(result.map, tinyRockComponentSize);
     auto start =
         closestReachableFloorTo(result.map, Point{width / 2, height / 2});
     if (!start.has_value()) {
@@ -94,13 +100,15 @@ MapBuildResult CellularAutomataBuilder::build(int width,
         start = Point{width / 2, height / 2};
     }
     result.playerStart = *start;
-    repairConnectivity(result.map, result.playerStart, rng);
-    sealMapEdges(result.map);
-    cullUnreachable(result.map, result.playerStart);
+    repairConnectivity(
+        result.map, result.playerStart, rng, ConnectivityStyle::Cave);
+    sealMapEdges(result.map, TileType::Rock);
+    cullUnreachable(result.map, result.playerStart, TileType::Rock);
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);
-    addBuildStep(result, "modifier: connectivity repair");
+    addBuildStep(result, "modifier: tiny cave fragment cleanup");
+    addBuildStep(result, "modifier: nearest-boundary cave connections");
     addBuildStep(result, "modifier: distant exit");
     recordSnapshot(result.snapshots,
                    result.map,

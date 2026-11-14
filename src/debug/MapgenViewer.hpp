@@ -15,6 +15,7 @@
 
 #include "core/Rng.hpp"
 #include "map/MapBuilderTypes.hpp"
+#include "world/WorldTypes.hpp"
 
 namespace rl {
 
@@ -24,6 +25,7 @@ struct MapgenViewerOptions {
     bool showSnapshots = false;
     int width = 40;
     int height = 25;
+    std::optional<BiomeVariant> biomeVariant;
 };
 
 int runMapgenViewer(const MapgenViewerOptions& options, std::ostream& output);

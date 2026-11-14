@@ -688,16 +688,31 @@ WfcBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
     const int gridHeight = chunksForDimension(height);
 
     std::optional<SolverResult> solved;
+    std::optional<Map> collapsedMap;
+    bool acceptedConnectedCollapse = false;
     for (int attempt = 0; attempt < restartAttempts; ++attempt) {
         // if an earlier random placement made some later
         // cell impossible then restarting is simpler & safer than partial
         // backtracking for this fixed-size chunk solver
-        solved = solveChunks(library.chunks,
-                             gridWidth,
-                             gridHeight,
-                             rng,
-                             options.recordSnapshots);
-        if (solved.has_value()) {
+        auto attemptResult = solveChunks(library.chunks,
+                                         gridWidth,
+                                         gridHeight,
+                                         rng,
+                                         options.recordSnapshots);
+        if (!attemptResult.has_value()) {
+            continue;
+        }
+        auto attemptMap = mapFromPlacements(library.chunks,
+                                            attemptResult->placements,
+                                            gridWidth,
+                                            gridHeight,
+                                            width,
+                                            height);
+        sealMapEdges(attemptMap);
+        solved = std::move(attemptResult);
+        collapsedMap = std::move(attemptMap);
+        if (findConnectedRegions(*collapsedMap).size() == 1U) {
+            acceptedConnectedCollapse = true;
             break;
         }
     }
@@ -705,14 +720,7 @@ WfcBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
         throw std::runtime_error("WFC failed to find a valid chunk collapse");
     }
 
-    MapBuildResult result{mapFromPlacements(library.chunks,
-                                            solved->placements,
-                                            gridWidth,
-                                            gridHeight,
-                                            width,
-                                            height),
-                          {},
-                          {}};
+    MapBuildResult result{std::move(*collapsedMap), {}, {}};
     result.builderName = "wfc";
     addBuildStep(result, "source: rexpaint chunk library");
     addBuildStep(result, "base: chunk wfc");
@@ -737,15 +745,19 @@ WfcBuilder::build(int width, int height, Rng& rng, MapBuildOptions options)
         start = Point{width / 2, height / 2};
     }
     result.playerStart = *start;
-    repairConnectivity(result.map, result.playerStart, rng);
-    sealMapEdges(result.map);
+    if (!acceptedConnectedCollapse) {
+        cullSmallRegions(result.map, 8, TileType::Wall);
+        repairConnectivity(result.map, result.playerStart, rng);
+        addBuildStep(result, "fallback: bounded nearest-boundary connections");
+    } else {
+        addBuildStep(result, "validation: connected collapse accepted");
+    }
     cullUnreachable(result.map, result.playerStart);
     setDistantStairs(result.map, result.playerStart, result.stairsPosition);
     result.spawnRegions =
         spawnRegionsFromConnectedFloors(result.map, SpawnRegionKind::Room);
     recordSnapshot(
         result.snapshots, result.map, "wfc output", options.recordSnapshots);
-    addBuildStep(result, "modifier: connectivity repair");
     addBuildStep(result, "modifier: distant exit");
 
     validateBuildOrThrow(result, "WFC generation produced an invalid map");

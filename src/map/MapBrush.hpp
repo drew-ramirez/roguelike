@@ -16,12 +16,15 @@ namespace rl {
 
 class Map;
 
+/** Selects the local footprint painted by a generation step. */
 enum class BrushShape { Single, Square, Circle };
+/** Mirrors a paint operation to create deliberate special-space identities. */
 enum class Symmetry { None, Horizontal, Vertical, Both, Quad };
 
 [[nodiscard]] std::vector<Point>
 brushPoints(Point center, BrushShape shape, int radius);
 
+/** Expands one point through the selected map-centered symmetry transform. */
 [[nodiscard]] std::vector<Point>
 symmetricalPoints(const Map& map, Point point, Symmetry symmetry);
 

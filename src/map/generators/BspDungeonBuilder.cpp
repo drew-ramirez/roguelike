@@ -24,62 +24,101 @@
 namespace rl {
 namespace {
 
-constexpr int maxRoomAttempts = 240;
-constexpr int maxRooms = 20;
+constexpr int minLeafSize = 9;
+constexpr int maxSplitDepth = 5;
 constexpr int minRoomSize = 3;
-constexpr int maxRoomSize = 10;
 
-void addSubRects(const Rect& rect, std::vector<Rect>& rects)
+[[nodiscard]] Rect randomRoomInLeaf(const Rect& leaf, Rng& rng)
 {
-    if (rect.width() < minRoomSize * 2 || rect.height() < minRoomSize * 2) {
-        return;
-    }
-
-    const int halfWidth = std::max(1, rect.width() / 2);
-    const int halfHeight = std::max(1, rect.height() / 2);
-    const int midX = rect.x1 + halfWidth;
-    const int midY = rect.y1 + halfHeight;
-
-    const std::array<Rect, 4> children{
-        Rect{rect.x1, rect.y1, midX, midY},
-        Rect{midX, rect.y1, rect.x2, midY},
-        Rect{rect.x1, midY, midX, rect.y2},
-        Rect{midX, midY, rect.x2, rect.y2},
-    };
-    for (const Rect& child : children) {
-        if (child.width() >= minRoomSize && child.height() >= minRoomSize) {
-            rects.push_back(child);
-        }
-    }
+    const int left = rng.rangeInclusive(1, std::min(3, leaf.width() - 4));
+    const int right =
+        rng.rangeInclusive(1, std::min(3, leaf.width() - left - 3));
+    const int top = rng.rangeInclusive(1, std::min(3, leaf.height() - 4));
+    const int bottom =
+        rng.rangeInclusive(1, std::min(3, leaf.height() - top - 3));
+    return Rect{
+        leaf.x1 + left, leaf.y1 + top, leaf.x2 - right, leaf.y2 - bottom};
 }
 
-[[nodiscard]] std::optional<Rect> randomRoomInRect(const Rect& rect, Rng& rng)
+[[nodiscard]] std::optional<Point>
+carveSubtree(Map& map,
+             const Rect& bounds,
+             int depth,
+             Rng& rng,
+             std::vector<Rect>& rooms,
+             std::vector<CorridorPath>& corridors,
+             std::vector<MapSnapshot>& snapshots,
+             bool recordSnapshots)
 {
-    if (rect.width() < minRoomSize || rect.height() < minRoomSize) {
+    const bool canSplitHorizontal = bounds.height() >= minLeafSize * 2;
+    const bool canSplitVertical = bounds.width() >= minLeafSize * 2;
+    if (depth < maxSplitDepth && (canSplitHorizontal || canSplitVertical)) {
+        bool horizontal = rng.coinFlip();
+        if (!canSplitHorizontal ||
+            (canSplitVertical && bounds.width() > bounds.height() * 3 / 2)) {
+            horizontal = false;
+        } else if (!canSplitVertical ||
+                   bounds.height() > bounds.width() * 3 / 2) {
+            horizontal = true;
+        }
+
+        Rect first = bounds;
+        Rect second = bounds;
+        if (horizontal) {
+            const int split = rng.rangeInclusive(bounds.y1 + minLeafSize,
+                                                 bounds.y2 - minLeafSize);
+            first.y2 = split;
+            second.y1 = split;
+        } else {
+            const int split = rng.rangeInclusive(bounds.x1 + minLeafSize,
+                                                 bounds.x2 - minLeafSize);
+            first.x2 = split;
+            second.x1 = split;
+        }
+
+        const auto firstPoint = carveSubtree(map,
+                                             first,
+                                             depth + 1,
+                                             rng,
+                                             rooms,
+                                             corridors,
+                                             snapshots,
+                                             recordSnapshots);
+        const auto secondPoint = carveSubtree(map,
+                                              second,
+                                              depth + 1,
+                                              rng,
+                                              rooms,
+                                              corridors,
+                                              snapshots,
+                                              recordSnapshots);
+        if (firstPoint.has_value() && secondPoint.has_value()) {
+            corridors.push_back(carveCorridor(map,
+                                              *firstPoint,
+                                              *secondPoint,
+                                              rng,
+                                              CorridorStrategy::LShaped));
+            recordSnapshot(snapshots,
+                           map,
+                           "bsp sibling connection " +
+                               std::to_string(corridors.size()),
+                           recordSnapshots);
+            return rng.coinFlip() ? firstPoint : secondPoint;
+        }
+        return firstPoint.has_value() ? firstPoint : secondPoint;
+    }
+
+    const Rect room = randomRoomInLeaf(bounds, rng);
+    if (room.width() < minRoomSize || room.height() < minRoomSize) {
         return std::nullopt;
     }
-
-    const int maxWidth = std::min(maxRoomSize, rect.width());
-    const int maxHeight = std::min(maxRoomSize, rect.height());
-    const int width = rng.rangeInclusive(minRoomSize, maxWidth);
-    const int height = rng.rangeInclusive(minRoomSize, maxHeight);
-    const int x = rng.rangeInclusive(rect.x1, rect.x2 - width);
-    const int y = rng.rangeInclusive(rect.y1, rect.y2 - height);
-    return Rect{x, y, x + width, y + height};
-}
-
-[[nodiscard]] bool
-roomFits(const Map& map, const Rect& room, const std::vector<Rect>& rooms)
-{
-    if (room.x1 < 1 || room.y1 < 1 || room.x2 > map.width() - 1 ||
-        room.y2 > map.height() - 1) {
-        return false;
-    }
-
-    const Rect buffered{room.x1 - 1, room.y1 - 1, room.x2 + 1, room.y2 + 1};
-    return std::none_of(rooms.begin(), rooms.end(), [&buffered](const Rect& r) {
-        return buffered.intersects(r);
-    });
+    [[maybe_unused]] const auto carved = carveRectRoom(map, room);
+    rooms.push_back(room);
+    recordSnapshot(snapshots,
+                   map,
+                   "bsp leaf room " + std::to_string(rooms.size()),
+                   recordSnapshots);
+    return randomInteriorPointInRoom(room, rng);
 }
 
 [[nodiscard]] SpawnRegion roomSpawnRegion(const Rect& room)
@@ -97,55 +136,21 @@ MapBuildResult BspDungeonBuilder::build(int width,
     validateBuilderDimensions("BspDungeonBuilder", width, height);
 
     Map map{width, height, TileType::Wall};
-    std::vector<Rect> rects{Rect{2, 2, width - 2, height - 2}};
     std::vector<Rect> rooms;
     std::vector<MapSnapshot> snapshots;
-    addSubRects(rects.front(), rects);
-
-    for (int attempt = 0;
-         attempt < maxRoomAttempts && rooms.size() < maxRooms && !rects.empty();
-         ++attempt) {
-        const Rect partition = rects[static_cast<std::size_t>(
-            rng.rangeInclusive(0, static_cast<int>(rects.size()) - 1))];
-        const auto candidate = randomRoomInRect(partition, rng);
-        if (!candidate.has_value() || !roomFits(map, *candidate, rooms)) {
-            continue;
-        }
-
-        [[maybe_unused]] const auto carved = carveRectRoom(map, *candidate);
-        rooms.push_back(*candidate);
-        addSubRects(*candidate, rects);
-        recordSnapshot(snapshots,
-                       map,
-                       "bsp room " + std::to_string(rooms.size()),
-                       options.recordSnapshots);
-    }
+    std::vector<CorridorPath> corridorPaths;
+    [[maybe_unused]] const auto representative =
+        carveSubtree(map,
+                     Rect{1, 1, width - 1, height - 1},
+                     0,
+                     rng,
+                     rooms,
+                     corridorPaths,
+                     snapshots,
+                     options.recordSnapshots);
 
     if (rooms.size() < 2) {
         throw std::runtime_error("BSP generation failed to place enough rooms");
-    }
-
-    std::sort(
-        rooms.begin(), rooms.end(), [](const Rect& left, const Rect& right) {
-            if (left.x1 == right.x1) {
-                return left.y1 < right.y1;
-            }
-            return left.x1 < right.x1;
-        });
-
-    std::vector<CorridorPath> corridorPaths;
-    for (std::size_t index = 1; index < rooms.size(); ++index) {
-        auto path =
-            carveCorridor(map,
-                          randomInteriorPointInRoom(rooms[index - 1], rng),
-                          randomInteriorPointInRoom(rooms[index], rng),
-                          rng,
-                          CorridorStrategy::LShaped);
-        corridorPaths.push_back(std::move(path));
-        recordSnapshot(snapshots,
-                       map,
-                       "bsp corridor " + std::to_string(index),
-                       options.recordSnapshots);
     }
 
     std::vector<SpawnRegion> spawnRegions;
@@ -167,8 +172,8 @@ MapBuildResult BspDungeonBuilder::build(int width,
                           std::move(snapshots),
                           "bsp",
                           std::move(corridorPaths)};
-    addBuildStep(result, "base: bsp random subrects");
-    addBuildStep(result, "connector: sorted rooms with random interior points");
+    addBuildStep(result, "base: bsp recursive leaves with random subrects");
+    addBuildStep(result, "connector: sibling subtrees");
 
     validateBuildOrThrow(result, "BSP generation produced an invalid map");
 

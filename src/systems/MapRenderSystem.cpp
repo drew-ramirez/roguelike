@@ -54,6 +54,18 @@ void renderTile(const Map& map,
         const auto& style = theme.style(MapThemeTile::OpenDoor, visible);
         console.set(
             screenX, screenY, style.glyph, style.foreground, style.background);
+    } else if (tile == TileType::Tree) {
+        const auto& style = theme.style(MapThemeTile::Tree, visible);
+        console.set(
+            screenX, screenY, style.glyph, style.foreground, style.background);
+    } else if (tile == TileType::DenseReeds) {
+        const auto& style = theme.style(MapThemeTile::DenseReeds, visible);
+        console.set(
+            screenX, screenY, style.glyph, style.foreground, style.background);
+    } else if (tile == TileType::Rock) {
+        const auto& style = theme.style(MapThemeTile::Rock, visible);
+        console.set(
+            screenX, screenY, style.glyph, style.foreground, style.background);
     } else {
         const bool blood = map.hasBloodstain(worldX, worldY);
         const auto& style = theme.style(
@@ -82,6 +94,12 @@ void renderDebugTile(const Map& map,
         console.set(screenX, screenY, U'+', Color{185, 130, 70, 255});
     } else if (tile == TileType::OpenDoor) {
         console.set(screenX, screenY, U'/', Color{170, 120, 65, 255});
+    } else if (tile == TileType::Tree) {
+        console.set(screenX, screenY, U'\u2663', Color{45, 135, 55, 255});
+    } else if (tile == TileType::DenseReeds) {
+        console.set(screenX, screenY, U'\u2248', Color{65, 145, 125, 255});
+    } else if (tile == TileType::Rock) {
+        console.set(screenX, screenY, U'\u25b2', Color{150, 145, 130, 255});
     } else {
         console.set(screenX, screenY, U'.', Color{120, 120, 120, 255});
     }

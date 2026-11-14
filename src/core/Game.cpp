@@ -42,13 +42,19 @@
 #include "systems/TrapSystem.hpp"
 #include "systems/VendorSystem.hpp"
 #include "systems/VisibilitySystem.hpp"
+#include "systems/WorldTravelSystem.hpp"
+#include "ui/CampMenu.hpp"
 #include "ui/Hud.hpp"
 #include "ui/InventoryMenu.hpp"
 #include "ui/ItemSelectionMenu.hpp"
 #include "ui/MainMenu.hpp"
+#include "ui/SettlementServiceMenu.hpp"
+#include "ui/ShrineMenu.hpp"
 #include "ui/SpellMenu.hpp"
 #include "ui/Targeting.hpp"
 #include "ui/VendorMenu.hpp"
+#include "ui/WorldMapMenu.hpp"
+#include "world/WorldGeneration.hpp"
 
 namespace rl {
 namespace {
@@ -65,14 +71,24 @@ Game::Game(std::optional<Rng::Seed> seed,
            int mapWidth,
            int mapHeight,
            bool visualMapgen,
-           MapTheme mapTheme)
+           MapTheme mapTheme,
+           bool startInGallery,
+           BiomeVariant galleryBiome,
+           std::string galleryBuilderId)
     : initialSeed_(seed), builderId_(std::move(builderId)),
-      visualMapgen_(visualMapgen), mapTheme_(std::move(mapTheme)),
+      visualMapgen_(visualMapgen), galleryBiome_(galleryBiome),
+      galleryBuilderId_(std::move(galleryBuilderId)),
+      mapTheme_(std::move(mapTheme)),
       camera_(console_.width(), console_.height() - hudHeight),
       map_(mapWidth, mapHeight, TileType::Wall),
       renderer_(
           std::make_unique<SdlRenderer>(console_.width(), console_.height()))
 {
+    if (startInGallery) {
+        showMapgenGallery();
+        return;
+    }
+
     if (loadExisting &&
         loadGame(defaultSavePath(), registry_, resources_, map_)) {
         resources_.log.add("Loaded saved game.");
@@ -95,6 +111,20 @@ Game::Game(std::optional<Rng::Seed> seed,
     }
 }
 
+void Game::showMapgenGallery()
+{
+    if (!mapgenGallery_.initialized) {
+        MapgenGalleryOptions options;
+        options.initialBuilderId = galleryBuilderId_;
+        options.seed = initialSeed_;
+        options.width = map_.width();
+        options.height = map_.height();
+        options.buildOptions.biomeVariant = galleryBiome_;
+        openMapgenGallery(mapgenGallery_, options);
+    }
+    state_ = RunState::MapGallery;
+}
+
 void Game::startNewGame(std::optional<Rng::Seed> seed)
 {
     registry_ = entt::registry{};
@@ -103,6 +133,7 @@ void Game::startNewGame(std::optional<Rng::Seed> seed)
     map_ = Map{map_.width(), map_.height(), TileType::Wall};
     resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
     std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
+    resources_.world = generateWorldMap(resources_.rng.seed());
 
     const auto options = MapBuildOptions{false, resources_.depth};
     if (resources_.mapBuilderId == "normal") {
@@ -128,6 +159,7 @@ void Game::beginVisualMapgen(std::optional<Rng::Seed> seed)
     map_ = Map{map_.width(), map_.height(), TileType::Wall};
     resources_.rng.reseed(seed.value_or(Rng::makeSeed()));
     std::cerr << "Map seed: " << resources_.rng.seed() << '\n';
+    resources_.world = generateWorldMap(resources_.rng.seed());
 
     const auto options = MapBuildOptions{true, resources_.depth};
     auto build = resources_.mapBuilderId == "normal"
@@ -212,6 +244,15 @@ void Game::tickMapGeneration(const std::vector<InputEvent>& events)
     render();
 }
 
+void Game::tickMapgenGallery(const std::vector<InputEvent>& events)
+{
+    if (updateMapgenGallery(mapgenGallery_, events, tickFrameMs) ==
+        MapgenGalleryCommand::ReturnToTitle) {
+        state_ = RunState::MainMenu;
+    }
+    render();
+}
+
 void Game::run()
 {
     while (running_ && !renderer_->shouldQuit()) {
@@ -237,6 +278,11 @@ void Game::tick(const std::vector<InputEvent>& events)
         return;
     }
 
+    if (state_ == RunState::MapGallery) {
+        tickMapgenGallery(events);
+        return;
+    }
+
     if (state_ == RunState::MainMenu || state_ == RunState::GameOver) {
         const bool loadAvailable = std::filesystem::exists(defaultSavePath());
         const MainMenuMode mode = state_ == RunState::MainMenu
@@ -257,6 +303,8 @@ void Game::tick(const std::vector<InputEvent>& events)
                     registry_, map_, resources_.player, fovProvider_);
                 state_ = RunState::AwaitingInput;
             }
+        } else if (action == MainMenuAction::Gallery) {
+            showMapgenGallery();
         } else if (action == MainMenuAction::Quit) {
             running_ = false;
         }
@@ -270,12 +318,30 @@ void Game::tick(const std::vector<InputEvent>& events)
             resolvePlayerTurn();
         } else if (input == PlayerInputResult::OpenInventory) {
             state_ = RunState::ShowInventory;
+        } else if (input == PlayerInputResult::OpenCamp) {
+            state_ = RunState::ShowCamp;
+        } else if (input == PlayerInputResult::OpenSettlementService) {
+            state_ = RunState::ShowSettlementService;
+        } else if (input == PlayerInputResult::OpenShrine) {
+            state_ = RunState::ShowShrine;
         } else if (input == PlayerInputResult::OpenVendor) {
             state_ = RunState::ShowVendor;
         } else if (input == PlayerInputResult::OpenSpellMenu) {
             state_ = RunState::ShowSpellMenu;
         } else if (input == PlayerInputResult::StartedTargeting) {
             state_ = RunState::ShowTargeting;
+        } else if (input == PlayerInputResult::OpenWorldMap) {
+            state_ = RunState::ShowWorldMap;
+        } else if (input == PlayerInputResult::TravelLocalEdge) {
+            if (resources_.world.pendingLocalTravel.has_value() &&
+                tryTravelByEdge(registry_,
+                                resources_,
+                                map_,
+                                fovProvider_,
+                                *resources_.world.pendingLocalTravel)) {
+                state_ = RunState::AwaitingInput;
+            }
+            resources_.world.pendingLocalTravel.reset();
         } else if (input == PlayerInputResult::UsePortal) {
             if (tryUseReturnPortal(registry_, resources_, map_, fovProvider_)) {
                 state_ = RunState::AwaitingInput;
@@ -310,6 +376,28 @@ void Game::tick(const std::vector<InputEvent>& events)
         } else if (input == InventoryInputResult::TookTurn) {
             resolvePlayerTurn();
         }
+    } else if (state_ == RunState::ShowCamp) {
+        const auto input = handleCampInput(registry_, resources_, events);
+        if (input == CampInputResult::Close) {
+            state_ = RunState::AwaitingInput;
+        } else if (input == CampInputResult::TookTurn) {
+            resolvePlayerTurn(false);
+        }
+    } else if (state_ == RunState::ShowSettlementService) {
+        const auto input =
+            handleSettlementServiceInput(registry_, resources_, events);
+        if (input == SettlementServiceInputResult::Close) {
+            state_ = RunState::AwaitingInput;
+        } else if (input == SettlementServiceInputResult::TookTurn) {
+            resolvePlayerTurn(false);
+        }
+    } else if (state_ == RunState::ShowShrine) {
+        const auto input = handleShrineInput(registry_, resources_, events);
+        if (input == ShrineInputResult::Close) {
+            state_ = RunState::AwaitingInput;
+        } else if (input == ShrineInputResult::TookTurn) {
+            resolvePlayerTurn(false);
+        }
     } else if (state_ == RunState::ShowItemSelection) {
         const auto input =
             handleItemSelectionInput(registry_, resources_, map_, events);
@@ -343,6 +431,26 @@ void Game::tick(const std::vector<InputEvent>& events)
         } else if (input == TargetingInputResult::TookTurn) {
             resolvePlayerTurn();
         }
+    } else if (state_ == RunState::ShowWorldMap) {
+        const auto input = handleWorldMapInput(resources_, events);
+        if (input == WorldMapInputResult::Close) {
+            state_ = RunState::AwaitingInput;
+        } else if (input == WorldMapInputResult::MoveCursor) {
+            if (resources_.world.pendingLocalTravel.has_value() &&
+                moveWorldMapCursor(registry_,
+                                   resources_,
+                                   map_,
+                                   fovProvider_,
+                                   *resources_.world.pendingLocalTravel)) {
+                state_ = RunState::AwaitingInput;
+            }
+            resources_.world.pendingLocalTravel.reset();
+        } else if (input == WorldMapInputResult::EnterSelected) {
+            if (enterWorldMapSelection(
+                    registry_, resources_, map_, fovProvider_)) {
+                state_ = RunState::AwaitingInput;
+            }
+        }
     }
 
     render();
@@ -359,6 +467,11 @@ void Game::render()
     console_.clear();
     if (state_ == RunState::MapGeneration) {
         renderMapGeneration();
+        return;
+    }
+
+    if (state_ == RunState::MapGallery) {
+        drawMapgenGallery(console_, mapgenGallery_);
         return;
     }
 
@@ -386,12 +499,20 @@ void Game::render()
     drawHud(console_, resources_, registry_, state_);
     if (state_ == RunState::ShowInventory) {
         drawInventoryMenu(console_, registry_, resources_);
+    } else if (state_ == RunState::ShowCamp) {
+        drawCampMenu(console_, registry_, resources_);
+    } else if (state_ == RunState::ShowSettlementService) {
+        drawSettlementServiceMenu(console_, registry_, resources_);
+    } else if (state_ == RunState::ShowShrine) {
+        drawShrineMenu(console_, registry_, resources_);
     } else if (state_ == RunState::ShowItemSelection) {
         drawItemSelectionMenu(console_, registry_, resources_);
     } else if (state_ == RunState::ShowVendor) {
         drawVendorMenu(console_, registry_, resources_);
     } else if (state_ == RunState::ShowSpellMenu) {
         drawSpellMenu(console_, registry_, resources_);
+    } else if (state_ == RunState::ShowWorldMap) {
+        drawWorldMapMenu(console_, resources_.world);
     }
 }
 

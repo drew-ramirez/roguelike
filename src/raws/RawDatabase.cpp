@@ -252,6 +252,43 @@ void parseStringList(const Json& json, std::vector<std::string>& out)
     }
 }
 
+[[nodiscard]] RawCampSite parseCampSite(const Json& json)
+{
+    return RawCampSite{json.value("type", std::string{"camp"}),
+                       json.value("safety_bonus", 0)};
+}
+
+[[nodiscard]] RawCookingStation parseCookingStation(const Json& json)
+{
+    RawCookingStation station;
+    station.stationId = json.value("id", std::string{"campfire"});
+    if (json.contains("methods")) {
+        parseStringList(json.at("methods"), station.methods);
+    }
+    if (json.contains("place_tags")) {
+        parseStringList(json.at("place_tags"), station.placeTags);
+    }
+    return station;
+}
+
+[[nodiscard]] RawSettlementService parseSettlementService(const Json& json)
+{
+    return RawSettlementService{
+        json.value("service", std::string{"teach_recipe"}),
+        json.value("recipe", std::string{})};
+}
+
+[[nodiscard]] RawShrine parseShrine(const Json& json)
+{
+    RawShrine shrine;
+    shrine.powerId = json.value("power", std::string{});
+    if (json.contains("offerings")) {
+        parseStringList(json.at("offerings"), shrine.acceptedOfferingTags);
+    }
+    shrine.blessingHp = json.value("blessing_hp", 0);
+    return shrine;
+}
+
 [[nodiscard]] RawEntityTemplate parseEntity(const Json& json,
                                             RawEntityKind kind)
 {
@@ -279,6 +316,20 @@ void parseStringList(const Json& json, std::vector<std::string>& out)
 
     if (json.contains("vendor")) {
         entity.vendor = parseVendor(json.at("vendor"));
+    }
+    if (json.contains("camp_site")) {
+        entity.campSite = parseCampSite(json.at("camp_site"));
+    }
+    if (json.contains("cooking_station")) {
+        entity.cookingStation =
+            parseCookingStation(json.at("cooking_station"));
+    }
+    if (json.contains("settlement_service")) {
+        entity.settlementService =
+            parseSettlementService(json.at("settlement_service"));
+    }
+    if (json.contains("shrine")) {
+        entity.shrine = parseShrine(json.at("shrine"));
     }
     if (json.contains("combat")) {
         entity.combat = parseCombat(json.at("combat"));
@@ -396,6 +447,76 @@ void appendSpawnTable(const Json& root,
     return faction;
 }
 
+[[nodiscard]] RawIngredient parseIngredient(const Json& json)
+{
+    RawIngredient ingredient;
+    ingredient.id = json.at("id").get<std::string>();
+    ingredient.name = json.value("name", ingredient.id);
+    if (json.contains("item")) {
+        ingredient.item = json.at("item").get<std::string>();
+    }
+    if (json.contains("tags")) {
+        parseStringList(json.at("tags"), ingredient.tags);
+    }
+    return ingredient;
+}
+
+[[nodiscard]] RawIngredientAmount parseIngredientAmount(const Json& json)
+{
+    return RawIngredientAmount{json.at("id").get<std::string>(),
+                               json.value("count", 1)};
+}
+
+[[nodiscard]] RawRecipeOutput parseRecipeOutput(const Json& json)
+{
+    return RawRecipeOutput{json.at("id").get<std::string>(),
+                           json.value("count", 1)};
+}
+
+[[nodiscard]] RawRecipe parseRecipe(const Json& json)
+{
+    RawRecipe recipe;
+    recipe.id = json.at("id").get<std::string>();
+    recipe.name = json.value("name", recipe.id);
+    recipe.station = json.value("station", std::string{});
+    recipe.method = json.value("method", std::string{});
+    recipe.nutrition = json.value("nutrition", recipe.nutrition);
+    if (json.contains("ingredients")) {
+        for (const auto& ingredient : json.at("ingredients")) {
+            recipe.ingredients.push_back(parseIngredientAmount(ingredient));
+        }
+    }
+    if (json.contains("outputs")) {
+        for (const auto& output : json.at("outputs")) {
+            recipe.outputs.push_back(parseRecipeOutput(output));
+        }
+    }
+    if (json.contains("place_tags")) {
+        parseStringList(json.at("place_tags"), recipe.placeTags);
+    }
+    return recipe;
+}
+
+[[nodiscard]] RawBiomeResourceEntry parseBiomeResourceEntry(const Json& json)
+{
+    return RawBiomeResourceEntry{json.at("ingredient").get<std::string>(),
+                                 json.value("weight", 1),
+                                 json.value("min", 1),
+                                 json.value("max", 1)};
+}
+
+[[nodiscard]] RawBiomeResourceTable parseBiomeResourceTable(const Json& json)
+{
+    RawBiomeResourceTable table;
+    table.id = json.at("id").get<std::string>();
+    if (json.contains("resources")) {
+        for (const auto& resource : json.at("resources")) {
+            table.resources.push_back(parseBiomeResourceEntry(resource));
+        }
+    }
+    return table;
+}
+
 } // namespace
 
 RawDatabase RawDatabase::fromJson(std::string_view text)
@@ -439,6 +560,36 @@ RawDatabase RawDatabase::fromJson(std::string_view text)
             const auto id = faction.id;
             if (!database.factions_.emplace(id, std::move(faction)).second) {
                 throw std::runtime_error("Duplicate raw faction: " + id);
+            }
+        }
+    }
+    if (root.contains("ingredients")) {
+        for (const auto& json : root.at("ingredients")) {
+            auto ingredient = parseIngredient(json);
+            const auto id = ingredient.id;
+            if (!database.ingredients_.emplace(id, std::move(ingredient))
+                     .second) {
+                throw std::runtime_error("Duplicate raw ingredient: " + id);
+            }
+        }
+    }
+    if (root.contains("recipes")) {
+        for (const auto& json : root.at("recipes")) {
+            auto recipe = parseRecipe(json);
+            const auto id = recipe.id;
+            if (!database.recipes_.emplace(id, std::move(recipe)).second) {
+                throw std::runtime_error("Duplicate raw recipe: " + id);
+            }
+        }
+    }
+    if (root.contains("biome_resource_tables")) {
+        for (const auto& json : root.at("biome_resource_tables")) {
+            auto table = parseBiomeResourceTable(json);
+            const auto id = table.id;
+            if (!database.biomeResourceTables_.emplace(id, std::move(table))
+                     .second) {
+                throw std::runtime_error("Duplicate biome resource table: " +
+                                         id);
             }
         }
     }
@@ -518,6 +669,41 @@ const RawFaction* RawDatabase::faction(std::string_view id) const noexcept
     return found == factions_.end() ? nullptr : &found->second;
 }
 
+const RawIngredient*
+RawDatabase::ingredient(std::string_view id) const noexcept
+{
+    const auto found = ingredients_.find(std::string{id});
+    return found == ingredients_.end() ? nullptr : &found->second;
+}
+
+const RawRecipe* RawDatabase::recipe(std::string_view id) const noexcept
+{
+    const auto found = recipes_.find(std::string{id});
+    return found == recipes_.end() ? nullptr : &found->second;
+}
+
+std::vector<const RawRecipe*> RawDatabase::recipes() const
+{
+    std::vector<const RawRecipe*> result;
+    result.reserve(recipes_.size());
+    for (const auto& recipe : recipes_) {
+        result.push_back(&recipe.second);
+    }
+    std::sort(result.begin(),
+              result.end(),
+              [](const RawRecipe* lhs, const RawRecipe* rhs) {
+                  return lhs->id < rhs->id;
+              });
+    return result;
+}
+
+const RawBiomeResourceTable*
+RawDatabase::biomeResourceTable(std::string_view id) const noexcept
+{
+    const auto found = biomeResourceTables_.find(std::string{id});
+    return found == biomeResourceTables_.end() ? nullptr : &found->second;
+}
+
 std::vector<std::string>
 RawDatabase::itemIdsForCategory(std::string_view category) const
 {
@@ -578,6 +764,23 @@ std::vector<std::string> RawDatabase::validate() const
     validateSpawnTable(itemSpawnTable_, "item spawn table");
     validateSpawnTable(propSpawnTable_, "prop spawn table");
 
+    const auto validateIngredientAmounts =
+        [&](const std::vector<RawIngredientAmount>& amounts,
+            std::string_view label) {
+            for (const auto& amount : amounts) {
+                if (ingredient(amount.id) == nullptr) {
+                    errors.push_back(std::string{label} +
+                                     " references unknown ingredient: " +
+                                     amount.id);
+                }
+                if (amount.count <= 0) {
+                    errors.push_back(std::string{label} +
+                                     " has non-positive ingredient count: " +
+                                     amount.id);
+                }
+            }
+        };
+
     for (const auto& [name, entityTemplate] : entities_) {
         if (entityTemplate.vendor.has_value()) {
             const auto stock =
@@ -586,6 +789,18 @@ std::vector<std::string> RawDatabase::validate() const
                 errors.push_back(name + " vendor category has no stock: " +
                                  entityTemplate.vendor->category);
             }
+        }
+        if (entityTemplate.settlementService.has_value()) {
+            const auto& service = *entityTemplate.settlementService;
+            if (!service.recipeId.empty() &&
+                recipe(service.recipeId) == nullptr) {
+                errors.push_back(name + " service references unknown recipe: " +
+                                 service.recipeId);
+            }
+        }
+        if (entityTemplate.shrine.has_value() &&
+            entityTemplate.shrine->powerId.empty()) {
+            errors.push_back(name + " shrine is missing a power id");
         }
         for (const auto& item : entityTemplate.equipped) {
             if (entity(item) == nullptr) {
@@ -646,6 +861,56 @@ std::vector<std::string> RawDatabase::validate() const
         if (spellTemplate.effects.inflictsDamage.has_value() &&
             *spellTemplate.effects.inflictsDamage <= 0) {
             errors.push_back(id + " spell has non-positive damage");
+        }
+    }
+    for (const auto& [id, ingredientTemplate] : ingredients_) {
+        if (ingredientTemplate.item.has_value() &&
+            entity(*ingredientTemplate.item) == nullptr) {
+            errors.push_back(id + " ingredient references unknown item: " +
+                             *ingredientTemplate.item);
+        }
+    }
+    for (const auto& [id, recipeTemplate] : recipes_) {
+        if (recipeTemplate.ingredients.empty()) {
+            errors.push_back(id + " recipe has no ingredients");
+        }
+        if (recipeTemplate.outputs.empty()) {
+            errors.push_back(id + " recipe has no outputs");
+        }
+        validateIngredientAmounts(recipeTemplate.ingredients, id + " recipe");
+        for (const auto& output : recipeTemplate.outputs) {
+            if (entity(output.id) == nullptr) {
+                errors.push_back(id + " recipe outputs unknown entity: " +
+                                 output.id);
+            }
+            if (output.count <= 0) {
+                errors.push_back(id +
+                                 " recipe has non-positive output count: " +
+                                 output.id);
+            }
+        }
+    }
+    for (const auto& [id, table] : biomeResourceTables_) {
+        if (table.resources.empty()) {
+            errors.push_back(id + " biome resource table has no resources");
+        }
+        for (const auto& resource : table.resources) {
+            if (ingredient(resource.ingredient) == nullptr) {
+                errors.push_back(id +
+                                 " biome resource references unknown "
+                                 "ingredient: " +
+                                 resource.ingredient);
+            }
+            if (resource.weight <= 0) {
+                errors.push_back(id +
+                                 " biome resource has non-positive weight: " +
+                                 resource.ingredient);
+            }
+            if (resource.minCount <= 0 ||
+                resource.maxCount < resource.minCount) {
+                errors.push_back(id + " biome resource has invalid count: " +
+                                 resource.ingredient);
+            }
         }
     }
 

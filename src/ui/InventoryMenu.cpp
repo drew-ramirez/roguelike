@@ -10,30 +10,35 @@
 #include "systems/EquipmentSystem.hpp"
 #include "systems/InputSystem.hpp"
 #include "systems/ItemSystem.hpp"
+#include "ui/ItemDetails.hpp"
 
 namespace rl {
 namespace {
 
-constexpr int panelX = 14;
-constexpr int panelY = 8;
-constexpr int panelWidth = 52;
-constexpr int panelHeight = 24;
+constexpr int panelX = 6;
+constexpr int panelY = 7;
+constexpr int panelWidth = 68;
+constexpr int panelHeight = 26;
+constexpr int listWidth = 28;
+constexpr int detailX = panelX + listWidth + 4;
+constexpr int detailWidth = panelWidth - listWidth - 6;
 
-std::string itemLabel(const entt::registry& registry, entt::entity item)
+[[nodiscard]] std::string clippedLabel(std::string text, int width)
 {
-    std::string label = registry.all_of<Name>(item)
-                            ? registry.get<Name>(item).value
-                            : "Unnamed item";
-    if (registry.all_of<MagicItem>(item)) {
-        const auto& magic = registry.get<MagicItem>(item);
-        if (!magic.identified && !magic.unidentifiedName.empty()) {
-            label = magic.unidentifiedName;
-        }
+    if (width <= 0) {
+        return {};
     }
-    if (registry.all_of<Equipped>(item)) {
-        label += " (equipped)";
+    const auto maximum = static_cast<std::size_t>(width);
+    if (text.size() <= maximum) {
+        return text;
     }
-    return label;
+    if (maximum <= 3U) {
+        text.resize(maximum);
+        return text;
+    }
+    text.resize(maximum - 3U);
+    text += "...";
+    return text;
 }
 
 void drawBox(ConsoleBuffer& console)
@@ -48,6 +53,11 @@ void drawBox(ConsoleBuffer& console)
                         Color{180, 180, 180, 255},
                         Color::black());
         }
+    }
+
+    for (int y = panelY + 2; y < panelY + panelHeight - 1; ++y) {
+        console.set(
+            detailX - 2, y, U'|', Color{100, 100, 100, 255}, Color::black());
     }
 }
 
@@ -169,11 +179,22 @@ void drawInventoryMenu(ConsoleBuffer& console,
             selected ? Color::yellow() : Color{200, 200, 200, 255};
         console.print(panelX + 2,
                       row,
-                      std::string{selected ? "> " : "  "} +
-                          itemLabel(registry, items[index]),
+                      clippedLabel(std::string{selected ? "> " : "  "} +
+                                       displayItemName(registry, items[index]),
+                                   listWidth),
                       color);
         ++row;
     }
+
+    const int selectedIndex = std::clamp(
+        resources.inventorySelection, 0, static_cast<int>(items.size()) - 1);
+    drawItemDetailsPane(console,
+                        registry,
+                        items[static_cast<std::size_t>(selectedIndex)],
+                        detailX,
+                        panelY + 3,
+                        detailWidth,
+                        panelHeight - 5);
 }
 
 } // namespace rl

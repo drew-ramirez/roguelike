@@ -20,6 +20,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/core/GameLog.cpp
     src/core/Morgue.cpp
     src/core/Rng.cpp
+    src/debug/MapgenGallery.cpp
     src/debug/MapgenPlayback.cpp
     src/debug/MapgenViewer.cpp
     src/fov/ShadowcastingFov.cpp
@@ -30,6 +31,7 @@ set(ROGUELIKE_CORE_SOURCES
     src/map/MapConnectivity.cpp
     src/map/DungeonRegionRouter.cpp
     src/map/MapGeometry.cpp
+    src/map/MapQualityMetrics.cpp
     src/map/MasterDungeonMap.cpp
     src/map/MapValidation.cpp
     src/map/generators/BspDungeonBuilder.cpp
@@ -68,9 +70,12 @@ set(ROGUELIKE_CORE_SOURCES
     src/spawn/Spawner.cpp
     src/spawn/TrapSpawner.cpp
     src/systems/BystanderAI.cpp
+    src/systems/CampSystem.cpp
+    src/systems/CookingSystem.cpp
     src/systems/DamageSystem.cpp
     src/systems/EffectSystem.cpp
     src/systems/EquipmentSystem.cpp
+    src/systems/ForageSystem.cpp
     src/systems/HungerSystem.cpp
     src/systems/InputSystem.cpp
     src/systems/ItemSystem.cpp
@@ -82,20 +87,28 @@ set(ROGUELIKE_CORE_SOURCES
     src/systems/PortalSystem.cpp
     src/systems/RangedCombatSystem.cpp
     src/systems/RenderSystem.cpp
+    src/systems/SettlementServiceSystem.cpp
+    src/systems/ShrineRiteSystem.cpp
     src/systems/SpatialIndexSystem.cpp
     src/systems/SpellSystem.cpp
     src/systems/SystemScheduler.cpp
     src/systems/TrapSystem.cpp
     src/systems/VendorSystem.cpp
     src/systems/VisibilitySystem.cpp
+    src/systems/WorldTravelSystem.cpp
+    src/ui/CampMenu.cpp
     src/ui/Hud.cpp
     src/ui/InventoryMenu.cpp
+    src/ui/ItemDetails.cpp
     src/ui/ItemSelectionMenu.cpp
     src/ui/MainMenu.cpp
+    src/ui/SettlementServiceMenu.cpp
+    src/ui/ShrineMenu.cpp
     src/ui/SpellMenu.cpp
     src/ui/Targeting.cpp
     src/ui/VendorMenu.cpp
     src/ui/Widgets.cpp
+    src/ui/WorldMapMenu.cpp
     src/world/WorldGeneration.cpp
 )
 
@@ -117,6 +130,7 @@ set(ROGUELIKE_TEST_SOURCES
     tests/faction_tests.cpp
     tests/input_tests.cpp
     tests/inventory_tests.cpp
+    tests/item_details_tests.cpp
     tests/level_snapshot_tests.cpp
     tests/log_tests.cpp
     tests/mapgen_tests.cpp
@@ -133,6 +147,8 @@ set(ROGUELIKE_TEST_SOURCES
     tests/targeting_tests.cpp
     tests/ui_tests.cpp
     tests/vendor_tests.cpp
+    tests/world_state_tests.cpp
+    tests/world_survival_tests.cpp
     tests/world_generation_tests.cpp
 )
 
@@ -152,6 +168,7 @@ set(ROGUELIKE_HEADERS
     src/core/Point.hpp
     src/core/Rng.hpp
     src/core/RunState.hpp
+    src/debug/MapgenGallery.hpp
     src/debug/MapgenPlayback.hpp
     src/debug/MapgenViewer.hpp
     src/ecs/Components.hpp
@@ -179,6 +196,7 @@ set(ROGUELIKE_HEADERS
     src/map/DungeonRegionRouter.hpp
     src/map/MapGeometry.hpp
     src/map/Map.hpp
+    src/map/MapQualityMetrics.hpp
     src/map/MapBuilder.hpp
     src/map/MapBuilderRegistry.hpp
     src/map/MapBuilderTypes.hpp
@@ -212,9 +230,12 @@ set(ROGUELIKE_HEADERS
     src/spawn/Spawner.hpp
     src/spawn/TrapSpawner.hpp
     src/systems/BystanderAI.hpp
+    src/systems/CampSystem.hpp
+    src/systems/CookingSystem.hpp
     src/systems/DamageSystem.hpp
     src/systems/EffectSystem.hpp
     src/systems/EquipmentSystem.hpp
+    src/systems/ForageSystem.hpp
     src/systems/HungerSystem.hpp
     src/systems/InputSystem.hpp
     src/systems/ItemSystem.hpp
@@ -226,21 +247,29 @@ set(ROGUELIKE_HEADERS
     src/systems/PortalSystem.hpp
     src/systems/RangedCombatSystem.hpp
     src/systems/RenderSystem.hpp
+    src/systems/SettlementServiceSystem.hpp
+    src/systems/ShrineRiteSystem.hpp
     src/systems/SpatialIndexSystem.hpp
     src/systems/SpellSystem.hpp
     src/systems/SystemScheduler.hpp
     src/systems/TrapSystem.hpp
     src/systems/VendorSystem.hpp
     src/systems/VisibilitySystem.hpp
+    src/systems/WorldTravelSystem.hpp
+    src/ui/CampMenu.hpp
     src/ui/Hud.hpp
     src/ui/InventoryMenu.hpp
+    src/ui/ItemDetails.hpp
     src/ui/ItemSelectionMenu.hpp
     src/ui/MainMenu.hpp
     src/ui/MenuResult.hpp
+    src/ui/SettlementServiceMenu.hpp
+    src/ui/ShrineMenu.hpp
     src/ui/SpellMenu.hpp
     src/ui/Targeting.hpp
     src/ui/VendorMenu.hpp
     src/ui/Widgets.hpp
+    src/ui/WorldMapMenu.hpp
     src/world/WorldGeneration.hpp
     src/world/WorldTypes.hpp
 )

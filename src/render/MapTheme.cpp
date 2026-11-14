@@ -25,6 +25,9 @@ constexpr std::array<char32_t, mapThemeTileCount> paletteGlyphs{
     U'<',
     U'+',
     U'/',
+    U'\u2663',
+    U'\u2248',
+    U'\u25b2',
 };
 
 constexpr std::array<char32_t, 6> legacyPaletteGlyphs{
@@ -82,6 +85,9 @@ MapTheme defaultMapTheme()
         MapTileStyle{U'<', Color{220, 220, 120, 255}, Color::black()},
         MapTileStyle{U'+', Color{185, 130, 70, 255}, Color::black()},
         MapTileStyle{U'/', Color{170, 120, 65, 255}, Color::black()},
+        MapTileStyle{U'\u2663', Color{45, 135, 55, 255}, Color::black()},
+        MapTileStyle{U'\u2248', Color{65, 145, 125, 255}, Color::black()},
+        MapTileStyle{U'\u25b2', Color{150, 145, 130, 255}, Color::black()},
     };
     theme.remembered = std::array<MapTileStyle, mapThemeTileCount>{
         MapTileStyle{U'#', Color{80, 80, 80, 255}, Color::black()},
@@ -91,6 +97,9 @@ MapTheme defaultMapTheme()
         MapTileStyle{U'<', Color{90, 90, 50, 255}, Color::black()},
         MapTileStyle{U'+', Color{80, 55, 30, 255}, Color::black()},
         MapTileStyle{U'/', Color{70, 50, 30, 255}, Color::black()},
+        MapTileStyle{U'\u2663', Color{25, 65, 30, 255}, Color::black()},
+        MapTileStyle{U'\u2248', Color{30, 65, 60, 255}, Color::black()},
+        MapTileStyle{U'\u25b2', Color{65, 65, 60, 255}, Color::black()},
     };
     return theme;
 }
@@ -99,16 +108,16 @@ MapTheme loadMapThemeFromRexPaint(const std::filesystem::path& path)
 {
     const auto image = loadRexPaintImage(path);
     if (image.layers.empty() ||
-        (image.width != 6 &&
+        (image.width != 6 && image.width != 7 &&
          image.width != static_cast<int>(mapThemeTileCount)) ||
         image.height != paletteHeight) {
         throw RexPaintError{
-            "REX Paint map theme must be a 6x2 or 7x2 palette: " +
+            "REX Paint map theme must be a 6x2, 7x2, or 10x2 palette: " +
             path.string()};
     }
 
     const auto& layer = image.layers.front();
-    MapTheme theme;
+    MapTheme theme = defaultMapTheme();
     for (std::size_t column = 0; column < static_cast<std::size_t>(image.width);
          ++column) {
         const auto x = static_cast<int>(column);

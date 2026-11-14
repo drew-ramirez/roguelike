@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -9,6 +10,7 @@
 #include <vector>
 
 #include "core/Rng.hpp"
+#include "debug/MapgenGallery.hpp"
 #include "debug/MapgenPlayback.hpp"
 #include "debug/MapgenViewer.hpp"
 #include "map/MapBrush.hpp"
@@ -16,6 +18,7 @@
 #include "map/MapBuilderRegistry.hpp"
 #include "map/MapConnectivity.hpp"
 #include "map/MapGeometry.hpp"
+#include "map/MapQualityMetrics.hpp"
 #include "map/MapValidation.hpp"
 #include "map/generators/BspDungeonBuilder.hpp"
 #include "map/generators/BspInteriorBuilder.hpp"
@@ -38,6 +41,26 @@ struct OpennessMetrics {
     double walkablePercent = 0.0;
     double openNeighborhoodPercent = 0.0;
 };
+
+[[nodiscard]] bool bufferContains(const ConsoleBuffer& console,
+                                  std::string_view text)
+{
+    if (text.empty()) {
+        return true;
+    }
+    for (int y = 0; y < console.height(); ++y) {
+        std::string row;
+        row.reserve(static_cast<std::size_t>(console.width()));
+        for (int x = 0; x < console.width(); ++x) {
+            const auto glyph = console.cellAt(x, y).glyph;
+            row.push_back(glyph <= 127 ? static_cast<char>(glyph) : '?');
+        }
+        if (row.find(text) != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
 
 [[nodiscard]] int passableNeighborCount(const Map& map, Point point)
 {
@@ -252,6 +275,49 @@ void setChunkTile(wfc::ChunkPattern& pattern, int x, int y, TileType tile)
         [id](const SpawnRequest& request) { return request.id == id; });
 }
 
+[[nodiscard]] bool surfaceExitIsOpen(const Map& map, int exit)
+{
+    const Point center{map.width() / 2, map.height() / 2};
+    if (exit == exitNorth) {
+        return isConnectivityPassable(map, Point{center.x, 1});
+    }
+    if (exit == exitEast) {
+        return isConnectivityPassable(map, Point{map.width() - 2, center.y});
+    }
+    if (exit == exitSouth) {
+        return isConnectivityPassable(map, Point{center.x, map.height() - 2});
+    }
+    if (exit == exitWest) {
+        return isConnectivityPassable(map, Point{1, center.y});
+    }
+    return false;
+}
+
+[[nodiscard]] bool surfaceExitIsThreeTilesWide(const Map& map, int exit)
+{
+    const Point center{map.width() / 2, map.height() / 2};
+    for (int offset = -1; offset <= 1; ++offset) {
+        Point edge;
+        Point inside;
+        if (exit == exitNorth || exit == exitSouth) {
+            const int y = exit == exitNorth ? 0 : map.height() - 1;
+            const int insideY = exit == exitNorth ? 1 : map.height() - 2;
+            edge = Point{center.x + offset, y};
+            inside = Point{center.x + offset, insideY};
+        } else {
+            const int x = exit == exitWest ? 0 : map.width() - 1;
+            const int insideX = exit == exitWest ? 1 : map.width() - 2;
+            edge = Point{x, center.y + offset};
+            inside = Point{insideX, center.y + offset};
+        }
+        if (!isConnectivityPassable(map, edge) ||
+            !isConnectivityPassable(map, inside)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace
 
 void runMapgenTests(TestRunner& runner)
@@ -423,6 +489,134 @@ void runMapgenTests(TestRunner& runner)
     }
 
     {
+        const auto catalog = mapBuilderCatalog();
+        std::vector<std::string_view> catalogIds;
+        catalogIds.reserve(catalog.size());
+        for (const auto& descriptor : catalog) {
+            catalogIds.push_back(descriptor.id);
+        }
+        auto uniqueIds = catalogIds;
+        std::ranges::sort(uniqueIds);
+        uniqueIds.erase(std::ranges::unique(uniqueIds).begin(),
+                        uniqueIds.end());
+        const auto available = availableMapBuilders();
+        const bool catalogMatchesAvailable = std::equal(
+            catalog.begin(),
+            catalog.end(),
+            available.begin(),
+            available.end(),
+            [](const MapBuilderDescriptor& descriptor, const std::string& id) {
+                return descriptor.id == id;
+            });
+        runner.expect(catalog.size() == 41U && uniqueIds.size() == 41U &&
+                          available.size() == catalog.size() &&
+                          catalogMatchesAvailable,
+                      "map builder catalog contains 41 unique builders");
+        runner.expect(
+            mapBuilderDescriptor("simple")->category ==
+                    MapBuilderCategory::Algorithm &&
+                mapBuilderDescriptor("cavern-vaults")->category ==
+                    MapBuilderCategory::Composition &&
+                mapBuilderDescriptor("surface-cave-mouth")->category ==
+                    MapBuilderCategory::Surface &&
+                mapBuilderDescriptor("dragon-lair")->category ==
+                    MapBuilderCategory::DungeonRegion,
+            "map builder catalog groups algorithms, chains, and regions");
+    }
+
+    {
+        MapgenGalleryState gallery;
+        MapgenGalleryOptions options;
+        options.initialBuilderId = "simple";
+        options.seed = Rng::Seed{123U};
+        options.width = 40;
+        options.height = 25;
+        openMapgenGallery(gallery, options);
+
+        runner.expect(gallery.seed == 123U && gallery.paused &&
+                          !gallery.frames.empty() &&
+                          gallery.frameIndex + 1U == gallery.frames.size() &&
+                          gallery.error.empty(),
+                      "gallery opens paused on the final generated map");
+        runner.expect(selectedMapgenGalleryBuilder(gallery).id == "simple" &&
+                          gallery.validation.valid,
+                      "gallery exposes its selected validated builder");
+
+        const std::vector<InputEvent> nextBuilder{
+            {InputEventType::KeyDown, Key::Down}};
+        static_cast<void>(updateMapgenGallery(gallery, nextBuilder, 0));
+        runner.expect(selectedMapgenGalleryBuilder(gallery).id == "bsp" &&
+                          gallery.seed == 123U,
+                      "gallery switches builders while preserving the seed");
+
+        const std::vector<InputEvent> play{
+            {InputEventType::KeyDown, Key::Space}};
+        static_cast<void>(updateMapgenGallery(gallery, play, 0));
+        runner.expect(!gallery.paused && gallery.frameIndex == 0U,
+                      "gallery restarts playback when playing from final");
+        static_cast<void>(updateMapgenGallery(gallery, {}, 300));
+        runner.expect(gallery.frameIndex > 0U || gallery.paused,
+                      "gallery advances playback using elapsed time");
+
+        const std::vector<InputEvent> finalFrame{
+            {InputEventType::KeyDown, Key::Enter}};
+        static_cast<void>(updateMapgenGallery(gallery, finalFrame, 0));
+        runner.expect(gallery.paused &&
+                          gallery.frameIndex + 1U == gallery.frames.size(),
+                      "gallery Enter returns to the final frame");
+
+        const std::vector<InputEvent> picker{{InputEventType::KeyDown, Key::B}};
+        static_cast<void>(updateMapgenGallery(gallery, picker, 0));
+        const std::vector<InputEvent> nextCategory{
+            {InputEventType::KeyDown, Key::Right}};
+        static_cast<void>(updateMapgenGallery(gallery, nextCategory, 0));
+        runner.expect(gallery.pickerOpen &&
+                          pickerMapgenGalleryBuilder(gallery).category ==
+                              MapBuilderCategory::Composition,
+                      "gallery picker navigates grouped builder categories");
+        const std::vector<InputEvent> closePicker{
+            {InputEventType::KeyDown, Key::Escape}};
+        static_cast<void>(updateMapgenGallery(gallery, closePicker, 0));
+        runner.expect(!gallery.pickerOpen &&
+                          selectedMapgenGalleryBuilder(gallery).id == "bsp",
+                      "closing the picker preserves the active preview");
+
+        ConsoleBuffer console{80, 50};
+        console.clear();
+        drawMapgenGallery(console, gallery);
+        runner.expect(bufferContains(console, "Gallery") &&
+                          bufferContains(console, "bsp") &&
+                          bufferContains(console, "seed 123") &&
+                          bufferContains(console, "valid"),
+                      "gallery renderer shows builder, seed, and validation");
+
+        const auto oldSeed = gallery.seed;
+        const std::vector<InputEvent> newSeed{
+            {InputEventType::KeyDown, Key::N}};
+        static_cast<void>(updateMapgenGallery(gallery, newSeed, 0));
+        runner.expect(gallery.seed != oldSeed && gallery.error.empty(),
+                      "gallery generates a new shared seed on N");
+
+        const std::vector<InputEvent> escape{
+            {InputEventType::KeyDown, Key::Escape}};
+        runner.expect(updateMapgenGallery(gallery, escape, 0) ==
+                          MapgenGalleryCommand::ReturnToTitle,
+                      "gallery preview returns to the title menu");
+    }
+
+    {
+        MapgenGalleryState gallery;
+        MapgenGalleryOptions options;
+        options.initialBuilderId = "simple";
+        options.seed = Rng::Seed{321U};
+        options.width = 5;
+        options.height = 5;
+        openMapgenGallery(gallery, options);
+        runner.expect(!gallery.error.empty() && gallery.frames.empty(),
+                      "gallery reports builder failures without throwing");
+    }
+
+    {
         Map map{9, 9, TileType::Wall};
         const auto both = paintBrush(map,
                                      Point{2, 3},
@@ -483,6 +677,146 @@ void runMapgenTests(TestRunner& runner)
                 hasSpawn("townsfolk") && hasSpawn("chair") &&
                 hasSpawn("food_ration"),
             "town builder requests vendor, bystander, prop, and food spawns");
+    }
+
+    {
+        Map map{7, 5, TileType::Floor};
+        map.setTile(1, 2, TileType::Tree);
+        map.setTile(3, 2, TileType::DenseReeds);
+        map.setTile(5, 2, TileType::Rock);
+        runner.expect(map.blocksMovement(1, 2) && map.blocksSight(1, 2) &&
+                          map.blocksMovement(3, 2) && map.blocksSight(3, 2) &&
+                          map.blocksMovement(5, 2) && map.blocksSight(5, 2),
+                      "natural terrain blocks movement and sight");
+        runner.expect(!isConnectivityPassable(TileType::Tree) &&
+                          !isConnectivityPassable(TileType::DenseReeds) &&
+                          !isConnectivityPassable(TileType::Rock),
+                      "natural terrain is excluded from connectivity");
+        runner.expect(isNaturalBlocker(TileType::Tree) &&
+                          isNaturalBlocker(TileType::DenseReeds) &&
+                          isNaturalBlocker(TileType::Rock) &&
+                          !isNaturalBlocker(TileType::Wall),
+                      "tile traits distinguish natural and constructed walls");
+    }
+
+    {
+        struct SurfaceRoleContent {
+            std::string id;
+            BiomeVariant biome = BiomeVariant::DryWoods;
+            LocalScreenRole role = LocalScreenRole::CornerWilderness;
+            std::string firstSpawn;
+            std::string secondSpawn;
+            bool expectsDownStairs = false;
+        };
+
+        const std::vector<SurfaceRoleContent> roles{
+            {"surface-town-outskirts",
+             BiomeVariant::DryWoods,
+             LocalScreenRole::TownOutskirts,
+             "townsfolk",
+             "food_ration",
+             false},
+            {"surface-cardinal-transition",
+             BiomeVariant::ReedMarsh,
+             LocalScreenRole::CardinalTransition,
+             "wild_boar",
+             "food_ration",
+             false},
+            {"surface-corner-wilderness",
+             BiomeVariant::DeepGrove,
+             LocalScreenRole::CornerWilderness,
+             "wolf",
+             "wild_boar",
+             false},
+            {"surface-ruin-pocket",
+             BiomeVariant::RuinedWoodland,
+             LocalScreenRole::RuinPocket,
+             "goblin",
+             "dwarf_rubble",
+             false},
+            {"surface-cave-mouth",
+             BiomeVariant::LimestoneRise,
+             LocalScreenRole::CaveMouth,
+             "cave_bat",
+             "limestone_column",
+             true},
+            {"surface-camp-shrine",
+             BiomeVariant::WetWoods,
+             LocalScreenRole::CampShrine,
+             "chair",
+             "healing_potion",
+             false},
+            {"surface-resource-heavy",
+             BiomeVariant::LimestoneRise,
+             LocalScreenRole::ResourceHeavy,
+             "limestone_column",
+             "healing_potion",
+             false},
+            {"surface-danger-encounter",
+             BiomeVariant::DangerousWilds,
+             LocalScreenRole::DangerEncounter,
+             "orc",
+             "fireball_scroll",
+             false},
+        };
+
+        for (std::size_t index = 0; index < roles.size(); ++index) {
+            Rng rng{static_cast<Rng::Seed>(7070U + index)};
+            MapBuildOptions options;
+            options.biomeVariant = roles[index].biome;
+            options.screenRole = roles[index].role;
+            options.exitMask = exitNorth | exitEast;
+            options.dangerEncounter =
+                roles[index].role == LocalScreenRole::DangerEncounter;
+
+            const auto result =
+                buildMapById(roles[index].id, 80, 43, rng, options);
+            const auto validation = validateMapBuild(
+                result.map, result.playerStart, result.stairsPosition);
+
+            runner.expect(validation.valid,
+                          roles[index].id + " surface role validates");
+            runner.expect(result.builderName == roles[index].id,
+                          roles[index].id + " reports its surface id");
+            runner.expect(hasBuildStepContaining(result, "role:"),
+                          roles[index].id + " records its local role");
+            runner.expect(
+                surfaceExitIsOpen(result.map, exitNorth) &&
+                    surfaceExitIsOpen(result.map, exitEast) &&
+                    surfaceExitIsThreeTilesWide(result.map, exitNorth) &&
+                    surfaceExitIsThreeTilesWide(result.map, exitEast),
+                roles[index].id + " preserves three-tile requested exits");
+            runner.expect(hasSpawnRequest(result, roles[index].firstSpawn) &&
+                              hasSpawnRequest(result, roles[index].secondSpawn),
+                          roles[index].id +
+                              " requests role-appropriate content");
+            runner.expect((countTiles(result.map, TileType::DownStairs) > 0) ==
+                              roles[index].expectsDownStairs,
+                          roles[index].id +
+                              " controls deliberate surface stairs");
+        }
+
+        MapBuildOptions marshResources;
+        marshResources.biomeVariant = BiomeVariant::ReedMarsh;
+        marshResources.screenRole = LocalScreenRole::ResourceHeavy;
+        marshResources.exitMask = exitNorth | exitEast | exitSouth | exitWest;
+        Rng marshResourceRng{8080U};
+        const auto marshResourceResult = buildMapById(
+            "surface-resource-heavy", 80, 43, marshResourceRng, marshResources);
+        runner.expect(hasSpawnRequest(marshResourceResult, "marsh_root") &&
+                          hasSpawnRequest(marshResourceResult, "reed_shoot"),
+                      "surface resource screens request marsh resources");
+
+        MapBuildOptions marshCamp;
+        marshCamp.biomeVariant = BiomeVariant::ReedMarsh;
+        marshCamp.screenRole = LocalScreenRole::CampShrine;
+        marshCamp.exitMask = exitNorth | exitEast | exitSouth | exitWest;
+        Rng marshCampRng{8081U};
+        const auto marshCampResult = buildMapById(
+            "surface-camp-shrine", 80, 43, marshCampRng, marshCamp);
+        runner.expect(hasSpawnRequest(marshCampResult, "reed_camp") &&
+                          hasSpawnRequest(marshCampResult, "reed_mentor"),
+                      "surface camp screens request marsh service content");
     }
 
     {
@@ -801,6 +1135,14 @@ void runMapgenTests(TestRunner& runner)
                 isKnownMapBuilder("voronoi-chebyshev") &&
                 isKnownMapBuilder("wfc") && isKnownMapBuilder("town") &&
                 isKnownMapBuilder("woods") &&
+                isKnownMapBuilder("surface-town-outskirts") &&
+                isKnownMapBuilder("surface-cardinal-transition") &&
+                isKnownMapBuilder("surface-corner-wilderness") &&
+                isKnownMapBuilder("surface-ruin-pocket") &&
+                isKnownMapBuilder("surface-cave-mouth") &&
+                isKnownMapBuilder("surface-camp-shrine") &&
+                isKnownMapBuilder("surface-resource-heavy") &&
+                isKnownMapBuilder("surface-danger-encounter") &&
                 isKnownMapBuilder("limestone-caverns") &&
                 isKnownMapBuilder("deep-caverns") &&
                 isKnownMapBuilder("dwarf-transition") &&
@@ -821,6 +1163,26 @@ void runMapgenTests(TestRunner& runner)
                       "mapgen viewer prints builder id");
         runner.expect(text.find("Validation: ok") != std::string::npos,
                       "mapgen viewer prints validation result");
+        runner.expect(text.find("Quality: coverage") != std::string::npos,
+                      "mapgen viewer prints structural quality metrics");
+
+        MapgenViewerOptions biomeOptions{
+            "surface-corner-wilderness", Rng::Seed{888U}, false, 40, 25};
+        biomeOptions.biomeVariant = BiomeVariant::DryWoods;
+        std::ostringstream dryWoodsOutput;
+        std::ostringstream repeatedDryWoodsOutput;
+        static_cast<void>(runMapgenViewer(biomeOptions, dryWoodsOutput));
+        static_cast<void>(
+            runMapgenViewer(biomeOptions, repeatedDryWoodsOutput));
+
+        biomeOptions.biomeVariant = BiomeVariant::ReedMarsh;
+        std::ostringstream reedMarshOutput;
+        static_cast<void>(runMapgenViewer(biomeOptions, reedMarshOutput));
+
+        runner.expect(dryWoodsOutput.str() == repeatedDryWoodsOutput.str(),
+                      "mapgen viewer remains deterministic for a fixed biome");
+        runner.expect(dryWoodsOutput.str() != reedMarshOutput.str(),
+                      "mapgen viewer applies the selected surface biome");
     }
 
     {
@@ -835,6 +1197,14 @@ void runMapgenTests(TestRunner& runner)
                                            "wfc",
                                            "town",
                                            "woods",
+                                           "surface-town-outskirts",
+                                           "surface-cardinal-transition",
+                                           "surface-corner-wilderness",
+                                           "surface-ruin-pocket",
+                                           "surface-cave-mouth",
+                                           "surface-camp-shrine",
+                                           "surface-resource-heavy",
+                                           "surface-danger-encounter",
                                            "limestone-caverns",
                                            "deep-caverns",
                                            "dwarf-transition",
@@ -896,6 +1266,165 @@ void runMapgenTests(TestRunner& runner)
     }
 
     {
+        const std::array<Rng::Seed, 5> seeds{1U, 2U, 7U, 42U, 4242U};
+        for (const Rng::Seed seed : seeds) {
+            Rng rng{seed};
+            const auto result =
+                buildMapById("cellular", 80, 43, rng, MapBuildOptions{});
+            const auto metrics = measureMapQuality(result.map);
+            runner.expect(metrics.walkableCoverage >= 0.28 &&
+                              metrics.walkableCoverage <= 0.50,
+                          "cellular coverage stays cave-like for seed " +
+                              std::to_string(seed));
+            runner.expect(metrics.disconnectedRegions == 0 &&
+                              metrics.tinyBlockerComponents == 0,
+                          "cellular removes disconnected floors and rock "
+                          "specks for seed " +
+                              std::to_string(seed));
+        }
+    }
+
+    {
+        struct Target {
+            std::string id;
+            double coverage = 0.0;
+            double tolerance = 0.0;
+        };
+        const std::vector<Target> targets{
+            {"drunkard", 0.40, 0.03},
+            {"drunkard-open-area", 0.50, 0.03},
+            {"drunkard-open-halls", 0.50, 0.03},
+            {"drunkard-winding-passages", 0.40, 0.03},
+            {"drunkard-fat-passages", 0.40, 0.03},
+            {"drunkard-symmetry", 0.40, 0.03},
+            {"dla", 0.25, 0.02},
+            {"dla-walk-inwards", 0.25, 0.02},
+            {"dla-walk-outwards", 0.25, 0.02},
+            {"dla-central-attractor", 0.25, 0.02},
+            {"dla-insectoid", 0.25, 0.02},
+        };
+        const std::array<Rng::Seed, 3> seeds{1U, 42U, 4242U};
+        for (const auto& target : targets) {
+            for (const Rng::Seed seed : seeds) {
+                Rng rng{seed};
+                const auto result =
+                    buildMapById(target.id, 80, 43, rng, MapBuildOptions{});
+                const auto metrics = measureMapQuality(result.map);
+                runner.expect(
+                    std::abs(metrics.walkableCoverage - target.coverage) <=
+                        target.tolerance,
+                    target.id + " reaches retained floor target for seed " +
+                        std::to_string(seed));
+                runner.expect(metrics.disconnectedRegions == 0,
+                              target.id +
+                                  " keeps random growth connected for seed " +
+                                  std::to_string(seed));
+            }
+        }
+    }
+
+    {
+        const std::array<Rng::Seed, 3> seeds{1U, 42U, 4242U};
+        for (const Rng::Seed seed : seeds) {
+            Rng mazeRng{seed};
+            const auto maze =
+                buildMapById("maze", 80, 43, mazeRng, MapBuildOptions{});
+            const auto mazeMetrics = measureMapQuality(maze.map);
+            runner.expect(mazeMetrics.walkableCoverage >= 0.44 &&
+                              mazeMetrics.walkableCoverage <= 0.50 &&
+                              mazeMetrics.narrowPercent >= 0.85 &&
+                              mazeMetrics.disconnectedRegions == 0,
+                          "maze preserves perfect narrow identity for seed " +
+                              std::to_string(seed));
+
+            for (const std::string id : {"simple", "bsp", "bsp-interior"}) {
+                Rng roomRng{seed};
+                const auto result =
+                    buildMapById(id, 80, 43, roomRng, MapBuildOptions{});
+                const auto metrics = measureMapQuality(result.map);
+                runner.expect(metrics.walkableCoverage >= 0.20 &&
+                                  metrics.walkableCoverage <= 0.65 &&
+                                  metrics.disconnectedRegions == 0,
+                              id +
+                                  " stays within room-family bounds for seed " +
+                                  std::to_string(seed));
+            }
+
+            Rng voronoiRng{seed};
+            const auto voronoi =
+                buildMapById("voronoi", 80, 43, voronoiRng, MapBuildOptions{});
+            const auto voronoiMetrics = measureMapQuality(voronoi.map);
+            runner.expect(voronoiMetrics.walkableCoverage >= 0.55 &&
+                              voronoiMetrics.walkableCoverage <= 0.75 &&
+                              voronoiMetrics.disconnectedRegions == 0 &&
+                              voronoiMetrics.tinyBlockerComponents == 0,
+                          "Voronoi keeps readable connected cells for seed " +
+                              std::to_string(seed));
+        }
+    }
+
+    {
+        struct SurfaceTarget {
+            std::string id;
+            BiomeVariant biome = BiomeVariant::DryWoods;
+        };
+        const std::vector<SurfaceTarget> targets{
+            {"surface-cardinal-transition", BiomeVariant::DryWoods},
+            {"surface-corner-wilderness", BiomeVariant::DeepGrove},
+            {"surface-ruin-pocket", BiomeVariant::RuinedWoodland},
+            {"surface-cave-mouth", BiomeVariant::LimestoneRise},
+            {"surface-camp-shrine", BiomeVariant::WetWoods},
+            {"surface-resource-heavy", BiomeVariant::LimestoneRise},
+        };
+        const std::array<Rng::Seed, 3> seeds{1U, 42U, 4242U};
+        for (const auto& target : targets) {
+            for (const Rng::Seed seed : seeds) {
+                MapBuildOptions options;
+                options.biomeVariant = target.biome;
+                options.exitMask = exitNorth | exitEast | exitSouth | exitWest;
+                Rng rng{seed};
+                const auto result =
+                    buildMapById(target.id, 80, 43, rng, options);
+                const auto metrics = measureMapQuality(result.map);
+                runner.expect(metrics.walkableCoverage >= 0.50 &&
+                                  metrics.walkableCoverage <= 0.68 &&
+                                  metrics.narrowPercent <= 0.18 &&
+                                  metrics.disconnectedRegions == 0 &&
+                                  metrics.tinyBlockerComponents == 0,
+                              target.id +
+                                  " meets surface quality targets for seed " +
+                                  std::to_string(seed));
+            }
+        }
+
+        for (const Rng::Seed seed : seeds) {
+            MapBuildOptions options;
+            options.biomeVariant = BiomeVariant::DryWoods;
+            options.exitMask = exitNorth | exitEast | exitSouth | exitWest;
+            Rng townRng{seed};
+            const auto town = buildMapById(
+                "surface-town-outskirts", 80, 43, townRng, options);
+            const auto townMetrics = measureMapQuality(town.map);
+            runner.expect(townMetrics.walkableCoverage >= 0.65 &&
+                              townMetrics.walkableCoverage <= 0.82,
+                          "town outskirts preserves broad streets for seed " +
+                              std::to_string(seed));
+
+            options.biomeVariant = BiomeVariant::DangerousWilds;
+            options.dangerEncounter = true;
+            Rng dangerRng{seed};
+            const auto danger = buildMapById(
+                "surface-danger-encounter", 80, 43, dangerRng, options);
+            const auto dangerMetrics = measureMapQuality(danger.map);
+            runner.expect(dangerMetrics.narrowPercent <= 0.28 &&
+                              dangerMetrics.disconnectedRegions == 0 &&
+                              dangerMetrics.tinyBlockerComponents == 0,
+                          "danger surface keeps a traversable arena for seed " +
+                              std::to_string(seed));
+        }
+    }
+
+    {
         struct OpennessLimit {
             std::string id;
             double maxWalkablePercent = 0.0;
@@ -906,6 +1435,10 @@ void runMapgenTests(TestRunner& runner)
             {"limestone-caverns", 72.0, 82.0},
             {"cavern-vaults", 75.0, 84.0},
             {"woods", 58.0, 70.0},
+            {"surface-cardinal-transition", 92.0, 92.0},
+            {"surface-corner-wilderness", 88.0, 90.0},
+            {"surface-resource-heavy", 88.0, 90.0},
+            {"surface-danger-encounter", 54.0, 70.0},
             {"mushroom-entrance", 62.0, 76.0},
             {"mushroom-forest", 62.0, 76.0},
             {"mushroom-exit", 62.0, 76.0},
