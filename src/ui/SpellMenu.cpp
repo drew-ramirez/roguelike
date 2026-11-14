@@ -11,6 +11,7 @@
 #include "render/ConsoleBuffer.hpp"
 #include "systems/InputSystem.hpp"
 #include "systems/SpellSystem.hpp"
+#include "ui/Widgets.hpp"
 
 namespace rl {
 namespace {
@@ -24,21 +25,6 @@ constexpr int panelHeight = 20;
 spellIds(const entt::registry& registry, const GameResources& resources)
 {
     return knownSpellIds(registry, resources.player);
-}
-
-void drawBox(ConsoleBuffer& console)
-{
-    for (int y = panelY; y < panelY + panelHeight; ++y) {
-        for (int x = panelX; x < panelX + panelWidth; ++x) {
-            const bool border = x == panelX || x == panelX + panelWidth - 1 ||
-                                y == panelY || y == panelY + panelHeight - 1;
-            console.set(x,
-                        y,
-                        border ? U'#' : U' ',
-                        Color{180, 180, 180, 255},
-                        Color::black());
-        }
-    }
 }
 
 } // namespace
@@ -109,7 +95,7 @@ void drawSpellMenu(ConsoleBuffer& console,
                    const entt::registry& registry,
                    const GameResources& resources)
 {
-    drawBox(console);
+    drawMenuFrame(console, panelX, panelY, panelWidth, panelHeight);
     console.print(panelX + 2, panelY + 1, "Spells", Color::yellow());
 
     const auto spells = spellIds(registry, resources);

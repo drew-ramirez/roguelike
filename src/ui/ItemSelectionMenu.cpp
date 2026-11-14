@@ -10,6 +10,7 @@
 #include "systems/InputSystem.hpp"
 #include "systems/ItemSystem.hpp"
 #include "ui/ItemDetails.hpp"
+#include "ui/Widgets.hpp"
 
 namespace rl {
 namespace {
@@ -22,24 +23,6 @@ constexpr int listWidth = 28;
 constexpr int detailX = panelX + listWidth + 4;
 constexpr int detailWidth = panelWidth - listWidth - 6;
 
-[[nodiscard]] std::string clippedLabel(std::string text, int width)
-{
-    if (width <= 0) {
-        return {};
-    }
-    const auto maximum = static_cast<std::size_t>(width);
-    if (text.size() <= maximum) {
-        return text;
-    }
-    if (maximum <= 3U) {
-        text.resize(maximum);
-        return text;
-    }
-    text.resize(maximum - 3U);
-    text += "...";
-    return text;
-}
-
 [[nodiscard]] std::vector<entt::entity>
 selectionTargets(const entt::registry& registry, const GameResources& resources)
 {
@@ -48,26 +31,6 @@ selectionTargets(const entt::registry& registry, const GameResources& resources)
     }
     return itemEffectTargets(
         registry, resources.player, resources.pendingItemSelection->source);
-}
-
-void drawBox(ConsoleBuffer& console)
-{
-    for (int y = panelY; y < panelY + panelHeight; ++y) {
-        for (int x = panelX; x < panelX + panelWidth; ++x) {
-            const bool border = x == panelX || x == panelX + panelWidth - 1 ||
-                                y == panelY || y == panelY + panelHeight - 1;
-            console.set(x,
-                        y,
-                        border ? U'#' : U' ',
-                        Color{180, 180, 180, 255},
-                        Color::black());
-        }
-    }
-
-    for (int y = panelY + 3; y < panelY + panelHeight - 1; ++y) {
-        console.set(
-            detailX - 2, y, U'|', Color{100, 100, 100, 255}, Color::black());
-    }
 }
 
 } // namespace
@@ -133,7 +96,12 @@ void drawItemSelectionMenu(ConsoleBuffer& console,
                            const entt::registry& registry,
                            const GameResources& resources)
 {
-    drawBox(console);
+    drawMenuFrame(console, panelX, panelY, panelWidth, panelHeight);
+
+    for (int y = panelY + 3; y < panelY + panelHeight - 1; ++y) {
+        console.set(
+            detailX - 2, y, U'|', Color{100, 100, 100, 255}, Color::black());
+    }
     const bool identify =
         resources.pendingItemSelection.has_value() &&
         resources.pendingItemSelection->mode == ItemSelectionMode::Identify;

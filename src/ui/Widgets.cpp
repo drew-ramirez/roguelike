@@ -6,6 +6,39 @@
 
 namespace rl {
 
+std::string clippedLabel(std::string text, int width)
+{
+    if (width <= 0) {
+        return {};
+    }
+    const auto maximum = static_cast<std::size_t>(width);
+    if (text.size() <= maximum) {
+        return text;
+    }
+    if (maximum <= 3U) {
+        text.resize(maximum);
+        return text;
+    }
+    text.resize(maximum - 3U);
+    text += "...";
+    return text;
+}
+
+void drawMenuFrame(ConsoleBuffer& console, int x, int y, int width, int height)
+{
+    for (int row = y; row < y + height; ++row) {
+        for (int column = x; column < x + width; ++column) {
+            const bool border = column == x || column == x + width - 1 ||
+                                row == y || row == y + height - 1;
+            console.set(column,
+                        row,
+                        border ? U'#' : U' ',
+                        Color{180, 180, 180, 255},
+                        Color::black());
+        }
+    }
+}
+
 void drawPanel(ConsoleBuffer& console, int top, int height)
 {
     for (int y = top; y < top + height && y < console.height(); ++y) {

@@ -18,6 +18,7 @@
 #include "render/ConsoleBuffer.hpp"
 #include "systems/InputSystem.hpp"
 #include "systems/SettlementServiceSystem.hpp"
+#include "ui/Widgets.hpp"
 
 namespace rl {
 namespace {
@@ -27,21 +28,6 @@ constexpr int panelY = 8;
 constexpr int panelWidth = 54;
 constexpr int panelHeight = 12;
 constexpr std::array<std::string_view, 2> actions{"Learn recipe", "Leave"};
-
-void drawBox(ConsoleBuffer& console)
-{
-    for (int y = panelY; y < panelY + panelHeight; ++y) {
-        for (int x = panelX; x < panelX + panelWidth; ++x) {
-            const bool border = x == panelX || x == panelX + panelWidth - 1 ||
-                                y == panelY || y == panelY + panelHeight - 1;
-            console.set(x,
-                        y,
-                        border ? U'#' : U' ',
-                        Color{180, 180, 180, 255},
-                        Color::black());
-        }
-    }
-}
 
 [[nodiscard]] std::string serviceName(const entt::registry& registry,
                                       entt::entity provider)
@@ -124,7 +110,7 @@ void drawSettlementServiceMenu(ConsoleBuffer& console,
                                const entt::registry& registry,
                                const GameResources& resources)
 {
-    drawBox(console);
+    drawMenuFrame(console, panelX, panelY, panelWidth, panelHeight);
     const auto provider = resources.pendingSettlementService.has_value()
                               ? resources.pendingSettlementService->provider
                               : entt::null;
