@@ -70,11 +70,9 @@ void runRawsValidationTests(TestRunner& runner)
     const auto missing = spawnRawEntity(registry, raws, "missing", Point{1, 1});
     runner.expect(!missing.has_value(), "unknown raw id returns empty");
 
-    Rng first{1U};
-    Rng second{1U};
-    runner.expect(rollSpawn(raws.monsterSpawnTable(), 1, first) ==
-                      rollSpawn(raws.monsterSpawnTable(), 1, second),
-                  "raw spawn table rolls are deterministic");
+    Rng rng{1U};
+    runner.expect(rollSpawn(raws.monsterSpawnTable(), 1, rng) == "goblin",
+                  "parsed spawn table supplies its configured monster");
 
     const auto openWorldRaws = RawDatabase::fromJson(R"({
       "items": [

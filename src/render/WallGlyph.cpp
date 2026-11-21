@@ -23,9 +23,7 @@ constexpr int eastBit = 8;
     return map.inBounds(x, y) && map.tileAt(x, y) == TileType::Wall;
 }
 
-} // namespace
-
-int wallNeighborMask(const Map& map, int x, int y)
+[[nodiscard]] int wallNeighborMask(const Map& map, int x, int y)
 {
     int mask = 0;
     if (isWall(map, x, y - 1)) {
@@ -43,7 +41,8 @@ int wallNeighborMask(const Map& map, int x, int y)
     return mask;
 }
 
-char32_t wallGlyphFromMask(int mask, WallGlyphStyle style) noexcept
+[[nodiscard]] char32_t wallGlyphFromMask(int mask,
+                                         WallGlyphStyle style) noexcept
 {
     if (style == WallGlyphStyle::AsciiFallback) {
         return U'#';
@@ -80,6 +79,8 @@ char32_t wallGlyphFromMask(int mask, WallGlyphStyle style) noexcept
         return U'#';
     }
 }
+
+} // namespace
 
 char32_t wallGlyph(const Map& map, int x, int y, WallGlyphStyle style)
 {

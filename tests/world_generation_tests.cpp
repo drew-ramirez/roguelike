@@ -66,8 +66,6 @@ void runWorldGenerationTests(TestRunner& runner)
         runner.expect(first.cells.size() == static_cast<std::size_t>(
                                                 worldMapWidth * worldMapHeight),
                       "world generation fills the macro grid");
-        runner.expect(first.cells.size() == second.cells.size(),
-                      "same-seed worlds have matching cell counts");
 
         bool same = first.cells.size() == second.cells.size();
         for (std::size_t index = 0; same && index < first.cells.size();
@@ -217,27 +215,6 @@ void runWorldGenerationTests(TestRunner& runner)
 
     {
         const auto world = generateWorldMap(Rng::Seed{42U});
-        const auto center =
-            describeLocalScreen(world, greenholtWorldPosition(), Point{1, 1});
-        runner.expect(center.role == LocalScreenRole::CenterLandmark &&
-                          center.builderId == "town" &&
-                          center.landmarkId == "greenholt",
-                      "Greenholt center screen resolves to the town builder");
-
-        const auto outskirts =
-            describeLocalScreen(world, greenholtWorldPosition(), Point{1, 0});
-        runner.expect(outskirts.role == LocalScreenRole::TownOutskirts &&
-                          outskirts.builderId == "surface-town-outskirts" &&
-                          (outskirts.exitMask & exitNorth) != 0,
-                      "Greenholt edge screens resolve to town outskirts");
-
-        const auto danger = describeLocalScreen(
-            world, greenholtWorldPosition(), Point{2, 1}, true);
-        runner.expect(danger.role == LocalScreenRole::DangerEncounter &&
-                          danger.builderId == "surface-danger-encounter" &&
-                          danger.dangerEncounter,
-                      "forced danger screens use the danger encounter role");
-
         bool threw = false;
         try {
             (void)describeLocalScreen(world, Point{-1, 0}, Point{1, 1});

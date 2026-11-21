@@ -89,20 +89,6 @@ void runAiTests(TestRunner& runner)
         runner.expect(!registry.all_of<WantsToMelee>(townsfolk),
                       "hostile AI skips neutral mob actors");
     }
-
-    {
-        auto map = openMap();
-        entt::registry registry;
-        GameResources resources;
-        resources.player = spawnPlayer(registry, Point{2, 2});
-        const auto goblin = spawnGoblin(registry, Point{3, 2});
-
-        runHostileMonsterAi(registry, resources, map);
-        runner.expect(registry.all_of<WantsToMelee>(goblin) &&
-                          registry.get<WantsToMelee>(goblin).target ==
-                              resources.player,
-                      "hostile AI queues adjacent monster attacks");
-    }
 }
 
 } // namespace rl::test

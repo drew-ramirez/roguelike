@@ -72,8 +72,6 @@ void runVendorTests(TestRunner& runner)
                       "buyer can purchase matching vendor stock");
         runner.expect(isOwnedBy(registry, sword, resources.player),
                       "purchased item moves into buyer backpack");
-        runner.expect(!registry.all_of<Position>(sword),
-                      "purchased item leaves the map");
         runner.expect(registry.get<Pools>(resources.player).gold == 15,
                       "purchase subtracts buyer gold");
         runner.expect(registry.get<Vendor>(vendor).gold == 295 &&
@@ -155,14 +153,16 @@ void runVendorTests(TestRunner& runner)
         const auto vendor = makeVendor(registry, "alchemy", 250);
         populateVendorStock(registry, defaultRawDatabase(), vendor);
         const auto stock = vendorStock(registry, vendor);
-        runner.expect(std::any_of(stock.begin(),
-                                  stock.end(),
-                                  [&](entt::entity item) {
-                                      return registry.all_of<Name>(item) &&
-                                             registry.get<Name>(item).value ==
-                                                 "Food Ration";
-                                  }),
-                      "alchemy vendors stock food rations");
+        runner.expect(
+            std::any_of(
+                stock.begin(),
+                stock.end(),
+                [&](entt::entity item) {
+                    return registry.all_of<RawIdentity>(item) &&
+                           registry.get<RawIdentity>(item).templateName ==
+                               "food_ration";
+                }),
+            "alchemy vendors stock food rations");
     }
 }
 

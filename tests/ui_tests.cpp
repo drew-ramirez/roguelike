@@ -87,8 +87,8 @@ void runUiTests(TestRunner& runner)
     world.cursor = reedfenWorldPosition();
     console.clear();
     drawWorldMapMenu(console, world);
-    runner.expect(bufferContains(console, "?") &&
-                      bufferContains(console, "Unknown wilds"),
+    runner.expect(!bufferContains(console, "Reedfen") &&
+                      !bufferContains(console, "Reed marsh"),
                   "world map hides undiscovered cells");
 
     auto* reedfen = worldCellAt(world, reedfenWorldPosition());

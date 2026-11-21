@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iterator>
 #include <string>
+#include <vector>
 
 #include <entt/entt.hpp>
 
@@ -80,17 +81,29 @@ void runDescentAndSpawnTests(TestRunner& runner)
     runner.expect(countNamed(registry, "Food Ration") >= 1,
                   "descent into woods spawns a supply pickup");
 
-    Rng first{100U};
-    Rng second{100U};
-    const auto firstRoll = rollSpawn(monsterSpawnTable(), 1, first);
-    const auto secondRoll = rollSpawn(monsterSpawnTable(), 1, second);
-    runner.expect(firstRoll == secondRoll,
-                  "spawn tables are deterministic for a fixed seed");
-    runner.expect(
-        std::any_of(monsterSpawnTable().begin(),
-                    monsterSpawnTable().end(),
-                    [](const SpawnEntry& entry) { return entry.minDepth > 1; }),
-        "spawn table has depth-gated entries");
+    {
+        const std::vector<SpawnEntry> table{
+            {"too_shallow", 100, 1, 1},
+            {"goblin", 1, 2, 2},
+            {"wolf", 1, 2, 2},
+            {"too_deep", 100, 3, 3},
+        };
+        Rng first{100U};
+        Rng second{100U};
+        bool sawGoblin = false;
+        bool sawWolf = false;
+        for (int roll = 0; roll < 16; ++roll) {
+            const auto chosen = rollSpawn(table, 2, first);
+            runner.expect(chosen == rollSpawn(table, 2, second),
+                          "the same spawn seed reproduces the roll sequence");
+            runner.expect(chosen == "goblin" || chosen == "wolf",
+                          "spawn rolls exclude entries outside this depth");
+            sawGoblin |= chosen == "goblin";
+            sawWolf |= chosen == "wolf";
+        }
+        runner.expect(sawGoblin && sawWolf,
+                      "spawn rolls select both eligible entries");
+    }
 
     {
         Rng buildRng{606U};

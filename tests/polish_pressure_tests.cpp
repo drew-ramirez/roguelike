@@ -51,11 +51,9 @@ void runPolishPressureTests(TestRunner& runner)
         map.setTile(1, 1, TileType::Wall);
         map.setTile(1, 2, TileType::Wall);
 
-        runner.expect(wallNeighborMask(map, 1, 1) == 3,
-                      "wall bitmask sees north and south walls");
-        runner.expect(wallGlyphFromMask(3) == U'\u2502',
+        runner.expect(wallGlyph(map, 1, 1) == U'\u2502',
                       "connected wall glyph uses vertical line");
-        runner.expect(wallGlyphFromMask(3, WallGlyphStyle::AsciiFallback) ==
+        runner.expect(wallGlyph(map, 1, 1, WallGlyphStyle::AsciiFallback) ==
                           U'#',
                       "wall glyph fallback stays ASCII");
     }

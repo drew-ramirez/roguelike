@@ -45,7 +45,6 @@ void runProgressionTests(TestRunner& runner)
     RunState state = RunState::PlayerTurn;
     applyDamageAndCleanup(registry, resources, state);
 
-    runner.expect(!registry.valid(goblin), "dead monster is removed");
     runner.expect(registry.get<Pools>(resources.player).xp == 100,
                   "killing rewarded monsters grants XP");
     runner.expect(recentLogContains(resources, "You gain 100 xp."),

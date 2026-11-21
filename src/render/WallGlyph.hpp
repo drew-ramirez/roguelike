@@ -13,10 +13,6 @@ class Map;
 
 enum class WallGlyphStyle { Connected, AsciiFallback };
 
-[[nodiscard]] int wallNeighborMask(const Map& map, int x, int y);
-[[nodiscard]] char32_t
-wallGlyphFromMask(int mask,
-                  WallGlyphStyle style = WallGlyphStyle::Connected) noexcept;
 [[nodiscard]] char32_t
 wallGlyph(const Map& map,
           int x,

@@ -37,7 +37,9 @@ void runRangedCombatTests(TestRunner& runner)
                   "ranged combat resolves a clear shot");
     runner.expect(registry.all_of<SufferDamage>(goblin),
                   "ranged attack queues target damage");
-    runner.expect(registry.valid(bow), "ranged attack does not consume ammo");
+    runner.expect(registry.valid(bow) && registry.all_of<Equipped>(bow) &&
+                      registry.get<Equipped>(bow).owner == resources.player,
+                  "ranged attack keeps the bow equipped");
 }
 
 } // namespace rl::test

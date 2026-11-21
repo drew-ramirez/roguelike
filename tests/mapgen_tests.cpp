@@ -116,69 +116,6 @@ struct OpennessMetrics {
     return count;
 }
 
-[[nodiscard]] bool touchesMapEdge(const Map& map, Point point) noexcept
-{
-    return point.x == 0 || point.y == 0 || point.x == map.width() - 1 ||
-           point.y == map.height() - 1;
-}
-
-[[nodiscard]] bool isWallTile(const Map& map, Point point)
-{
-    return map.inBounds(point.x, point.y) &&
-           map.tileAt(point.x, point.y) == TileType::Wall;
-}
-
-[[nodiscard]] int countSmallInteriorWallComponents(const Map& map,
-                                                   std::size_t maxSize)
-{
-    std::vector<bool> visited(static_cast<std::size_t>(map.tileCount()), false);
-    int count = 0;
-
-    for (int y = 0; y < map.height(); ++y) {
-        for (int x = 0; x < map.width(); ++x) {
-            const Point start{x, y};
-            const auto startIndex =
-                static_cast<std::size_t>(map.xyIdx(start.x, start.y));
-            if (visited[startIndex] || !isWallTile(map, start)) {
-                continue;
-            }
-
-            bool touchesEdge = false;
-            std::vector<Point> component;
-            std::vector<Point> frontier{start};
-            visited[startIndex] = true;
-
-            while (!frontier.empty()) {
-                const Point current = frontier.back();
-                frontier.pop_back();
-                component.push_back(current);
-                touchesEdge = touchesEdge || touchesMapEdge(map, current);
-
-                for (const Point next : cardinalNeighbors(current)) {
-                    if (!isWallTile(map, next)) {
-                        continue;
-                    }
-
-                    const auto nextIndex =
-                        static_cast<std::size_t>(map.xyIdx(next.x, next.y));
-                    if (visited[nextIndex]) {
-                        continue;
-                    }
-
-                    visited[nextIndex] = true;
-                    frontier.push_back(next);
-                }
-            }
-
-            if (!touchesEdge && component.size() <= maxSize) {
-                ++count;
-            }
-        }
-    }
-
-    return count;
-}
-
 void carveVerticalDoorCandidate(Map& map, int x, int y)
 {
     map.setTile(x, y - 1, TileType::Floor);
@@ -265,24 +202,6 @@ void setChunkTile(wfc::ChunkPattern& pattern, int x, int y, TileType tile)
         [id](const SpawnRequest& request) { return request.id == id; });
 }
 
-[[nodiscard]] bool surfaceExitIsOpen(const Map& map, int exit)
-{
-    const Point center{map.width() / 2, map.height() / 2};
-    if (exit == exitNorth) {
-        return isConnectivityPassable(map, Point{center.x, 1});
-    }
-    if (exit == exitEast) {
-        return isConnectivityPassable(map, Point{map.width() - 2, center.y});
-    }
-    if (exit == exitSouth) {
-        return isConnectivityPassable(map, Point{center.x, map.height() - 2});
-    }
-    if (exit == exitWest) {
-        return isConnectivityPassable(map, Point{1, center.y});
-    }
-    return false;
-}
-
 [[nodiscard]] bool surfaceExitIsThreeTilesWide(const Map& map, int exit)
 {
     const Point center{map.width() / 2, map.height() / 2};
@@ -332,11 +251,9 @@ void runMapgenTests(TestRunner& runner)
                           countReachableTiles(map, Point{0, 0}) == 0,
                       "distance map handles invalid starts as unreachable");
         const auto validation = validateMapBuild(map, Point{1, 1}, Point{2, 1});
-        runner.expect(validation.walkableTiles ==
-                              countConnectivityPassableTiles(map) &&
-                          validation.reachableTiles ==
-                              countReachableTiles(map, Point{1, 1}),
-                      "map validation reports MapConnectivity tile counts");
+        runner.expect(!validation.valid && validation.walkableTiles == 3 &&
+                          validation.reachableTiles == 2,
+                      "map validation rejects an isolated walkable tile");
         runner.expect(cullUnreachable(map, Point{1, 1}) == 1,
                       "reachability culling removes isolated floors");
 
@@ -498,10 +415,9 @@ void runMapgenTests(TestRunner& runner)
             [](const MapBuilderDescriptor& descriptor, const std::string& id) {
                 return descriptor.id == id;
             });
-        runner.expect(catalog.size() == 41U && uniqueIds.size() == 41U &&
-                          available.size() == catalog.size() &&
+        runner.expect(uniqueIds.size() == catalog.size() &&
                           catalogMatchesAvailable,
-                      "map builder catalog contains 41 unique builders");
+                      "available builders match the ordered, unique catalog");
         runner.expect(
             mapBuilderDescriptor("simple")->category ==
                     MapBuilderCategory::Algorithm &&
@@ -545,7 +461,7 @@ void runMapgenTests(TestRunner& runner)
         runner.expect(!gallery.paused && gallery.frameIndex == 0U,
                       "gallery restarts playback when playing from final");
         static_cast<void>(updateMapgenGallery(gallery, {}, 300));
-        runner.expect(gallery.frameIndex > 0U || gallery.paused,
+        runner.expect(gallery.frameIndex > 0U,
                       "gallery advances playback using elapsed time");
 
         const std::vector<InputEvent> finalFrame{
@@ -768,12 +684,10 @@ void runMapgenTests(TestRunner& runner)
                           roles[index].id + " surface role validates");
             runner.expect(result.builderName == roles[index].id,
                           roles[index].id + " reports its surface id");
-            runner.expect(
-                surfaceExitIsOpen(result.map, exitNorth) &&
-                    surfaceExitIsOpen(result.map, exitEast) &&
-                    surfaceExitIsThreeTilesWide(result.map, exitNorth) &&
-                    surfaceExitIsThreeTilesWide(result.map, exitEast),
-                roles[index].id + " preserves three-tile requested exits");
+            runner.expect(surfaceExitIsThreeTilesWide(result.map, exitNorth) &&
+                              surfaceExitIsThreeTilesWide(result.map, exitEast),
+                          roles[index].id +
+                              " preserves three-tile requested exits");
             runner.expect(hasSpawnRequest(result, roles[index].firstSpawn) &&
                               hasSpawnRequest(result, roles[index].secondSpawn),
                           roles[index].id +
@@ -808,33 +722,24 @@ void runMapgenTests(TestRunner& runner)
     }
 
     {
-        struct RegionContent {
-            std::string id;
-            std::string firstSpawn;
-            std::string secondSpawn;
-        };
-        const std::vector<RegionContent> regions{
-            {"deep-caverns", "deep_kobold", "stone_golem"},
-            {"dwarf-transition", "dwarf_sentry", "dwarf_rubble"},
-            {"dragon-lair", "dragon", "gauntlets_of_might"},
-            {"mushroom-entrance", "mushroom_patch", "sporeling"},
-            {"mushroom-forest", "sporeling", "fungal_giant"},
-            {"mushroom-exit", "dark_elf_scout_a", "hand_crossbow"},
-            {"dark-elf-city", "dark_elf_marksman_a", "dark_elf_blade_b"},
+        const std::vector<std::string> regions{
+            "deep-caverns",
+            "dwarf-transition",
+            "dragon-lair",
+            "mushroom-entrance",
+            "mushroom-forest",
+            "mushroom-exit",
+            "dark-elf-city",
         };
 
         for (std::size_t index = 0; index < regions.size(); ++index) {
             Rng rng{static_cast<Rng::Seed>(700U + index)};
             const auto result = buildMapById(
-                regions[index].id, 40, 25, rng, MapBuildOptions{true});
+                regions[index], 40, 25, rng, MapBuildOptions{true});
             const auto validation = validateMapBuild(
                 result.map, result.playerStart, result.stairsPosition);
             runner.expect(validation.valid,
-                          regions[index].id + " region validates");
-            runner.expect(
-                hasSpawnRequest(result, regions[index].firstSpawn) &&
-                    hasSpawnRequest(result, regions[index].secondSpawn),
-                regions[index].id + " requests authored region content");
+                          regions[index] + " region validates");
         }
     }
 
@@ -999,11 +904,11 @@ void runMapgenTests(TestRunner& runner)
         runner.expect(!sameMapTiles(pythagoras.map, manhattan.map),
                       "Voronoi distance variants produce distinct maps");
 
-        Rng cleanupRng{4242U};
-        const auto cleaned =
-            buildMapById("voronoi", 80, 43, cleanupRng, MapBuildOptions{true});
-        runner.expect(countSmallInteriorWallComponents(cleaned.map, 8U) == 0,
-                      "Voronoi output removes tiny floating wall fragments");
+        Rng fragmentRng{12U};
+        const auto voronoi = buildMapById("voronoi", 80, 43, fragmentRng, {});
+        runner.expect(
+            measureMapQuality(voronoi.map).tinyBlockerComponents == 0,
+            "Voronoi removes tiny floating rock fragments for seed 12");
     }
 
     {

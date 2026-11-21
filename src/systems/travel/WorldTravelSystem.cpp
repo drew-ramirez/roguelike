@@ -170,6 +170,17 @@ landmarkUnlockedForRegion(const WorldMapState& world,
     return true;
 }
 
+[[nodiscard]] int macroTravelHungerCost(const WorldCellDescriptor& cell)
+{
+    return std::max(
+        1, 8 + (cell.dangerTier * 4) + biomeTravelModifier(cell.biome));
+}
+
+[[nodiscard]] int localTravelHungerCost(const WorldCellDescriptor& cell)
+{
+    return std::max(1, macroTravelHungerCost(cell) / 2);
+}
+
 } // namespace
 
 std::vector<RouteLink> availableTravelRoutes(const GameResources& resources)
@@ -198,17 +209,6 @@ std::vector<RouteLink> availableTravelRoutes(const GameResources& resources)
                   return left.hungerCost < right.hungerCost;
               });
     return routes;
-}
-
-int macroTravelHungerCost(const WorldCellDescriptor& cell)
-{
-    return std::max(
-        1, 8 + (cell.dangerTier * 4) + biomeTravelModifier(cell.biome));
-}
-
-int localTravelHungerCost(const WorldCellDescriptor& cell)
-{
-    return std::max(1, macroTravelHungerCost(cell) / 2);
 }
 
 int travelHungerCost(const RouteLink& route) noexcept

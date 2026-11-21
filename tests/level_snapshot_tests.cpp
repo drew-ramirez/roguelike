@@ -175,10 +175,10 @@ void runLevelSnapshotTests(TestRunner& runner)
         resources.depth = 2;
         resources.rng.reseed(77U);
         resources.player = spawnPlayer(registry, Point{2, 2});
-        [[maybe_unused]] const auto potion =
-            spawnHealingPotion(registry, Point{3, 3});
+        const auto potion = spawnHealingPotion(registry, Point{3, 3});
         resources.dungeon.storeLevel(
             1, "town", storedMap, registry, resources.player);
+        registry.destroy(potion);
 
         auto currentMap = openMap();
         currentMap.setTile(5, 5, TileType::DownStairs);
@@ -193,11 +193,23 @@ void runLevelSnapshotTests(TestRunner& runner)
         runner.expect(loadedResources.dungeon.hasLevel(1),
                       "load restores archived dungeon levels");
 
+        runner.expect(countNamedItems(loadedRegistry, "Healing Potion") == 0,
+                      "archived potion does not appear on the active level");
         Map restored{1, 1, TileType::Wall};
         loadedResources.dungeon.restoreLevel(1, restored, loadedRegistry);
         runner.expect(restored.isRevealed(2, 2),
                       "load restores archived map memory");
-        runner.expect(countNamedItems(loadedRegistry, "Healing Potion") >= 1,
+        const auto items =
+            loadedRegistry.view<const Item, const Name, const Position>();
+        bool potionAtDropSite = false;
+        for (const auto item : items) {
+            const auto& position = items.get<const Position>(item);
+            potionAtDropSite |=
+                items.get<const Name>(item).value == "Healing Potion" &&
+                position.x == 3 && position.y == 3;
+        }
+        runner.expect(countNamedItems(loadedRegistry, "Healing Potion") == 1 &&
+                          potionAtDropSite,
                       "load restores archived level entities");
     }
 }

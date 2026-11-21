@@ -24,8 +24,6 @@ class Map;
 [[nodiscard]] std::vector<RouteLink>
 availableTravelRoutes(const GameResources& resources);
 
-[[nodiscard]] int macroTravelHungerCost(const WorldCellDescriptor& cell);
-[[nodiscard]] int localTravelHungerCost(const WorldCellDescriptor& cell);
 [[nodiscard]] int travelHungerCost(const RouteLink& route) noexcept;
 
 [[nodiscard]] bool moveWorldMapCursor(entt::registry& registry,

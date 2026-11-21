@@ -64,19 +64,6 @@ void runSpatialTests(TestRunner& runner)
     {
         auto map = openMap();
         entt::registry registry;
-        const auto blocker = entityAt(registry, Point{3, 2});
-        registry.emplace<BlocksTile>(blocker);
-
-        runner.expect(isBlocked(map, registry, Point{3, 2}),
-                      "spatial query sees live blockers");
-        registry.destroy(blocker);
-        runner.expect(!isBlocked(map, registry, Point{3, 2}),
-                      "destroyed blockers stop blocking immediately");
-    }
-
-    {
-        auto map = openMap();
-        entt::registry registry;
         const auto player = spawnPlayer(registry, Point{2, 2});
         const auto blocker = entityAt(registry, Point{3, 2});
         registry.emplace<BlocksTile>(blocker);

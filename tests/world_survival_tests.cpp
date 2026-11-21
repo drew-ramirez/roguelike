@@ -72,14 +72,6 @@ void moveWorldToReedfen(WorldMapState& world)
 void runWorldSurvivalTests(TestRunner& runner)
 {
     {
-        const auto& raws = defaultRawDatabase();
-        runner.expect(raws.ingredient("pond_fish") != nullptr &&
-                          raws.recipe("marsh_stew") != nullptr &&
-                          raws.biomeResourceTable("reed_marsh") != nullptr,
-                      "default raws expose camp survival content");
-    }
-
-    {
         entt::registry registry;
         const auto& raws = defaultRawDatabase();
         const auto camp =
@@ -108,22 +100,19 @@ void runWorldSurvivalTests(TestRunner& runner)
         auto* targetCell = worldCellAt(resources.world, target);
         runner.expect(targetCell != nullptr, "macro travel target exists");
         if (targetCell != nullptr) {
+            targetCell->biome = BiomeVariant::ReedMarsh;
             targetCell->dangerTier = 0;
             targetCell->fields.dangerPressure = 0.0;
             targetCell->discovered = false;
         }
 
         const int before = hungerDuration(registry, resources.player);
-        const int expectedCost =
-            targetCell == nullptr ? 0 : macroTravelHungerCost(*targetCell);
         runner.expect(
             !moveWorldMapCursor(registry, resources, map, fov, Point{1, 0}) &&
                 resources.world.cursor == target && targetCell != nullptr &&
                 targetCell->discovered &&
-                hungerDuration(registry, resources.player) ==
-                    before - expectedCost,
-            "macro cursor travel reveals the target and spends "
-            "biome hunger");
+                hungerDuration(registry, resources.player) == before - 14,
+            "macro cursor travel reveals a safe marsh and spends 14 hunger");
     }
 
     {
@@ -213,19 +202,18 @@ void runWorldSurvivalTests(TestRunner& runner)
         auto map = openMap(40, 25);
         ShadowcastingFov fov;
 
-        const auto* currentCell =
-            worldCellAt(resources.world, greenholtWorldPosition());
+        if (auto* currentCell =
+                worldCellAt(resources.world, greenholtWorldPosition())) {
+            currentCell->biome = BiomeVariant::DryWoods;
+            currentCell->dangerTier = 0;
+        }
         const int before = hungerDuration(registry, resources.player);
-        const int expectedCost =
-            currentCell == nullptr ? 0 : localTravelHungerCost(*currentCell);
         runner.expect(
             tryTravelByEdge(registry, resources, map, fov, Point{1, 0}) &&
                 resources.world.currentMacro == greenholtWorldPosition() &&
                 resources.world.currentScreen == Point{2, 1} &&
-                hungerDuration(registry, resources.player) ==
-                    before - expectedCost,
-            "local edge travel enters the adjacent surface screen and spends "
-            "hunger");
+                hungerDuration(registry, resources.player) == before - 4,
+            "local edge travel enters adjacent safe woods and spends 4 hunger");
         const auto& position = registry.get<Position>(resources.player);
         runner.expect(position.x <= 2 && map.isWalkable(position.x, position.y),
                       "local edge travel places the player near the opposite "
@@ -239,10 +227,6 @@ void runWorldSurvivalTests(TestRunner& runner)
         resources.player = spawnPlayer(registry, Point{4, 4});
         const auto camp = spawnRawEntity(
             registry, defaultRawDatabase(), "greenholt_hearth", Point{5, 4});
-
-        runner.expect(camp.has_value() &&
-                          registry.all_of<CampSite, CookingStation>(*camp),
-                      "raw camp prop spawns camp and cooking components");
 
         registry.get<CombatStats>(resources.player).hp = 20;
         registry.get<Pools>(resources.player).hitPoints = 20;

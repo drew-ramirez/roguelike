@@ -63,25 +63,27 @@ void runTargetingTests(TestRunner& runner)
 
     Camera camera{5, 4};
     camera.centerOn(Point{8, 5}, map);
-    const auto screen = camera.worldToScreen(Point{8, 5});
-    runner.expect(screen.has_value() &&
-                      camera.screenToWorld(*screen) == Point{8, 5},
-                  "camera round-trips world and screen coordinates");
+    runner.expect(camera.worldToScreen(Point{8, 5}) == Point{2, 2} &&
+                      camera.screenToWorld(Point{2, 2}) == Point{8, 5},
+                  "scrolled camera maps the center tile in both directions");
     runner.expect(!camera.worldToScreen(Point{1, 1}).has_value(),
                   "camera culls world points outside the viewport");
 
     Map largeMap = openMap(20, 12);
     largeMap.setVisible(8, 5);
+    largeMap.setVisible(1, 1);
     entt::registry renderRegistry;
     [[maybe_unused]] const auto visible =
         spawnGoblin(renderRegistry, Point{8, 5});
-    [[maybe_unused]] const auto outsideView =
-        spawnGoblin(renderRegistry, Point{1, 1});
+    const auto outsideView = spawnGoblin(renderRegistry, Point{1, 1});
+    renderRegistry.get<Renderable>(outsideView).glyph = U'X';
     ConsoleBuffer console{10, 6};
     console.clear();
     renderEntities(renderRegistry, largeMap, console, camera);
-    runner.expect(console.cellAt(screen->x, screen->y).glyph == U'g',
-                  "camera-aware entity rendering uses screen coordinates");
+    runner.expect(console.cellAt(2, 2).glyph == U'g',
+                  "scrolled rendering draws the visible goblin at center");
+    runner.expect(console.cellAt(1, 1).glyph == U' ',
+                  "scrolled rendering omits visible entities off screen");
 }
 
 } // namespace rl::test

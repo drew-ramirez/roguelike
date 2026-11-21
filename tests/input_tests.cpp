@@ -1,6 +1,5 @@
 #include "TestSuites.hpp"
 
-#include <algorithm>
 #include <optional>
 #include <string_view>
 #include <vector>
@@ -13,6 +12,7 @@
 #include "input/InputEvent.hpp"
 #include "spawn/Spawner.hpp"
 #include "systems/InputSystem.hpp"
+#include "systems/spatial/VisibilitySystem.hpp"
 #include "systems/travel/MapTransitionSystem.hpp"
 #include "ui/WorldMapMenu.hpp"
 #include "world/WorldGeneration.hpp"
@@ -122,7 +122,11 @@ void runInputTests(TestRunner& runner)
 
     map.setTile(2, 1, TileType::ClosedDoor);
     registry.get<Position>(resources.player) = Position{1, 1};
-    registry.get<Viewshed>(resources.player).dirty = false;
+    registry.get<Viewshed>(resources.player).dirty = true;
+    ShadowcastingFov doorFov;
+    updateVisibility(registry, map, resources.player, doorFov);
+    runner.expect(!map.isVisible(3, 1), "closed doors block sight");
+
     const std::vector<InputEvent> openDoor{{InputEventType::KeyDown, Key::D}};
     runner.expect(handleMapInput(registry, resources, map, openDoor) ==
                       PlayerInputResult::TookTurn,
@@ -131,8 +135,9 @@ void runInputTests(TestRunner& runner)
                   "bumping a closed door opens it");
     runner.expect(registry.get<Position>(resources.player).x == 1,
                   "opening a door does not move the player");
-    runner.expect(registry.get<Viewshed>(resources.player).dirty,
-                  "opening a door marks FOV dirty");
+    updateVisibility(registry, map, resources.player, doorFov);
+    runner.expect(map.isVisible(3, 1),
+                  "opening a door lets the player see through it");
 
     {
         auto neutralMap = openMap();
@@ -261,21 +266,6 @@ void runInputTests(TestRunner& runner)
                           shrineResources.pendingShrine->shrine == shrine,
                       "bumping a shrine records the active shrine");
     }
-
-    Map sightMap{6, 3, TileType::Floor};
-    sightMap.setTile(2, 1, TileType::ClosedDoor);
-    ShadowcastingFov fov;
-    const auto closedVisible = fov.compute(sightMap, Point{1, 1}, 5);
-    runner.expect(std::find(closedVisible.begin(),
-                            closedVisible.end(),
-                            Point{3, 1}) == closedVisible.end(),
-                  "closed doors block FOV");
-    sightMap.setTile(2, 1, TileType::OpenDoor);
-    const auto openVisible = fov.compute(sightMap, Point{1, 1}, 5);
-    runner.expect(std::find(openVisible.begin(),
-                            openVisible.end(),
-                            Point{3, 1}) != openVisible.end(),
-                  "open doors do not block FOV");
 }
 
 } // namespace rl::test
